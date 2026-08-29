@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { GlobalErrorFallback } from './GlobalErrorFallback';
 
 interface Props {
   children: ReactNode;
@@ -36,7 +37,7 @@ export class GlobalErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
-      return this.props.fallback || null;
+      return this.props.fallback || <GlobalErrorFallback />;
     }
 
     return this.props.children;
