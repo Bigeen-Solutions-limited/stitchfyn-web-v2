@@ -2,11 +2,9 @@
  * Audit Types — Pure Projection Layer
  *
  * camelCase — matches what the backend actually sends. The API's
- * CamelCasePlugin (createDbConnection) has been unconditionally active
- * since before this type existed; it was declared snake_case anyway, so
- * every field with an underscore (witnessed_at, occurred_at, actor_id,
- * etc.) read as undefined at runtime. Found verifying the audit trail
- * display path during Phase 2A — see the Phase 2 report.
+ * CamelCasePlugin (createDbConnection) is unconditionally active; a
+ * snake_case field here (witnessed_at, occurred_at, actor_id, etc.) would
+ * read as undefined at runtime.
  */
 export interface AuditRecord {
   id: string;
