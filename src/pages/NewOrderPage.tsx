@@ -1291,7 +1291,13 @@ export function NewOrderPage() {
               </Box>
 
               <Grid container spacing={4}>
-                {/* Image Upload */}
+                {/* Fabric evidence capture moved to the order detail page
+                    (Slice 4) — one photo per garment, uploaded through the
+                    authenticated fabric-evidence-photos endpoint once real
+                    garment IDs exist, instead of a single base64 photo
+                    shared across every garment in the order. This card is
+                    now informational only; it no longer writes
+                    fabricImageBase64. */}
                 <Grid size={{ xs: 12, md: 5 }}>
                   <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 1.5, display: 'block', letterSpacing: 1.5 }}>
                     FABRIC EVIDENCE
@@ -1299,7 +1305,7 @@ export function NewOrderPage() {
                   <Card
                     sx={{
                       width: '100%',
-                      height: 240,
+                      minHeight: 240,
                       border: '2px dashed',
                       borderColor: 'divider',
                       borderRadius: '24px',
@@ -1308,57 +1314,24 @@ export function NewOrderPage() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       bgcolor: 'background.paper',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      overflow: 'hidden',
                       boxShadow: 'none',
-                      transition: 'all 0.3s ease',
-                      '&:hover': { borderColor: 'secondary.main', bgcolor: alpha('#c49a1a', 0.05), transform: 'scale(1.01)' }
+                      p: 3,
+                      textAlign: 'center',
                     }}
-                    onClick={() => document.getElementById('fabric-upload')?.click()}
                   >
-                    {!fabricDetails.fabricImageBase64 ? (
-                      <Stack spacing={1} alignItems="center">
-                        <Avatar sx={{ bgcolor: alpha('#c49a1a', 0.1), color: 'secondary.main', width: 64, height: 64, mb: 1 }}>
-                          <AddIcon sx={{ fontSize: 32 }} />
-                        </Avatar>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Upload Fabric Image</Typography>
-                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>JPEG, PNG up to 10MB</Typography>
-                      </Stack>
-                    ) : (
-                      <img
-                        src={fabricDetails.fabricImageBase64}
-                        alt="Fabric preview"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    )}
-                    <input
-                      id="fabric-upload"
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setFabricDetails({ ...fabricDetails, fabricImageBase64: reader.result as string });
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
+                    <Stack spacing={1} alignItems="center">
+                      <Avatar sx={{ bgcolor: alpha('#c49a1a', 0.1), color: 'secondary.main', width: 64, height: 64, mb: 1 }}>
+                        <AddIcon sx={{ fontSize: 32 }} />
+                      </Avatar>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        Capture Fabric Photo After Saving
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                        Each garment gets its own fabric photo, captured with the
+                        camera on the order&apos;s detail page once this order is saved.
+                      </Typography>
+                    </Stack>
                   </Card>
-                  {fabricDetails.fabricImageBase64 && (
-                    <Button
-                      fullWidth
-                      variant="text"
-                      onClick={() => setFabricDetails({ ...fabricDetails, fabricImageBase64: "" })}
-                      sx={{ mt: 1, textTransform: 'none', color: 'error.main', fontWeight: 700 }}
-                    >
-                      Remove Photo
-                    </Button>
-                  )}
                 </Grid>
 
                 {/* Fabric Type & Swatch */}
