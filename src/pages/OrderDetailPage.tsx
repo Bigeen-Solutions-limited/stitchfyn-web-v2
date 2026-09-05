@@ -54,6 +54,7 @@ import { truncateId } from '../utils/format.ts';
 import { PaymentPanel } from '../features/orders/components/PaymentPanel.tsx';
 import { DesignBriefPanel } from '../features/orders/components/DesignBriefPanel.tsx';
 import { FabricSealPanel } from '../features/orders/components/FabricSealPanel.tsx';
+import { FabricEvidenceCapturePanel } from '../features/orders/components/FabricEvidenceCapturePanel.tsx';
 import { CollectionChecklistPanel } from '../features/orders/components/CollectionChecklistPanel.tsx';
 import { FittingsPanel } from '../features/orders/components/FittingsPanel.tsx';
 import { MobileHeader } from '../components/layout/MobileHeader.tsx';
@@ -552,6 +553,15 @@ export function OrderDetailPage() {
                       </Box>
                     </Grid>
                   </Grid>
+
+                  {/* Fabric Evidence Capture — keyed by garment so capture
+                      state (selected file, this-session uploads) never
+                      leaks from one garment to another when switching the
+                      selector above. */}
+                  <FabricEvidenceCapturePanel
+                    key={selectedGarment.id}
+                    garmentId={selectedGarment.id}
+                  />
 
                   {/* Fabric Safety Seal */}
                   <FabricSealPanel
