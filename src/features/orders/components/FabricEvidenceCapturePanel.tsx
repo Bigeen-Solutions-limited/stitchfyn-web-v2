@@ -28,10 +28,10 @@ interface FabricEvidenceCapturePanelProps {
 // backend limit is not touched — this is validation only.
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
-type CaptureState = 'idle' | 'ready' | 'uploading' | 'success' | 'error';
+type CaptureState = 'idle' | 'uploading' | 'success' | 'error';
 
 /**
- * Fabric Evidence Capture — Slice 4
+ * Fabric Evidence Capture — Slice 4, revised for US-3.1 (single-tap capture)
  *
  * Deliberately separate from FabricSealPanel: this component only captures
  * and uploads fabric_evidence_photos rows via the Slice 3 endpoint. It
@@ -42,6 +42,15 @@ type CaptureState = 'idle' | 'ready' | 'uploading' | 'success' | 'error';
  * OrderDetailPage) so garment A's captures are never conflated with
  * garment B's — each mounted instance of this component only ever knows
  * about its own garmentId.
+ *
+ * US-3.1: selecting/capturing a valid photo uploads it immediately — there
+ * is no intermediate "ready" preview state and no separate Upload Photo
+ * tap. The file input is only ever rendered while state === 'idle', so it
+ * unmounts the instant a file is accepted, which is what actually prevents
+ * a stray double `change` event (or a repeat tap on the — now-hidden —
+ * capture button) from firing a second upload; the `state !== 'idle'`
+ * guard at the top of handleFileChange is defense in depth for the same
+ * event landing before that re-render commits.
  */
 export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCapturePanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -70,31 +79,11 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
     if (inputRef.current) inputRef.current.value = '';
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      setState('error');
-      setErrorMessage(
-        `That photo is ${(file.size / (1024 * 1024)).toFixed(1)}MB — the limit is 5MB. Please retake at a lower resolution or choose a smaller image.`,
-      );
-      return;
-    }
-
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-    setState('ready');
-    setErrorMessage(null);
-  }
-
-  function handleUpload() {
-    if (!selectedFile || isUploading) return; // duplicate-submission guard
+  function startUpload(file: File) {
+    if (isUploading) return; // duplicate-submission guard
     setState('uploading');
 
-    uploadMutation.mutate(selectedFile, {
+    uploadMutation.mutate(file, {
       onSuccess: (photo) => {
         setUploadedPhotos((prev) => [...prev, photo]);
         setState('success');
@@ -117,10 +106,31 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
     });
   }
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (state !== 'idle') return; // belt-and-suspenders: the input is unmounted outside 'idle' anyway
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setState('error');
+      setErrorMessage(
+        `That photo is ${(file.size / (1024 * 1024)).toFixed(1)}MB — the limit is 5MB. Please retake at a lower resolution or choose a smaller image.`,
+      );
+      return;
+    }
+
+    setErrorMessage(null);
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    startUpload(file); // US-3.1: no separate Upload Photo tap — upload starts on selection
+  }
+
   function handleRetry() {
     // Re-attempts the SAME already-selected file — no recapture needed.
     if (!selectedFile) return;
-    handleUpload();
+    startUpload(selectedFile);
   }
 
   return (
@@ -172,7 +182,12 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
         </Button>
       )}
 
-      {(state === 'ready' || state === 'uploading') && previewUrl && (
+      {/* US-3.1: upload starts automatically on selection — there is no
+          preview/confirm step to stop at, just an in-progress indicator
+          while the existing mutation runs. The button is disabled (not
+          removed) so a duplicate tap during this window is a no-op rather
+          than a second submission. */}
+      {state === 'uploading' && previewUrl && (
         <Stack spacing={1.5} alignItems="flex-start">
           <Box
             component="img"
@@ -183,20 +198,11 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
           <Stack direction="row" spacing={1.5}>
             <Button
               variant="contained"
-              disabled={isUploading}
-              onClick={handleUpload}
-              startIcon={isUploading ? <CircularProgress size={16} sx={{ color: 'white' }} /> : undefined}
-              sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none', bgcolor: '#1e5c3a', '&:hover': { bgcolor: '#256b45' } }}
+              disabled
+              startIcon={<CircularProgress size={16} sx={{ color: 'white' }} />}
+              sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none', bgcolor: '#1e5c3a' }}
             >
-              {isUploading ? 'Uploading…' : 'Upload Photo'}
-            </Button>
-            <Button
-              variant="text"
-              disabled={isUploading}
-              onClick={resetSelection}
-              sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-            >
-              Retake
+              Uploading…
             </Button>
           </Stack>
         </Stack>
