@@ -15,7 +15,9 @@ import {
   ShoppingBag as ShoppingBagIcon,
   Engineering as EngineeringIcon,
   Security as SecurityIcon,
-  EventNote as EventNoteIcon
+  EventNote as EventNoteIcon,
+  Checkroom as ChecklistIcon,
+  CheckCircleOutline as CheckCircleOutlineIcon,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../infrastructure/http/axios.client';
@@ -23,21 +25,36 @@ import type { AuditRecord } from '../types';
 
 interface AuditTrailTimelineProps {
   targetId?: string;
+  // US-3.7: garment-scoped material history. Mutually exclusive with
+  // targetId in practice (contextId wins if both are somehow passed) — a
+  // distinct prop rather than overloading targetId, since they hit
+  // different backend routes (/audit/context/:id vs /audit/target/:id)
+  // and mean different things (one garment's events vs. one order's).
+  contextId?: string;
+  // US-3.7: lets a garment-scoped instance say "Material Audit Trail"
+  // instead of the generic "Immutable Audit Trail" label, so it's clear
+  // which garment's history is on screen. Existing order-level call sites
+  // are unaffected — they simply don't pass this prop.
+  title?: string;
 }
 
 /**
  * AuditTrailTimeline — The Immutable Timeline
- * 
+ *
  * RESPONSIBILITY:
  * - Render chronological audit logs strictly by witnessed_at.
  * - Display "Temporal Drift" warning if occurred_at and witnessed_at differ by >1h.
  * - NO mutation triggers.
  */
-export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId }) => {
+export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId, contextId, title }) => {
   const { data: records, isLoading } = useQuery({
-    queryKey: ['audit-trail', targetId || 'all'],
+    queryKey: ['audit-trail', contextId ? `context:${contextId}` : targetId ? `target:${targetId}` : 'all'],
     queryFn: async () => {
-      const url = targetId ? `/audit/target/${targetId}` : '/audit';
+      const url = contextId
+        ? `/audit/context/${contextId}`
+        : targetId
+          ? `/audit/target/${targetId}`
+          : '/audit';
       const { data } = await apiClient.get<AuditRecord[]>(url);
       return data;
     },
@@ -54,6 +71,10 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
         return { icon: <EngineeringIcon fontSize="small" />, color: '#4caf50', label: 'Production Update' };
       case 'WORKFLOW_INHIBITED':
         return { icon: <WarningIcon fontSize="small" />, color: '#f44336', label: 'Production Halted' };
+      case 'FABRIC_INTAKE_RECORDED':
+        return { icon: <ChecklistIcon fontSize="small" />, color: '#c49a1a', label: 'Fabric Intake Recorded' };
+      case 'FABRIC_CONFIRMED':
+        return { icon: <CheckCircleOutlineIcon fontSize="small" />, color: '#1e5c3a', label: 'Fabric Confirmed' };
       default:
         return { icon: <HistoryIcon fontSize="small" />, color: '#757575', label: action.replace(/_/g, ' ') };
     }
@@ -64,7 +85,7 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
         <VerifiedUserIcon sx={{ color: 'primary.main', fontSize: 20 }} />
         <Typography variant="subtitle2" fontWeight={800} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Immutable Audit Trail
+          {title ?? 'Immutable Audit Trail'}
         </Typography>
       </Stack>
 

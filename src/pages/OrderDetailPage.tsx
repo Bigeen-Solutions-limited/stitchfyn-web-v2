@@ -576,6 +576,16 @@ export function OrderDetailPage() {
                     quantityUnit={selectedGarment.quantityUnit ?? null}
                   />
 
+                  {/* Material Audit Trail — US-3.7. Garment-scoped (contextId,
+                      not targetId), keyed by garment so switching the
+                      selector above swaps to that garment's own history
+                      rather than showing a stale one. */}
+                  <AuditTrailTimeline
+                    key={`material-audit-${selectedGarment.id}`}
+                    contextId={selectedGarment.id}
+                    title="Material Audit Trail"
+                  />
+
                   {/* Design Brief */}
                   <DesignBriefPanel
                     orderId={order.id}
