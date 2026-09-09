@@ -49,6 +49,8 @@ export interface Garment {
   fabricType?: string | null
   colorSwatch?: string | null
   designNotes?: string | null
+  quantity?: number | null
+  quantityUnit?: string | null
   requiredMeasurements?: string[]
   confirmedAt?: string | null
   confirmationChannel?: string | null

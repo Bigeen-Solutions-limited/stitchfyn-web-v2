@@ -29,6 +29,18 @@ export interface CustomerOrderProjection {
     backFinish: string | null;
     additionalNotes: string | null;
   }[];
+  fabricGarments: {
+    garmentId: string;
+    garmentName: string;
+    fabricType: string | null;
+    colorSwatch: string | null;
+    quantity: number | null;
+    quantityUnit: string | null;
+    conditionNotes: string | null;
+    confirmedAt: string | null;
+    confirmationChannel: string | null;
+    evidencePhotos: { id: string; secureUrl: string; uploadedAt: string }[];
+  }[];
 }
 
 export const customerApi = {

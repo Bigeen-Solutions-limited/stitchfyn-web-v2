@@ -12,13 +12,16 @@ vi.mock('../seal.api', () => ({
   },
 }))
 
-function renderPanel() {
+// US-3.3: defaults to a garment with a recorded quantity — the normal case
+// where the tailor already logged it at intake. Pass nulls to exercise the
+// "not recorded yet" path.
+function renderPanel(quantity: number | null = 5, quantityUnit: string | null = 'yards') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return render(
     <QueryClientProvider client={queryClient}>
-      <FabricSealPanel orderId="order-1" garmentId="garment-1" />
+      <FabricSealPanel orderId="order-1" garmentId="garment-1" quantity={quantity} quantityUnit={quantityUnit} />
     </QueryClientProvider>,
   )
 }
@@ -50,28 +53,38 @@ describe('FabricSealPanel', () => {
     expect(screen.queryByRole('button', { name: /confirm fabric/i })).not.toBeInTheDocument()
   })
 
-  it('opens the dialog, requires a quantity, and submits quantity_confirmed to confirmFabric', async () => {
+  it('opens the dialog showing the recorded quantity read-only, and confirms without re-entering it', async () => {
     vi.mocked(sealApi.getGarmentSeal).mockRejectedValue(NOT_FOUND)
     vi.mocked(sealApi.confirmFabric).mockResolvedValue({
       id: 'garment-1', orderId: 'order-1', storeId: 's1', name: 'Gown', status: 'IN_PROGRESS',
     } satisfies Garment)
-    renderPanel()
+    renderPanel(5, 'yards')
 
     fireEvent.click(await screen.findByRole('button', { name: /confirm fabric/i }))
 
+    expect(screen.getByText(/5 yards/i)).toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: /quantity/i })).not.toBeInTheDocument()
+
     // Dialog's own submit button shares the same accessible name — take the last one (in the dialog)
     const dialogSubmit = screen.getAllByRole('button', { name: /confirm fabric/i }).at(-1)!
-    expect(dialogSubmit).toBeDisabled() // no quantity typed yet
-
-    const input = screen.getByLabelText(/quantity confirmed/i)
-    fireEvent.change(input, { target: { value: '5 yards' } })
-    expect(dialogSubmit).not.toBeDisabled()
+    expect(dialogSubmit).not.toBeDisabled() // quantity already recorded — nothing to type
 
     fireEvent.click(dialogSubmit)
 
     await waitFor(() => {
-      expect(sealApi.confirmFabric).toHaveBeenCalledWith('garment-1', { quantity_confirmed: '5 yards' })
+      expect(sealApi.confirmFabric).toHaveBeenCalledWith('garment-1')
     })
+  })
+
+  it('disables the dialog submit and shows guidance when no quantity was recorded at intake', async () => {
+    vi.mocked(sealApi.getGarmentSeal).mockRejectedValue(NOT_FOUND)
+    renderPanel(null, null)
+
+    fireEvent.click(await screen.findByRole('button', { name: /confirm fabric/i }))
+
+    expect(screen.getByText(/no fabric quantity was recorded/i)).toBeInTheDocument()
+    const dialogSubmit = screen.getAllByRole('button', { name: /confirm fabric/i }).at(-1)!
+    expect(dialogSubmit).toBeDisabled()
   })
 
   it('disables the trigger immediately on success so a second confirm cannot be submitted', async () => {
@@ -82,7 +95,6 @@ describe('FabricSealPanel', () => {
     renderPanel()
 
     fireEvent.click(await screen.findByRole('button', { name: /confirm fabric/i }))
-    fireEvent.change(screen.getByLabelText(/quantity confirmed/i), { target: { value: '5 yards' } })
     fireEvent.click(screen.getAllByRole('button', { name: /confirm fabric/i }).at(-1)!)
 
     await waitFor(() => {
@@ -102,11 +114,10 @@ describe('FabricSealPanel', () => {
     renderPanel()
 
     fireEvent.click(await screen.findByRole('button', { name: /confirm fabric/i }))
-    fireEvent.change(screen.getByLabelText(/quantity confirmed/i), { target: { value: '5 yards' } })
     fireEvent.click(screen.getAllByRole('button', { name: /confirm fabric/i }).at(-1)!)
 
     expect(await screen.findByText(/failed to confirm fabric/i)).toBeInTheDocument()
-    // Dialog stays open on failure — quantity field is still present
-    expect(screen.getByLabelText(/quantity confirmed/i)).toBeInTheDocument()
+    // Dialog stays open on failure — recorded quantity is still shown
+    expect(screen.getByText(/5 yards/i)).toBeInTheDocument()
   })
 })

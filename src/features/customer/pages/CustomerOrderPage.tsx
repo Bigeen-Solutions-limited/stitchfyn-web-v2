@@ -7,6 +7,7 @@ import { PortalPaymentSummary } from '../../portal/components/PortalPaymentSumma
 import { PortalMessageThread } from '../../portal/components/PortalMessageThread';
 import { PortalCollectionSignoff } from '../../portal/components/PortalCollectionSignoff';
 import { PortalDesignBriefConfirm } from '../../portal/components/PortalDesignBriefConfirm';
+import { PortalFabricConfirm } from '../../portal/components/PortalFabricConfirm';
 import { PortalDisputeSurface } from '../../portal/components/PortalDisputeSurface';
 
 export function CustomerOrderPage() {
@@ -76,6 +77,12 @@ export function CustomerOrderPage() {
           </div>
         </div>
       </div>
+
+      {/* Activation Step 2 (fabric) before Step 3 (design), matching the
+          PRD's own step ordering. */}
+      {order.fabricGarments.map((garment) => (
+        <PortalFabricConfirm key={garment.garmentId} portalToken={id || ''} garment={garment} />
+      ))}
 
       {order.designBriefs.map((brief) => (
         <PortalDesignBriefConfirm key={brief.id} portalToken={id || ''} brief={brief} />
