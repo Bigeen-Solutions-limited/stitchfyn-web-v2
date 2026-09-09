@@ -58,7 +58,7 @@ describe('FabricEvidenceCapturePanel', () => {
     expect(input.getAttribute('capture')).toBe('environment')
   })
 
-  it('3. selecting an image hands the raw File to the upload call, not a base64 conversion', async () => {
+  it('3. selecting an image uploads it automatically, handing the raw File to the upload call — no base64 conversion, no Upload Photo tap', async () => {
     const file = makeImageFile()
     vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mockResolvedValue({
       id: 'photo-1', garmentId: 'garment-1', orderId: 'order-1', companyId: 'c1',
@@ -68,7 +68,6 @@ describe('FabricEvidenceCapturePanel', () => {
     renderPanel()
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
-    fireEvent.click(await screen.findByRole('button', { name: /upload photo/i }))
 
     await waitFor(() => {
       expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-1', file)
@@ -77,6 +76,25 @@ describe('FabricEvidenceCapturePanel', () => {
     // sits between selection and upload.
     const [, uploadedArg] = vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mock.calls[0]
     expect(uploadedArg).toBeInstanceOf(File)
+  })
+
+  it('3b. no Upload Photo confirmation step exists in the normal flow', async () => {
+    const file = makeImageFile()
+    vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mockResolvedValue({
+      id: 'photo-1', garmentId: 'garment-1', orderId: 'order-1', companyId: 'c1',
+      cloudinaryPublicId: 'stitchfyn/fabric-evidence/x', secureUrl: 'https://res.cloudinary.com/mock/x.jpg',
+      uploadedBy: 'user-1', uploadedAt: new Date().toISOString(),
+    })
+    renderPanel()
+
+    fireEvent.change(getFileInput(), { target: { files: [file] } })
+
+    // US-3.1: selection alone is enough to trigger the upload call — there
+    // is never a moment where an "Upload Photo" button exists to be
+    // clicked, before or after the mutation resolves.
+    expect(screen.queryByRole('button', { name: /^upload photo$/i })).not.toBeInTheDocument()
+    await screen.findByText(/photo uploaded/i)
+    expect(screen.queryByRole('button', { name: /^upload photo$/i })).not.toBeInTheDocument()
   })
 
   it('4 & 5. uploads to the correct garmentId (the API layer owns the multipart "image" field)', async () => {
@@ -89,7 +107,6 @@ describe('FabricEvidenceCapturePanel', () => {
     renderPanel('garment-42')
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
-    fireEvent.click(await screen.findByRole('button', { name: /upload photo/i }))
 
     await waitFor(() => {
       expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-42', file)
@@ -106,7 +123,6 @@ describe('FabricEvidenceCapturePanel', () => {
     renderPanel()
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
-    fireEvent.click(await screen.findByRole('button', { name: /upload photo/i }))
 
     expect(await screen.findByText(/photo uploaded/i)).toBeInTheDocument()
   })
@@ -117,7 +133,6 @@ describe('FabricEvidenceCapturePanel', () => {
     renderPanel()
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
-    fireEvent.click(await screen.findByRole('button', { name: /upload photo/i }))
 
     expect(await screen.findByText(/upload failed/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument()
@@ -135,7 +150,6 @@ describe('FabricEvidenceCapturePanel', () => {
     renderPanel()
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
-    fireEvent.click(await screen.findByRole('button', { name: /upload photo/i }))
     fireEvent.click(await screen.findByRole('button', { name: /retry/i }))
 
     expect(await screen.findByText(/photo uploaded/i)).toBeInTheDocument()
@@ -152,15 +166,18 @@ describe('FabricEvidenceCapturePanel', () => {
     renderPanel()
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
-    const uploadButton = await screen.findByRole('button', { name: /upload/i })
-    fireEvent.click(uploadButton)
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /uploading/i })).toBeDisabled()
-    })
-    // Clicking again while pending must not fire a second call.
-    fireEvent.click(screen.getByRole('button', { name: /uploading/i }))
-    fireEvent.click(screen.getByRole('button', { name: /uploading/i }))
+    // Upload starts on selection alone — the only control visible during
+    // the in-flight window is the disabled "Uploading…" indicator.
+    const uploadingButton = await screen.findByRole('button', { name: /uploading/i })
+    expect(uploadingButton).toBeDisabled()
+    // The capture control itself is gone too (input unmounts outside 'idle'),
+    // so a repeat tap on it can't re-trigger a selection mid-upload either.
+    expect(screen.queryByRole('button', { name: /capture fabric photo/i })).not.toBeInTheDocument()
+
+    // Clicking the disabled indicator must not fire a second call.
+    fireEvent.click(uploadingButton)
+    fireEvent.click(uploadingButton)
 
     resolveUpload!({
       id: 'photo-1', garmentId: 'garment-1', orderId: 'order-1', companyId: 'c1',
@@ -194,7 +211,6 @@ describe('FabricEvidenceCapturePanel', () => {
     const panelB = container.querySelector('[data-testid="panel-b"]') as HTMLElement
 
     fireEvent.change(panelA.querySelector('input[type="file"]')!, { target: { files: [fileA] } })
-    fireEvent.click(screen.getAllByRole('button', { name: /upload photo/i })[0])
 
     await waitFor(() => {
       expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-A', fileA)
@@ -204,7 +220,6 @@ describe('FabricEvidenceCapturePanel', () => {
     expect(panelA.querySelector('img[alt="Uploaded fabric evidence"]')).toBeTruthy()
 
     fireEvent.change(panelB.querySelector('input[type="file"]')!, { target: { files: [fileB] } })
-    fireEvent.click(screen.getAllByRole('button', { name: /upload photo/i })[0])
 
     await waitFor(() => {
       expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-B', fileB)
@@ -224,7 +239,6 @@ describe('FabricEvidenceCapturePanel', () => {
     renderPanel()
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
-    fireEvent.click(await screen.findByRole('button', { name: /upload photo/i }))
     await screen.findByText(/photo uploaded/i)
 
     expect(sealApi.confirmFabric).not.toHaveBeenCalled()
