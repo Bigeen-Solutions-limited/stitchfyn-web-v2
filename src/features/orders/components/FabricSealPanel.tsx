@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -10,18 +9,22 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   alpha,
 } from '@mui/material';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import SmsOutlinedIcon from '@mui/icons-material/SmsOutlined';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { sealApi } from '../seal.api';
 
 interface FabricSealPanelProps {
   orderId: string;
   garmentId: string;
+  // US-3.3: the quantity recorded on the garment at intake. Confirming
+  // reviews/acknowledges this value — it is never re-entered here.
+  quantity: number | null;
+  quantityUnit: string | null;
 }
 
 const PUBLIC_BASE_URL = import.meta.env.VITE_PUBLIC_BASE_URL ?? window.location.origin;
@@ -37,10 +40,10 @@ function handleShare(verificationCode: string) {
   }
 }
 
-export function FabricSealPanel({ orderId, garmentId }: FabricSealPanelProps) {
+export function FabricSealPanel({ orderId, garmentId, quantity, quantityUnit }: FabricSealPanelProps) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [quantity, setQuantity] = useState('');
+  const hasQuantity = quantity !== null && quantity !== undefined && !!quantityUnit;
 
   const { data: seal, isLoading, error } = useQuery({
     queryKey: ['seal', orderId, garmentId],
@@ -54,12 +57,11 @@ export function FabricSealPanel({ orderId, garmentId }: FabricSealPanelProps) {
   const is404 = (error as any)?.response?.status === 404;
 
   const confirmMutation = useMutation({
-    mutationFn: () => sealApi.confirmFabric(garmentId, { quantity_confirmed: quantity.trim() }),
+    mutationFn: () => sealApi.confirmFabric(garmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seal', orderId, garmentId] });
       queryClient.invalidateQueries({ queryKey: ['orders', orderId] });
       setDialogOpen(false);
-      setQuantity('');
     },
   });
 
@@ -149,17 +151,21 @@ export function FabricSealPanel({ orderId, garmentId }: FabricSealPanelProps) {
           </Stack>
         </DialogTitle>
         <DialogContent dividers sx={{ pt: 2 }}>
-          <TextField
-            fullWidth
-            size="small"
-            label="Quantity Confirmed"
-            placeholder="e.g. 5 yards"
-            value={quantity}
-            disabled={confirmMutation.isPending}
-            onChange={(e) => setQuantity(e.target.value)}
-            sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-          />
-          <Typography variant="caption" sx={{ color: 'text.disabled', mt: 1, display: 'block' }}>
+          {hasQuantity ? (
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha('#1e5c3a', 0.06) }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Recorded Fabric Quantity
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                {quantity} {quantityUnit}
+              </Typography>
+            </Box>
+          ) : (
+            <Alert severity="warning" sx={{ borderRadius: 2 }}>
+              No fabric quantity was recorded for this garment at intake. Record one before confirming.
+            </Alert>
+          )}
+          <Typography variant="caption" sx={{ color: 'text.disabled', mt: 1.5, display: 'block' }}>
             This cannot be undone — the fabric record locks permanently once confirmed.
           </Typography>
           {confirmMutation.isError && (
@@ -178,7 +184,7 @@ export function FabricSealPanel({ orderId, garmentId }: FabricSealPanelProps) {
           </Button>
           <Button
             variant="contained"
-            disabled={!quantity.trim() || confirmMutation.isPending}
+            disabled={!hasQuantity || confirmMutation.isPending}
             onClick={() => confirmMutation.mutate()}
             sx={{ fontWeight: 700, borderRadius: 2, textTransform: 'none', bgcolor: '#1e5c3a', '&:hover': { bgcolor: '#256b45' } }}
           >

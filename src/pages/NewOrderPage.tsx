@@ -123,6 +123,12 @@ export function NewOrderPage() {
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [materialQuantity, setMaterialQuantity] = useState<number | "">("");
+  // US-3.3: the controlled unit for the garment's own structured fabric
+  // quantity record — distinct from the Material Vault's canonicalUnit
+  // (that's free text set at material registration and isn't guaranteed to
+  // match this small, validated set). Defaults to the common case to keep
+  // intake fast.
+  const [quantityUnit, setQuantityUnit] = useState<"yards" | "meters">("yards");
   const [eventOccasion, setEventOccasion] = useState("");
   const [garmentCategory, setGarmentCategory] = useState("");
   const [garmentTier, setGarmentTier] = useState<"STANDARD" | "COMPLEX" | "BESPOKE">("STANDARD");
@@ -409,7 +415,13 @@ export function NewOrderPage() {
           fabricImageBase64: fabricDetails.fabricImageBase64,
           fabricType: inventory?.find(m => m.materialId === selectedMaterialId)?.name || null,
           colorSwatch: fabricDetails.colorSwatch,
-          designNotes: fabricDetails.designNotes
+          designNotes: fabricDetails.designNotes,
+          // US-3.3: the garment's own structured fabric quantity record —
+          // same number the tailor entered above for the Material Vault
+          // reservation (materialQuantity, below), explicitly wired into
+          // both destinations rather than only feeding the inventory side.
+          quantity: materialQuantity || undefined,
+          quantityUnit: materialQuantity ? quantityUnit : undefined
         })),
         materialId: selectedMaterialId || undefined,
         materialQuantity: materialQuantity || undefined
@@ -1387,7 +1399,7 @@ export function NewOrderPage() {
                         </FormControl>
 
                         <TextField
-                          sx={{ width: { xs: '100%', sm: 150 }, '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                          sx={{ width: { xs: '100%', sm: 130 }, '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                           label="Qty / Yardage"
                           value={materialQuantity}
                           onChange={(e) => {
@@ -1397,6 +1409,18 @@ export function NewOrderPage() {
                           inputProps={{ inputMode: 'decimal', pattern: '[0-9]*\\.?[0-9]*' }}
                           disabled={!selectedMaterialId}
                         />
+                        <FormControl sx={{ width: { xs: '100%', sm: 120 } }} disabled={!selectedMaterialId}>
+                          <InputLabel>Unit</InputLabel>
+                          <Select
+                            value={quantityUnit}
+                            label="Unit"
+                            onChange={(e) => setQuantityUnit(e.target.value as "yards" | "meters")}
+                            sx={{ borderRadius: '12px', bgcolor: 'background.default' }}
+                          >
+                            <MenuItem value="yards">Yards</MenuItem>
+                            <MenuItem value="meters">Meters</MenuItem>
+                          </Select>
+                        </FormControl>
                       </Stack>
 
                       <Box>

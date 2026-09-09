@@ -27,3 +27,42 @@ export const fabricEvidenceApi = {
     return data;
   },
 };
+
+// Thin, customer-safe shape — no cloudinaryPublicId, uploadedBy, or tenant
+// identifiers (the backend's portal GET route already omits these; see
+// fabric-evidence.controller.ts's registerPortalRoutes).
+export interface PortalFabricEvidencePhoto {
+  id: string;
+  secureUrl: string;
+  uploadedAt: string;
+}
+
+export interface PortalConfirmFabricResult {
+  id: string;
+  confirmedAt: string | null;
+  confirmationChannel: string | null;
+}
+
+// Customer-facing surface — portal-token authenticated, no staff JWT. Same
+// pattern as portalDesignBriefApi/portalDisputeApi.
+export const portalFabricEvidenceApi = {
+  getEvidence: async (portalToken: string, garmentId: string): Promise<PortalFabricEvidencePhoto[]> => {
+    const { data } = await apiClient.get<PortalFabricEvidencePhoto[]>(
+      `/portal/orders/${portalToken}/garments/${garmentId}/fabric-evidence-photos`,
+    );
+    return data;
+  },
+
+  // US-3.3: the customer confirms the tailor-logged quantity already on the
+  // garment record — no request body is required.
+  confirm: async (
+    portalToken: string,
+    garmentId: string,
+  ): Promise<PortalConfirmFabricResult> => {
+    const { data } = await apiClient.post<PortalConfirmFabricResult>(
+      `/portal/orders/${portalToken}/garments/${garmentId}/confirm-fabric`,
+      {},
+    );
+    return data;
+  },
+};

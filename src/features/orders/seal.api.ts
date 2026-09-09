@@ -2,8 +2,9 @@ import axios from 'axios';
 import { apiClient } from '../../infrastructure/http/axios.client';
 import type { Garment } from './orders.api';
 
+// US-3.3: quantity is no longer submitted here — it was already recorded
+// on the garment at intake; confirming acknowledges that existing value.
 export interface ConfirmFabricRequest {
-  quantity_confirmed: string;
   fabric_photo_id?: string | null;
 }
 
@@ -40,7 +41,7 @@ export const sealApi = {
 
   // channel is deliberately omitted — the backend defaults to 'in_person'
   // when it's not sent, which is exactly this action's purpose.
-  confirmFabric: async (garmentId: string, body: ConfirmFabricRequest): Promise<Garment> => {
+  confirmFabric: async (garmentId: string, body: ConfirmFabricRequest = {}): Promise<Garment> => {
     const { data } = await apiClient.post<Garment>(
       `/garments/${garmentId}/confirm-fabric`,
       body,

@@ -538,6 +538,11 @@ export function OrderDetailPage() {
                               {selectedGarment.colorSwatch || 'No Swatch'}
                             </Typography>
                           </Stack>
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                            {selectedGarment.quantity != null && selectedGarment.quantityUnit
+                              ? `Qty: ${selectedGarment.quantity} ${selectedGarment.quantityUnit}`
+                              : 'Qty: not recorded'}
+                          </Typography>
                         </Box>
                       </Stack>
                     </Grid>
@@ -567,6 +572,8 @@ export function OrderDetailPage() {
                   <FabricSealPanel
                     orderId={order.id}
                     garmentId={selectedGarment.id}
+                    quantity={selectedGarment.quantity ?? null}
+                    quantityUnit={selectedGarment.quantityUnit ?? null}
                   />
 
                   {/* Design Brief */}
