@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -12,9 +12,15 @@ import {
 import PhotoCameraOutlinedIcon from '@mui/icons-material/PhotoCameraOutlined';
 import ReplayIcon from '@mui/icons-material/Replay';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
+import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import { useMutation } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { fabricEvidenceApi, type FabricEvidencePhoto } from '../fabric-evidence.api';
+import { getDeviceId } from '../../../lib/device-id';
+import { enqueuePendingEvidence } from '../offline/fabric-evidence-offline-db';
+import { retryFabricEvidenceItem } from '../offline/fabric-evidence-sync-manager';
+import { useFabricEvidenceOfflineQueue } from '../offline/useFabricEvidenceOfflineQueue';
 
 interface FabricEvidenceCapturePanelProps {
   garmentId: string;
@@ -28,7 +34,31 @@ interface FabricEvidenceCapturePanelProps {
 // backend limit is not touched — this is validation only.
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
-type CaptureState = 'idle' | 'uploading' | 'success' | 'error';
+type CaptureState = 'idle' | 'uploading' | 'success' | 'error' | 'queued';
+
+interface CaptureAttempt {
+  clientId: string;
+  deviceCapturedAt: string;
+}
+
+/** Manages its own object URL lifecycle for one queued item's File. */
+function PendingEvidenceThumbnail({ file }: { file: File }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+  if (!url) return null;
+  return (
+    <Box
+      component="img"
+      src={url}
+      alt="Fabric photo pending sync"
+      sx={{ width: 56, height: 56, borderRadius: 2, objectFit: 'cover', border: '1px solid', borderColor: 'divider', opacity: 0.85 }}
+    />
+  );
+}
 
 /**
  * Fabric Evidence Capture — Slice 4, revised for US-3.1 (single-tap capture)
@@ -63,9 +93,31 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
   // uploaded in a prior session are not shown here on reload. See the
   // Slice 4 report's "unresolved risks" for this gap.
   const [uploadedPhotos, setUploadedPhotos] = useState<FabricEvidencePhoto[]>([]);
+  // Set once per newly-selected file (not per upload attempt) so a manual
+  // "Retry" after a genuine server error replays the SAME idempotency key
+  // — required for the offline capture & sync contract: a retried
+  // submission must be recognized as the same one, not a fresh duplicate.
+  const [captureAttempt, setCaptureAttempt] = useState<CaptureAttempt | null>(null);
 
-  const uploadMutation = useMutation<FabricEvidencePhoto, AxiosError<{ message?: string }>, File>({
-    mutationFn: (file: File) => fabricEvidenceApi.uploadFabricEvidencePhoto(garmentId, file),
+  // Offline capture & synchronization: photos already queued (this
+  // session or a prior one — the queue is IndexedDB-backed, so it survives
+  // reload/restart) for THIS garment. onSynced appends the now-confirmed
+  // photo to uploadedPhotos, same as a normal immediate success would.
+  const pendingItems = useFabricEvidenceOfflineQueue(garmentId, (photo) => {
+    setUploadedPhotos((prev) => (prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]));
+  });
+
+  const uploadMutation = useMutation<
+    FabricEvidencePhoto,
+    AxiosError<{ message?: string }>,
+    { file: File; idempotency: CaptureAttempt }
+  >({
+    mutationFn: ({ file, idempotency }) =>
+      fabricEvidenceApi.uploadFabricEvidencePhoto(garmentId, file, {
+        clientId: idempotency.clientId,
+        deviceId: getDeviceId(),
+        deviceCapturedAt: idempotency.deviceCapturedAt,
+      }),
   });
 
   const isUploading = uploadMutation.isPending;
@@ -76,34 +128,71 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
     setPreviewUrl(null);
     setState('idle');
     setErrorMessage(null);
+    setCaptureAttempt(null);
     if (inputRef.current) inputRef.current.value = '';
   }
 
-  function startUpload(file: File) {
+  function startUpload(file: File, idempotency: CaptureAttempt) {
     if (isUploading) return; // duplicate-submission guard
     setState('uploading');
 
-    uploadMutation.mutate(file, {
-      onSuccess: (photo) => {
-        setUploadedPhotos((prev) => [...prev, photo]);
-        setState('success');
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
-        setSelectedFile(null);
-        if (inputRef.current) inputRef.current.value = '';
+    uploadMutation.mutate(
+      { file, idempotency },
+      {
+        onSuccess: (photo) => {
+          setUploadedPhotos((prev) => [...prev, photo]);
+          setState('success');
+          if (previewUrl) URL.revokeObjectURL(previewUrl);
+          setPreviewUrl(null);
+          setSelectedFile(null);
+          setCaptureAttempt(null);
+          if (inputRef.current) inputRef.current.value = '';
+        },
+        onError: async (error: AxiosError<{ message?: string }>) => {
+          const status = error.response?.status;
+
+          if (!status) {
+            // No server response at all — connectivity is the actual
+            // problem, not the photo or the request. Persist it instead of
+            // showing a dead-end error the user can't act on offline.
+            try {
+              await enqueuePendingEvidence({
+                id: idempotency.clientId,
+                garmentId,
+                deviceId: getDeviceId(),
+                imageFile: file,
+                deviceCapturedAt: idempotency.deviceCapturedAt,
+              });
+              setState('queued');
+              if (previewUrl) URL.revokeObjectURL(previewUrl);
+              setPreviewUrl(null);
+              setSelectedFile(null);
+              setCaptureAttempt(null);
+              if (inputRef.current) inputRef.current.value = '';
+            } catch {
+              // Storage itself failed (quota, private browsing, etc.) — do
+              // NOT claim this was safely saved offline. Fall through to
+              // the normal error state with a message that's honest about
+              // what actually happened.
+              setState('error');
+              setErrorMessage(
+                'Could not save this photo for offline sync on this device. Please try again once you’re back online.',
+              );
+            }
+            return;
+          }
+
+          setState('error');
+          if (status === 413) {
+            setErrorMessage('That photo is too large for the server to accept. Please retake at a lower resolution.');
+          } else if (status === 409) {
+            setErrorMessage('This garment’s fabric has already been confirmed — new evidence can no longer be added.');
+          } else {
+            setErrorMessage(error.response?.data?.message || 'Upload failed. Please try again.');
+          }
+        },
       },
-      onError: (error: AxiosError<{ message?: string }>) => {
-        setState('error');
-        const status = error.response?.status;
-        if (status === 413) {
-          setErrorMessage('That photo is too large for the server to accept. Please retake at a lower resolution.');
-        } else if (status === 409) {
-          setErrorMessage('This garment’s fabric has already been confirmed — new evidence can no longer be added.');
-        } else {
-          setErrorMessage(error.response?.data?.message || 'Upload failed. Please try again.');
-        }
-      },
-    });
+    );
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -124,13 +213,20 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
     setErrorMessage(null);
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
-    startUpload(file); // US-3.1: no separate Upload Photo tap — upload starts on selection
+    // Generated once, at the moment of capture — not at upload-attempt
+    // time — so every retry (online or via the offline queue) of THIS
+    // photo carries the same idempotency key and the same device-claimed
+    // capture instant.
+    const idempotency: CaptureAttempt = { clientId: crypto.randomUUID(), deviceCapturedAt: new Date().toISOString() };
+    setCaptureAttempt(idempotency);
+    startUpload(file, idempotency); // US-3.1: no separate Upload Photo tap — upload starts on selection
   }
 
   function handleRetry() {
-    // Re-attempts the SAME already-selected file — no recapture needed.
-    if (!selectedFile) return;
-    startUpload(selectedFile);
+    // Re-attempts the SAME already-selected file with the SAME idempotency
+    // key — no recapture needed, and a genuine duplicate is impossible.
+    if (!selectedFile || !captureAttempt) return;
+    startUpload(selectedFile, captureAttempt);
   }
 
   return (
@@ -159,6 +255,58 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
                 borderColor: 'divider',
               }}
             />
+          ))}
+        </Stack>
+      )}
+
+      {pendingItems.length > 0 && (
+        <Stack spacing={1} sx={{ mb: 2 }}>
+          {pendingItems.map((item) => (
+            <Stack
+              key={item.id}
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+              sx={{ p: 1, borderRadius: 2, bgcolor: alpha('#000', 0.03) }}
+            >
+              <PendingEvidenceThumbnail file={item.imageFile} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {item.status === 'pending' && (
+                  <Chip
+                    size="small"
+                    icon={<CloudOffOutlinedIcon />}
+                    label="Saved offline — pending sync"
+                    sx={{ fontWeight: 700, bgcolor: alpha('#c49a1a', 0.12), color: '#8a6d13' }}
+                  />
+                )}
+                {item.status === 'syncing' && (
+                  <Chip
+                    size="small"
+                    icon={<CircularProgress size={12} />}
+                    label="Syncing…"
+                    sx={{ fontWeight: 700, bgcolor: alpha('#1e5c3a', 0.1), color: '#1e5c3a' }}
+                  />
+                )}
+                {item.status === 'failed' && (
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    <Chip
+                      size="small"
+                      icon={<CloudUploadOutlinedIcon />}
+                      label={item.errorMessage || 'Sync failed'}
+                      sx={{ fontWeight: 700, bgcolor: alpha('#d32f2f', 0.1), color: '#d32f2f' }}
+                    />
+                    <Button
+                      size="small"
+                      startIcon={<ReplayIcon />}
+                      onClick={() => retryFabricEvidenceItem(item.id, garmentId)}
+                      sx={{ fontWeight: 700, textTransform: 'none' }}
+                    >
+                      Retry
+                    </Button>
+                  </Stack>
+                )}
+              </Box>
+            </Stack>
           ))}
         </Stack>
       )}
@@ -220,6 +368,21 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
           }
         >
           Photo uploaded.
+        </Alert>
+      )}
+
+      {state === 'queued' && (
+        <Alert
+          icon={<CloudOffOutlinedIcon fontSize="inherit" />}
+          severity="info"
+          sx={{ borderRadius: 2, mb: 1 }}
+          action={
+            <Button size="small" onClick={() => setState('idle')} sx={{ fontWeight: 700, textTransform: 'none' }}>
+              OK
+            </Button>
+          }
+        >
+          Saved offline — this photo will sync automatically once you're back online.
         </Alert>
       )}
 
