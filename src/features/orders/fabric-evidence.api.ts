@@ -9,20 +9,53 @@ export interface FabricEvidencePhoto {
   secureUrl: string;
   uploadedBy: string;
   uploadedAt: string;
+  // Optional on the TYPE (not the real API response, which always includes
+  // them, possibly as null) so pre-existing test fixtures/call sites that
+  // predate offline capture & sync don't all need updating for fields they
+  // don't care about.
+  clientId?: string | null;
+  deviceId?: string | null;
+  deviceCapturedAt?: string | null;
 }
+
+// Offline capture & sync: present when the upload is (or may be) a retry —
+// either the first attempt of a freshly-captured photo, or a queued item
+// being flushed after reconnecting. Sent on every upload (not just queued
+// ones) so a flaky-but-nominally-online capture is idempotent too, not
+// just an explicitly-queued offline one.
+export interface FabricEvidenceIdempotency {
+  clientId: string;
+  deviceId: string;
+  /** ISO 8601 device capture time — untrusted, becomes the audit occurredAt. */
+  deviceCapturedAt: string;
+}
+
+// A hung request (no server response at all) is what offline detection
+// actually depends on being timely about — see fabric-evidence-sync-
+// manager.ts. Scoped to this one call, not a global axios change.
+const UPLOAD_TIMEOUT_MS = 15000;
 
 // Authenticated — staff only. Uploads go through the StitchFYN API, never
 // directly to Cloudinary: the backend derives companyId/uploadedBy/
 // uploadedAt/cloudinaryPublicId from the request's auth context and the
 // Cloudinary response, never from the client.
 export const fabricEvidenceApi = {
-  uploadFabricEvidencePhoto: async (garmentId: string, file: File): Promise<FabricEvidencePhoto> => {
+  uploadFabricEvidencePhoto: async (
+    garmentId: string,
+    file: File | Blob,
+    idempotency?: FabricEvidenceIdempotency,
+  ): Promise<FabricEvidencePhoto> => {
     const form = new FormData();
-    form.append('image', file);
+    form.append('image', file, file instanceof File ? file.name : 'fabric-photo.jpg');
+    if (idempotency) {
+      form.append('clientId', idempotency.clientId);
+      form.append('deviceId', idempotency.deviceId);
+      form.append('deviceCapturedAt', idempotency.deviceCapturedAt);
+    }
     const { data } = await apiClient.post<FabricEvidencePhoto>(
       `/garments/${garmentId}/fabric-evidence-photos`,
       form,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
+      { headers: { 'Content-Type': 'multipart/form-data' }, timeout: UPLOAD_TIMEOUT_MS },
     );
     return data;
   },

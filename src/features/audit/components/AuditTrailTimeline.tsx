@@ -18,6 +18,7 @@ import {
   EventNote as EventNoteIcon,
   Checkroom as ChecklistIcon,
   CheckCircleOutline as CheckCircleOutlineIcon,
+  PhotoCameraOutlined as PhotoCameraOutlinedIcon,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../infrastructure/http/axios.client';
@@ -75,6 +76,8 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
         return { icon: <ChecklistIcon fontSize="small" />, color: '#c49a1a', label: 'Fabric Intake Recorded' };
       case 'FABRIC_CONFIRMED':
         return { icon: <CheckCircleOutlineIcon fontSize="small" />, color: '#1e5c3a', label: 'Fabric Confirmed' };
+      case 'FABRIC_EVIDENCE_RECORDED':
+        return { icon: <PhotoCameraOutlinedIcon fontSize="small" />, color: '#8d6e63', label: 'Fabric Evidence Recorded' };
       default:
         return { icon: <HistoryIcon fontSize="small" />, color: '#757575', label: action.replace(/_/g, ' ') };
     }
