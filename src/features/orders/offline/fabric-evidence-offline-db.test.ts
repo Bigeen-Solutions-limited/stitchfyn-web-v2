@@ -5,10 +5,12 @@ import {
   getPendingForGarment,
   removePendingEvidence,
   updatePendingEvidence,
+  OversizedFabricEvidenceError,
 } from './fabric-evidence-offline-db'
+import { MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES } from '../fabric-evidence.api'
 
-function makeFile(name = 'fabric.jpg') {
-  return new File([new Uint8Array(1024)], name, { type: 'image/jpeg' })
+function makeFile(name = 'fabric.jpg', sizeBytes = 1024) {
+  return new File([new Uint8Array(sizeBytes)], name, { type: 'image/jpeg' })
 }
 
 function clearDb(): Promise<void> {
@@ -94,5 +96,56 @@ describe('fabric-evidence-offline-db', () => {
     // a brand-new IndexedDB connection, the same as a page reload would.
     const reread = await getPendingForGarment('garment-A')
     expect(reread).toHaveLength(1)
+  })
+
+  describe('5 MiB defense-in-depth guard', () => {
+    // FabricEvidenceCapturePanel already rejects an oversized file before
+    // it ever calls enqueuePendingEvidence — these tests call it directly,
+    // proving the function enforces the limit independently of that
+    // upstream check (future callers, programming error, stale client
+    // state, direct invocation).
+
+    it('rejects a file over the 5 MiB limit with a distinguishable error and persists nothing', async () => {
+      const oversized = makeFile('huge.jpg', MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES + 1)
+
+      await expect(
+        enqueuePendingEvidence({ id: 'c1', garmentId: 'garment-A', deviceId: 'd1', imageFile: oversized, deviceCapturedAt: new Date().toISOString() }),
+      ).rejects.toBeInstanceOf(OversizedFabricEvidenceError)
+
+      expect(await getPendingForGarment('garment-A')).toHaveLength(0)
+    })
+
+    it('a file exactly at the 5 MiB limit is accepted (not rejected merely for equaling the limit)', async () => {
+      const atLimit = makeFile('at-limit.jpg', MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES)
+
+      await enqueuePendingEvidence({ id: 'c1', garmentId: 'garment-A', deviceId: 'd1', imageFile: atLimit, deviceCapturedAt: new Date().toISOString() })
+
+      expect(await getPendingForGarment('garment-A')).toHaveLength(1)
+    })
+
+    it('a file one byte under the 5 MiB limit is accepted', async () => {
+      const underByOne = makeFile('under-by-one.jpg', MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES - 1)
+
+      await enqueuePendingEvidence({ id: 'c1', garmentId: 'garment-A', deviceId: 'd1', imageFile: underByOne, deviceCapturedAt: new Date().toISOString() })
+
+      expect(await getPendingForGarment('garment-A')).toHaveLength(1)
+    })
+
+    it('a file one byte over the 5 MiB limit is rejected', async () => {
+      const overByOne = makeFile('over-by-one.jpg', MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES + 1)
+
+      await expect(
+        enqueuePendingEvidence({ id: 'c1', garmentId: 'garment-A', deviceId: 'd1', imageFile: overByOne, deviceCapturedAt: new Date().toISOString() }),
+      ).rejects.toBeInstanceOf(OversizedFabricEvidenceError)
+      expect(await getPendingForGarment('garment-A')).toHaveLength(0)
+    })
+
+    it('the error message names the actual size and the limit', async () => {
+      const oversized = makeFile('huge.jpg', 6 * 1024 * 1024)
+
+      await expect(
+        enqueuePendingEvidence({ id: 'c1', garmentId: 'garment-A', deviceId: 'd1', imageFile: oversized, deviceCapturedAt: new Date().toISOString() }),
+      ).rejects.toThrow(/6\.0MB.*5MB/)
+    })
   })
 })

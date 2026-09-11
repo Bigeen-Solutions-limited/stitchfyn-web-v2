@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
 import { FabricEvidenceCapturePanel } from './FabricEvidenceCapturePanel'
-import { fabricEvidenceApi, type FabricEvidencePhoto } from '../fabric-evidence.api'
+import { fabricEvidenceApi, MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES, type FabricEvidencePhoto } from '../fabric-evidence.api'
 import { sealApi } from '../seal.api'
 import { getAllPendingEvidence } from '../offline/fabric-evidence-offline-db'
 import { useAuthStore } from '../../auth/auth.store'
@@ -12,6 +12,10 @@ vi.mock('../fabric-evidence.api', () => ({
   fabricEvidenceApi: {
     uploadFabricEvidencePhoto: vi.fn(),
   },
+  // Real value, not a mock — fabric-evidence-offline-db.ts (unmocked, real
+  // module) also imports this from '../fabric-evidence.api', so the guard
+  // it enforces and the boundary this test exercises must agree.
+  MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES: 5 * 1024 * 1024,
 }))
 
 // Never imported by the component under test — mocked here purely to make
@@ -305,6 +309,51 @@ describe('FabricEvidenceCapturePanel', () => {
 
     expect(screen.getByText(/5MB/)).toBeInTheDocument()
     expect(fabricEvidenceApi.uploadFabricEvidencePhoto).not.toHaveBeenCalled()
+  })
+
+  describe('5 MiB boundary semantics', () => {
+    it('a file exactly at the 5 MiB limit is accepted (not rejected merely for equaling the limit)', async () => {
+      vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mockResolvedValue({
+        id: 'photo-1', garmentId: 'garment-1', orderId: 'order-1', companyId: 'c1',
+        cloudinaryPublicId: 'stitchfyn/fabric-evidence/x', secureUrl: 'https://res.cloudinary.com/mock/x.jpg',
+        uploadedBy: 'user-1', uploadedAt: new Date().toISOString(),
+      })
+      renderPanel()
+      const atLimit = makeImageFile('at-limit.jpg', MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES)
+
+      fireEvent.change(getFileInput(), { target: { files: [atLimit] } })
+
+      await waitFor(() => {
+        expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-1', atLimit, anyIdempotency)
+      })
+      expect(screen.queryByText(/5MB/)).not.toBeInTheDocument()
+    })
+
+    it('a file one byte over the 5 MiB limit is rejected', () => {
+      renderPanel()
+      const overByOne = makeImageFile('over-by-one.jpg', MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES + 1)
+
+      fireEvent.change(getFileInput(), { target: { files: [overByOne] } })
+
+      expect(screen.getByText(/5MB/)).toBeInTheDocument()
+      expect(fabricEvidenceApi.uploadFabricEvidencePhoto).not.toHaveBeenCalled()
+    })
+
+    it('a file one byte under the 5 MiB limit is accepted', async () => {
+      vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mockResolvedValue({
+        id: 'photo-1', garmentId: 'garment-1', orderId: 'order-1', companyId: 'c1',
+        cloudinaryPublicId: 'stitchfyn/fabric-evidence/x', secureUrl: 'https://res.cloudinary.com/mock/x.jpg',
+        uploadedBy: 'user-1', uploadedAt: new Date().toISOString(),
+      })
+      renderPanel()
+      const underByOne = makeImageFile('under-by-one.jpg', MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES - 1)
+
+      fireEvent.change(getFileInput(), { target: { files: [underByOne] } })
+
+      await waitFor(() => {
+        expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-1', underByOne, anyIdempotency)
+      })
+    })
   })
 
   describe('Offline capture & synchronization', () => {

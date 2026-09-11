@@ -8,6 +8,11 @@ vi.mock('../fabric-evidence.api', () => ({
   fabricEvidenceApi: {
     uploadFabricEvidencePhoto: vi.fn(),
   },
+  // Real value, not a mock — fabric-evidence-offline-db.ts (unmocked, real
+  // module) also imports this from '../fabric-evidence.api', and its
+  // enqueuePendingEvidence() guard checks against it on every enqueue()
+  // call this file's tests make.
+  MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES: 5 * 1024 * 1024,
 }))
 
 function makeFile(name = 'fabric.jpg') {

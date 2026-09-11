@@ -35,6 +35,21 @@ export interface FabricEvidenceIdempotency {
 // manager.ts. Scoped to this one call, not a global axios change.
 const UPLOAD_TIMEOUT_MS = 15000;
 
+/**
+ * Maximum accepted fabric-evidence image size — 5 MiB, matching the
+ * server's @fastify/multipart `fileSize` limit (stitchfyn-api/src/app/
+ * app.ts, via infrastructure/config/upload-limits.ts). The two apps share
+ * no runtime package, so this is a deliberately duplicated, documented
+ * value rather than a cross-repo coupling — keep both in sync if this
+ * value ever changes.
+ *
+ * The single source of truth WITHIN this app: every place in stitchfyn-web
+ * that needs this limit (the capture panel's pre-upload check, the offline
+ * queue's defense-in-depth guard) imports it from here rather than
+ * redeclaring it.
+ */
+export const MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MiB
+
 // Authenticated — staff only. Uploads go through the StitchFYN API, never
 // directly to Cloudinary: the backend derives companyId/uploadedBy/
 // uploadedAt/cloudinaryPublicId from the request's auth context and the
