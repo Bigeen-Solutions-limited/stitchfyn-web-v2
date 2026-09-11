@@ -16,9 +16,9 @@ import CloudOffOutlinedIcon from '@mui/icons-material/CloudOffOutlined';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import { useMutation } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
-import { fabricEvidenceApi, type FabricEvidencePhoto } from '../fabric-evidence.api';
+import { fabricEvidenceApi, MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES, type FabricEvidencePhoto } from '../fabric-evidence.api';
 import { getDeviceId } from '../../../lib/device-id';
-import { enqueuePendingEvidence } from '../offline/fabric-evidence-offline-db';
+import { enqueuePendingEvidence, OversizedFabricEvidenceError } from '../offline/fabric-evidence-offline-db';
 import { retryFabricEvidenceItem } from '../offline/fabric-evidence-sync-manager';
 import { useFabricEvidenceOfflineQueue } from '../offline/useFabricEvidenceOfflineQueue';
 
@@ -26,13 +26,14 @@ interface FabricEvidenceCapturePanelProps {
   garmentId: string;
 }
 
-// @fastify/multipart is configured with a 5MB fileSize limit (app.ts). A
-// typical modern phone camera photo can exceed this (a single 12MP+ JPEG
-// is often 3-8MB), so this is checked client-side to fail fast with a
-// clear message rather than silently attempting an upload that will 413.
-// Per Slice 4 scope: no client-side compression is implemented, and the
-// backend limit is not touched — this is validation only.
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+// @fastify/multipart is configured with the same limit server-side
+// (MAX_UPLOAD_FILE_SIZE_BYTES, stitchfyn-api/src/app/app.ts). A typical
+// modern phone camera photo can exceed this (a single 12MP+ JPEG is often
+// 3-8MB), so this is checked client-side to fail fast with a clear message
+// rather than silently attempting an upload that will 413. Product
+// decision: oversized images are rejected outright — never compressed,
+// resized, or uploaded first to discover the problem afterward.
+const MAX_FILE_SIZE_BYTES = MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES;
 
 type CaptureState = 'idle' | 'uploading' | 'success' | 'error' | 'queued';
 
@@ -169,14 +170,19 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
               setSelectedFile(null);
               setCaptureAttempt(null);
               if (inputRef.current) inputRef.current.value = '';
-            } catch {
-              // Storage itself failed (quota, private browsing, etc.) — do
-              // NOT claim this was safely saved offline. Fall through to
-              // the normal error state with a message that's honest about
+            } catch (enqueueError) {
+              // Do NOT claim this was safely saved offline. Distinguish an
+              // oversized file (should be structurally unreachable via this
+              // UI — handleFileChange already rejects it before selection —
+              // but enqueuePendingEvidence enforces it independently as a
+              // defense-in-depth boundary) from a genuine storage failure
+              // (quota, private browsing, etc.), so the message matches
               // what actually happened.
               setState('error');
               setErrorMessage(
-                'Could not save this photo for offline sync on this device. Please try again once you’re back online.',
+                enqueueError instanceof OversizedFabricEvidenceError
+                  ? enqueueError.message
+                  : 'Could not save this photo for offline sync on this device. Please try again once you’re back online.',
               );
             }
             return;

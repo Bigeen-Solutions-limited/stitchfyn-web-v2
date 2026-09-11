@@ -10,10 +10,28 @@
 // specifically NOT an access token, NOT unrelated order/customer data, and
 // NOT a server-generated evidence id (none exists yet for a pending item).
 
+import { MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES } from '../fabric-evidence.api';
+
 const DB_NAME = 'stitchfyn-fabric-evidence-queue';
 const DB_VERSION = 1;
 const STORE_NAME = 'pending';
 const GARMENT_INDEX = 'garmentId';
+
+/**
+ * Thrown by enqueuePendingEvidence() for a file over the 5 MiB product
+ * limit. Distinct from a generic storage failure so callers can tell "this
+ * was rejected because it's too large" apart from "IndexedDB itself
+ * failed" and show the right message for each.
+ */
+export class OversizedFabricEvidenceError extends Error {
+  constructor(public readonly sizeBytes: number) {
+    super(
+      `Image is ${(sizeBytes / (1024 * 1024)).toFixed(1)}MB — exceeds the ` +
+        `${MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES / (1024 * 1024)}MB limit and cannot be queued offline.`,
+    );
+    this.name = 'OversizedFabricEvidenceError';
+  }
+}
 
 export type PendingFabricEvidenceStatus = 'pending' | 'syncing' | 'failed';
 export type PendingFabricEvidenceFailureReason = 'network' | 'authorization' | 'validation' | 'unknown';
@@ -64,10 +82,20 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
  * silently no-ops) on any storage failure — including quota exceeded —
  * so the caller can surface a real error instead of claiming the photo is
  * safely queued when it isn't.
+ *
+ * Defense-in-depth: FabricEvidenceCapturePanel already rejects an oversized
+ * file before it ever reaches this function, so this guard should never
+ * actually fire via the normal UI flow — it exists for future callers,
+ * programming error, or direct invocation, none of which this function can
+ * assume were already validated upstream.
  */
 export async function enqueuePendingEvidence(
   record: Omit<PendingFabricEvidenceRecord, 'status' | 'attempts' | 'createdAt'>,
 ): Promise<void> {
+  if (record.imageFile.size > MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES) {
+    throw new OversizedFabricEvidenceError(record.imageFile.size);
+  }
+
   const db = await openDb();
   try {
     const tx = db.transaction(STORE_NAME, 'readwrite');
