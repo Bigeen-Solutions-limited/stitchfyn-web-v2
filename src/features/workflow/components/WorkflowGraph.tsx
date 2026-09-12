@@ -10,6 +10,18 @@ interface WorkflowGraphProps {
   orderId: string;
 }
 
+/**
+ * Mandatory QC/Collection Review Photo Gate — PRD Epic 4 AC #5, the one
+ * named exception to progress photos being optional everywhere else
+ * (US-4.3). Mirrors WorkflowService.reportStageCompletion's own
+ * QC_COLLECTION_REVIEW_STAGE_ID exactly (matched by stage id, the same
+ * convention that stage's `qc_passed` notification milestone already
+ * uses) — this is a UX mirror only. The backend independently rejects a
+ * completion with no qualifying photo (409 PROGRESS_PHOTO_REQUIRED)
+ * regardless of what this constant says.
+ */
+const QC_COLLECTION_REVIEW_STAGE_ID = 'qc';
+
 export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
   const { data: workflow, isLoading } = useGarmentWorkflow(garmentId);
   const reportCompletion = useReportStageCompletion(garmentId, orderId);
@@ -79,7 +91,17 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
           // However, if a stage is legally unlocked by the chronological DAG but falls out of ACTIVE state (due to an admin override leapfrogging it), it should still be conditionally actionable to recover completion flow.
           const isActionable = stage.status === 'IN_PROGRESS' || (unlocked && !isCompleted);
           const isLocked = !isActionable && !isCompleted && !unlocked;
-          
+
+          // Staff Progress-Photo Capture UI — US-4.3. Computed once per
+          // stage so both the mandatory-gate check below and the capture
+          // control further down use the identical filtered list.
+          const stagePhotos = (progressPhotos ?? []).filter((p) => p.stageId === stage.stageId);
+
+          // Mandatory QC/Collection Review Photo Gate — see the module-level
+          // comment on QC_COLLECTION_REVIEW_STAGE_ID above.
+          const isQcCollectionReviewStage = stage.stageId === QC_COLLECTION_REVIEW_STAGE_ID;
+          const missingRequiredQcPhoto = isQcCollectionReviewStage && stagePhotos.length === 0;
+
           return (
             <div key={stage.id} className="relative flex items-start gap-lg">
               {/* Connection Line */}
@@ -124,13 +146,21 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
                   </div>
                   
                   {isActionable && (
-                    <button 
-                      onClick={() => reportCompletion.mutate({ stageId: stage.stageId })}
-                      disabled={reportCompletion.isPending}
-                      className="btn btn-accent btn-sm py-1"
-                    >
-                      {reportCompletion.isPending ? 'Syncing...' : 'Mark Complete'}
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                      <button
+                        onClick={() => reportCompletion.mutate({ stageId: stage.stageId })}
+                        disabled={reportCompletion.isPending || missingRequiredQcPhoto}
+                        className="btn btn-accent btn-sm py-1"
+                        title={missingRequiredQcPhoto ? 'Add at least one progress photo before completing this stage.' : undefined}
+                      >
+                        {reportCompletion.isPending ? 'Syncing...' : 'Mark Complete'}
+                      </button>
+                      {missingRequiredQcPhoto && (
+                        <p className="text-xs text-muted" style={{ maxWidth: 200, textAlign: 'right', margin: 0 }}>
+                          Add at least one progress photo before completing this stage.
+                        </p>
+                      )}
+                    </div>
                   )}
 
                   {isCompleted && (
@@ -154,7 +184,6 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
                     is the real enforcement). Completed stages retain their
                     photos as historical evidence with no capture action. */}
                 {!isLocked && (() => {
-                  const stagePhotos = (progressPhotos ?? []).filter((p) => p.stageId === stage.stageId);
                   const canCapturePhoto = isActionable && stagePhotos.length < MAX_PROGRESS_PHOTOS_PER_STAGE_UI_HINT;
                   if (stagePhotos.length === 0 && !canCapturePhoto) return null;
                   return (
