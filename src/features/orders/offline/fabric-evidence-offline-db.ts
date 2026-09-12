@@ -24,11 +24,14 @@ const GARMENT_INDEX = 'garmentId';
  * failed" and show the right message for each.
  */
 export class OversizedFabricEvidenceError extends Error {
-  constructor(public readonly sizeBytes: number) {
+  public readonly sizeBytes: number;
+
+  constructor(sizeBytes: number) {
     super(
       `Image is ${(sizeBytes / (1024 * 1024)).toFixed(1)}MB — exceeds the ` +
         `${MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES / (1024 * 1024)}MB limit and cannot be queued offline.`,
     );
+    this.sizeBytes = sizeBytes;
     this.name = 'OversizedFabricEvidenceError';
   }
 }
