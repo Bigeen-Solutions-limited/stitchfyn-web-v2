@@ -40,6 +40,13 @@ export function useReportStageCompletion(garmentId: string, orderId?: string) {
       showToast("Action Successful", "Information updated.")
     },
     onError: (err: any) => {
+      // A rejected completion (e.g. 409 PROGRESS_PHOTO_REQUIRED from the
+      // QC/Collection Review Photo Gate) leaves the stage incomplete on
+      // the server — refetch so a stale client's view (workflow status,
+      // progress-photo count) re-syncs to the true state rather than
+      // continuing to show whatever it optimistically assumed.
+      queryClient.invalidateQueries({ queryKey: keys.workflow.garment(garmentId) })
+      queryClient.invalidateQueries({ queryKey: keys.workflow.progressPhotos(garmentId) })
       handleError(err)
     },
   })

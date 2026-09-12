@@ -82,6 +82,10 @@ export const errorMessages: Record<ErrorCode, ErrorMessage> = {
     title: 'Photo Limit Reached',
     detail: 'This stage already has 3 progress photos — the maximum allowed.',
   },
+  PROGRESS_PHOTO_REQUIRED: {
+    title: 'Photo Required',
+    detail: 'Add at least one progress photo before completing this stage.',
+  },
   UNKNOWN_ERROR: {
     title: 'Unexpected Error',
     detail: 'We ran into an issue. Please refresh the page, or contact support if the issue persists.',

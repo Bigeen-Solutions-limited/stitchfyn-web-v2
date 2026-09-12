@@ -132,3 +132,90 @@ describe('WorkflowGraph — Staff Progress-Photo Capture UI integration', () => 
     expect(await screen.findByRole('button', { name: /mark complete/i })).toBeInTheDocument()
   })
 })
+
+describe('WorkflowGraph — Mandatory QC/Collection Review Photo Gate', () => {
+  beforeEach(() => {
+    vi.mocked(workflowApi.getGarmentWorkflow).mockReset()
+    vi.mocked(progressPhotoApi.getForGarment).mockReset()
+    vi.mocked(progressPhotoApi.getForGarment).mockResolvedValue([])
+  })
+
+  function makeQcWorkflow(overrides: Partial<GarmentWorkflowResponse> = {}): GarmentWorkflowResponse {
+    return makeWorkflow({
+      stages: [
+        { id: 'stage-qc', workflowInstanceId: 'instance-1', stageId: 'qc', status: 'IN_PROGRESS', completedBy: null, completedAt: null, startedAt: null, evidencePhotoUrls: null },
+      ],
+      graphDefinition: {
+        nodes: [{ id: 'qc', name: 'Quality Check' }],
+        edges: [],
+      },
+      ...overrides,
+    })
+  }
+
+  it('1. the active qc stage with no photo shows Add Progress Photo but disables Mark Complete', async () => {
+    vi.mocked(workflowApi.getGarmentWorkflow).mockResolvedValue(makeQcWorkflow())
+    renderGraph()
+
+    expect(await screen.findByRole('button', { name: /add progress photo/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /mark complete/i })).toBeDisabled()
+    expect(screen.getByText(/add at least one progress photo before completing this stage/i)).toBeInTheDocument()
+  })
+
+  it('2. once a progress photo exists for the qc stage, Mark Complete becomes available', async () => {
+    vi.mocked(workflowApi.getGarmentWorkflow).mockResolvedValue(makeQcWorkflow())
+    vi.mocked(progressPhotoApi.getForGarment).mockResolvedValue([
+      makePhoto({ stageId: 'qc', stageInstanceId: 'stage-qc' }),
+    ])
+    renderGraph()
+
+    await screen.findByRole('button', { name: /mark complete/i })
+    expect(screen.getByRole('button', { name: /mark complete/i })).not.toBeDisabled()
+    expect(screen.queryByText(/add at least one progress photo before completing this stage/i)).not.toBeInTheDocument()
+  })
+
+  it('3. a photo captured earlier on the qc stage satisfies the gate immediately, with no extra action', async () => {
+    vi.mocked(workflowApi.getGarmentWorkflow).mockResolvedValue(makeQcWorkflow())
+    vi.mocked(progressPhotoApi.getForGarment).mockResolvedValue([
+      makePhoto({ id: 'earlier-photo', stageId: 'qc', stageInstanceId: 'stage-qc' }),
+    ])
+    renderGraph()
+
+    expect(await screen.findByRole('button', { name: /mark complete/i })).not.toBeDisabled()
+  })
+
+  it('4. a photo belonging to a DIFFERENT stage does not incorrectly enable qc completion', async () => {
+    vi.mocked(workflowApi.getGarmentWorkflow).mockResolvedValue(makeQcWorkflow())
+    vi.mocked(progressPhotoApi.getForGarment).mockResolvedValue([
+      makePhoto({ id: 'wrong-stage-photo', stageId: 'finishing', stageInstanceId: 'stage-finishing' }),
+    ])
+    renderGraph()
+
+    expect(await screen.findByRole('button', { name: /mark complete/i })).toBeDisabled()
+  })
+
+  it('5. a normal production stage (not qc) remains completable with zero photos', async () => {
+    vi.mocked(workflowApi.getGarmentWorkflow).mockResolvedValue(makeWorkflow())
+    renderGraph()
+
+    expect(await screen.findByRole('button', { name: /mark complete/i })).not.toBeDisabled()
+  })
+
+  it('6. a completed qc stage retains its photos and shows no capture control or Mark Complete button', async () => {
+    vi.mocked(workflowApi.getGarmentWorkflow).mockResolvedValue(
+      makeQcWorkflow({
+        stages: [
+          { id: 'stage-qc', workflowInstanceId: 'instance-1', stageId: 'qc', status: 'COMPLETED', completedBy: 'u1', completedAt: new Date().toISOString(), startedAt: null, evidencePhotoUrls: null },
+        ],
+      }),
+    )
+    vi.mocked(progressPhotoApi.getForGarment).mockResolvedValue([
+      makePhoto({ stageId: 'qc', stageInstanceId: 'stage-qc' }),
+    ])
+    renderGraph()
+
+    expect(await screen.findByAltText('Progress photo')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /add progress photo/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /mark complete/i })).not.toBeInTheDocument()
+  })
+})

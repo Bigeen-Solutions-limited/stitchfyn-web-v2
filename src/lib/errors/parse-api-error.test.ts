@@ -87,6 +87,21 @@ describe("parseApiError", () => {
     expect(result).toEqual(errorMessages.PROGRESS_PHOTO_LIMIT_REACHED)
   })
 
+  it("maps the QC/Collection Review Photo Gate's PROGRESS_PHOTO_REQUIRED reason to its own message, not the generic CONFLICT one", () => {
+    const error = {
+      isAxiosError: true,
+      response: {
+        data: {
+          code: ErrorCodes.CONFLICT,
+          metadata: { reason: ErrorCodes.PROGRESS_PHOTO_REQUIRED },
+        },
+      },
+    }
+
+    const result = parseApiError(error)
+    expect(result).toEqual(errorMessages.PROGRESS_PHOTO_REQUIRED)
+  })
+
   it("falls back to the generic code when metadata.reason is absent or unrecognized", () => {
     const error = {
       isAxiosError: true,
