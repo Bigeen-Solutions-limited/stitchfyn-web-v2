@@ -72,6 +72,33 @@ describe("parseApiError", () => {
     expect(result.field).toBe("photoUrl")
   })
 
+  it("prefers metadata.reason over the generic code when both are present", () => {
+    const error = {
+      isAxiosError: true,
+      response: {
+        data: {
+          code: ErrorCodes.CONFLICT,
+          metadata: { reason: ErrorCodes.PROGRESS_PHOTO_LIMIT_REACHED },
+        },
+      },
+    }
+
+    const result = parseApiError(error)
+    expect(result).toEqual(errorMessages.PROGRESS_PHOTO_LIMIT_REACHED)
+  })
+
+  it("falls back to the generic code when metadata.reason is absent or unrecognized", () => {
+    const error = {
+      isAxiosError: true,
+      response: {
+        data: { code: ErrorCodes.CONFLICT, metadata: { reason: "something-unmapped" } },
+      },
+    }
+
+    const result = parseApiError(error)
+    expect(result).toEqual(errorMessages.CONFLICT)
+  })
+
   it("maps AUTH_SESSION_EXPIRED correctly", () => {
     const error = {
       isAxiosError: true,
