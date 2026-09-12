@@ -16,8 +16,9 @@ import {
   PlayCircle as InProgressIcon,
   Warning as InhibitedIcon,
 } from '@mui/icons-material';
-import { useGarmentWorkflow } from '../hooks/useWorkflowMutation';
+import { useGarmentWorkflow, useProgressPhotos } from '../hooks/useWorkflowMutation';
 import type { StageInstance } from '../workflow.api';
+import { ProgressPhotoThumbnails } from './ProgressPhotoThumbnails';
 
 interface WorkflowStageTimelineProps {
   garmentId: string;
@@ -40,6 +41,10 @@ function getStageStyle(status: StageInstance['status']) {
 
 export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ garmentId }) => {
   const { data: workflow, isLoading } = useGarmentWorkflow(garmentId);
+  // Staff Progress-Photo Capture UI — read-only here (no capture action;
+  // that belongs to WorkflowGraph). Photos must remain visible on this tab
+  // too so they don't appear to "disappear" when switching from DAG View.
+  const { data: progressPhotos } = useProgressPhotos(garmentId);
 
   if (isLoading) {
     return (
@@ -179,6 +184,16 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
                     </Typography>
                   )}
                 </Stack>
+
+                {/* Staff Progress-Photo Capture UI — read-only display.
+                    Shown for stages that have been reached (IN_PROGRESS,
+                    INHIBITED — started but currently flagged, COMPLETED);
+                    PENDING/BLOCKED (not yet active) show nothing, matching
+                    WorkflowGraph's own locked-stage rule. */}
+                {(stage.status === 'IN_PROGRESS' || stage.status === 'INHIBITED' || stage.status === 'COMPLETED') && (() => {
+                  const stagePhotos = (progressPhotos ?? []).filter((p) => p.stageId === stage.stageId);
+                  return <ProgressPhotoThumbnails photos={stagePhotos} />;
+                })()}
               </Box>
             </Box>
           );

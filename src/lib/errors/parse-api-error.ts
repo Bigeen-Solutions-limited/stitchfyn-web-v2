@@ -10,7 +10,18 @@ import { ErrorCodes } from './error-codes';
  */
 export function parseApiError(error: unknown): ErrorMessage {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ code?: string }>;
+    const axiosError = error as AxiosError<{ code?: string; metadata?: { reason?: string } }>;
+
+    // 0. A structured metadata.reason is more specific than the bare
+    // `code` (several distinct backend conditions share the same generic
+    // DomainError code, e.g. every ConflictError sends code: "CONFLICT" —
+    // metadata.reason is how a specific one, like the progress-photo
+    // 3-photo limit, gets its own message without a raw message
+    // passthrough or a new error framework.
+    const reason = axiosError.response?.data?.metadata?.reason;
+    if (reason && errorMessages[reason as ErrorCode]) {
+      return errorMessages[reason as ErrorCode];
+    }
 
     // 1. Check for domain-specific error code in response body
     const errorCode = axiosError.response?.data?.code;

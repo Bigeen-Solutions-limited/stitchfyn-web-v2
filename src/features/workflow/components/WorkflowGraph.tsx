@@ -1,5 +1,8 @@
-import { useGarmentWorkflow, useReportStageCompletion } from '../hooks/useWorkflowMutation';
+import { useGarmentWorkflow, useReportStageCompletion, useProgressPhotos } from '../hooks/useWorkflowMutation';
 import type { StageInstance, WorkflowEdge } from '../workflow.api';
+import { MAX_PROGRESS_PHOTOS_PER_STAGE_UI_HINT } from '../progress-photo.api';
+import { ProgressPhotoCapture } from './ProgressPhotoCapture';
+import { ProgressPhotoThumbnails } from './ProgressPhotoThumbnails';
 import { CheckCircle, Lock } from '@mui/icons-material';
 
 interface WorkflowGraphProps {
@@ -10,6 +13,9 @@ interface WorkflowGraphProps {
 export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
   const { data: workflow, isLoading } = useGarmentWorkflow(garmentId);
   const reportCompletion = useReportStageCompletion(garmentId, orderId);
+  // Staff Progress-Photo Capture UI — one query for the whole garment,
+  // filtered per-stage below, rather than one query per row.
+  const { data: progressPhotos } = useProgressPhotos(garmentId);
 
   if (isLoading) return <div className="p-md text-muted animate-pulse">Syncing Workflow DAG...</div>;
   if (!workflow) return null;
@@ -139,6 +145,25 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
                     </span>
                   )}
                 </div>
+
+                {/* Staff Progress-Photo Capture UI — US-4.3. Locked/
+                    not-yet-active stages show nothing here, per the locked
+                    product decision. Active stages show existing photos
+                    plus the capture control (hidden once the stage already
+                    has MAX_PROGRESS_PHOTOS_PER_STAGE_UI_HINT — the backend
+                    is the real enforcement). Completed stages retain their
+                    photos as historical evidence with no capture action. */}
+                {!isLocked && (() => {
+                  const stagePhotos = (progressPhotos ?? []).filter((p) => p.stageId === stage.stageId);
+                  const canCapturePhoto = isActionable && stagePhotos.length < MAX_PROGRESS_PHOTOS_PER_STAGE_UI_HINT;
+                  if (stagePhotos.length === 0 && !canCapturePhoto) return null;
+                  return (
+                    <div>
+                      <ProgressPhotoThumbnails photos={stagePhotos} />
+                      {canCapturePhoto && <ProgressPhotoCapture garmentId={garmentId} stageId={stage.stageId} />}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           );

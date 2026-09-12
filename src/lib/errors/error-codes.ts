@@ -16,9 +16,13 @@ export const ErrorCodes = {
   // Workflow
   WORKFLOW_STAGE_SKIP:       'WORKFLOW_STAGE_SKIP',
   WORKFLOW_INVALID_TRANSITION:'WORKFLOW_INVALID_TRANSITION',
+  // Progress photos
+  PROGRESS_PHOTO_LIMIT_REACHED: 'PROGRESS_PHOTO_LIMIT_REACHED',
   // General
   TENANT_MISMATCH:           'TENANT_MISMATCH',
   VALIDATION_ERROR:          'VALIDATION_ERROR',
+  NOT_FOUND:                 'NOT_FOUND',
+  CONFLICT:                  'CONFLICT',
   UNKNOWN_ERROR:             'UNKNOWN_ERROR',
 } as const;
 

@@ -23,6 +23,7 @@ export const keys = {
     garment: (garmentId: string) => ['workflow', 'garment', garmentId] as const,
     templates: ['workflow', 'templates'] as const,
     activeTasks: ['workflow', 'active-tasks'] as const,
+    progressPhotos: (garmentId: string) => ['workflow', 'garment', garmentId, 'progress-photos'] as const,
   },
   staff: {
     all: ['staff'] as const,
