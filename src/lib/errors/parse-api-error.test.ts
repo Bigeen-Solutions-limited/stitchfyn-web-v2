@@ -102,6 +102,36 @@ describe("parseApiError", () => {
     expect(result).toEqual(errorMessages.PROGRESS_PHOTO_REQUIRED)
   })
 
+  it("maps US-4.8's FINAL_QUALITY_REVIEW_NOT_READY reason to its own message, not the generic CONFLICT one", () => {
+    const error = {
+      isAxiosError: true,
+      response: {
+        data: {
+          code: ErrorCodes.CONFLICT,
+          metadata: { reason: ErrorCodes.FINAL_QUALITY_REVIEW_NOT_READY },
+        },
+      },
+    }
+
+    const result = parseApiError(error)
+    expect(result).toEqual(errorMessages.FINAL_QUALITY_REVIEW_NOT_READY)
+  })
+
+  it("maps US-4.8's FINAL_QUALITY_REVIEW_ALREADY_COMPLETED reason to its own message", () => {
+    const error = {
+      isAxiosError: true,
+      response: {
+        data: {
+          code: ErrorCodes.CONFLICT,
+          metadata: { reason: ErrorCodes.FINAL_QUALITY_REVIEW_ALREADY_COMPLETED },
+        },
+      },
+    }
+
+    const result = parseApiError(error)
+    expect(result).toEqual(errorMessages.FINAL_QUALITY_REVIEW_ALREADY_COMPLETED)
+  })
+
   it("falls back to the generic code when metadata.reason is absent or unrecognized", () => {
     const error = {
       isAxiosError: true,
