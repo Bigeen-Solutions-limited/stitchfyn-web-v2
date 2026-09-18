@@ -47,6 +47,7 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import { RiskBadge } from '../components/ui/RiskBadge.tsx';
 import { useAvailableTransitions, useAttemptTransition } from '../features/production/hooks/useProductionMutation.ts';
 import { EditOrderModal } from '../features/orders/components/EditOrderModal.tsx';
+import { ReassignFabricDialog } from '../features/orders/components/ReassignFabricDialog.tsx';
 import { AuditTrailTimeline } from '../features/audit/components/AuditTrailTimeline.tsx';
 import { DisputePortal } from '../features/dispute/components/DisputePortal.tsx';
 
@@ -74,6 +75,7 @@ export function OrderDetailPage() {
   });
   const [selectedGarmentId, setSelectedGarmentId] = useState<string | null>(null);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
   const [workflowTab, setWorkflowTab] = useState<'graph' | 'timeline'>('graph');
   const [showForensicProof, setShowForensicProof] = useState(false);
   const [bypassModal, setBypassModal] = useState<{ open: boolean; targetStatus: string } | null>(null);
@@ -86,7 +88,7 @@ export function OrderDetailPage() {
   const attemptTransition = useAttemptTransition();
 
   useEffect(() => {
-    if (garments && garments.length > 0 && !selectedGarmentId) {
+    if (garments && garments.length > 0 && (!selectedGarmentId || !garments.some(g => g.id === selectedGarmentId))) {
       const targetId = (location.state as any)?.targetGarmentId;
       const isValidTarget = targetId && garments?.some(g => g.id === targetId);
 
@@ -368,6 +370,14 @@ export function OrderDetailPage() {
                       ))}
                     </Select>
                   </FormControl>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setReassignOpen(true)}
+                    sx={{ mt: 1.5, borderRadius: 2, fontWeight: 700 }}
+                  >
+                    Reassign
+                  </Button>
                 </Box>
               )}
               {selectedGarment && isCompanyAdminOrManager && !isOrderLocked && availableTransitions.length > 0 && (() => {
@@ -726,6 +736,16 @@ export function OrderDetailPage() {
           open={isEditModalOpen}
           onClose={() => setEditModalOpen(false)}
           order={order}
+        />
+      )}
+
+      {isCompanyAdminOrManager && selectedGarment && (
+        <ReassignFabricDialog
+          open={reassignOpen}
+          onClose={() => setReassignOpen(false)}
+          garmentId={selectedGarment.id}
+          garmentName={selectedGarment.name}
+          currentOrderId={order.id}
         />
       )}
 
