@@ -723,7 +723,6 @@ export function OrderDetailPage() {
       <Card className="sf-card" sx={{ p: 3, borderRadius: 3, mt: 4 }}>
         <CollectionChecklistPanel
           orderId={order.id}
-          isOrderCompleted={!!isOrderCompleted}
           lockedAt={order.lockedAt}
           canInitiate={
             user?.role === 'OWNER' || user?.role === 'MANAGER' || user?.role === 'TAILOR'

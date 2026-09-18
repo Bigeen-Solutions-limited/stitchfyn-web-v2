@@ -15,10 +15,13 @@ import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collectionApi, type ChecklistItem } from '../collection.api';
+import { useAuthStore } from '../../auth/auth.store';
+import { useDomainError } from '../../../lib/errors';
+import { useToastStore } from '../../../components/feedback/Toast';
+import { keys } from '../../../query/keys';
 
 interface Props {
   orderId: string;
-  isOrderCompleted: boolean;
   lockedAt?: string | null;
   canInitiate: boolean;
 }
@@ -36,9 +39,13 @@ function ItemList({ items }: { items: ChecklistItem[] }) {
   );
 }
 
-export function CollectionChecklistPanel({ orderId, isOrderCompleted, lockedAt, canInitiate }: Props) {
+export function CollectionChecklistPanel({ orderId, lockedAt, canInitiate }: Props) {
   const queryClient = useQueryClient();
-  const queryKey = ['collection-checklist', orderId];
+  const queryKey = keys.collection.checklist(orderId);
+  const readinessKey = keys.collection.readiness(orderId);
+  const currentUser = useAuthStore((s) => s.user);
+  const showToast = useToastStore((s) => s.showToast);
+  const { handleError } = useDomainError();
 
   const { data: checklist, isLoading, error } = useQuery({
     queryKey,
@@ -49,19 +56,38 @@ export function CollectionChecklistPanel({ orderId, isOrderCompleted, lockedAt, 
     },
   });
 
+  // US-4.8's own backend-authoritative readiness signal — a UX gate only.
+  // The tailor-signoff endpoint enforces the same condition independently;
+  // this query exists so the button can reflect that truthfully instead
+  // of relying on the pre-existing, structurally-unreachable
+  // garments.status check (see STITCHFYN_US4_8_FINAL_QUALITY_REVIEW_DISCOVERY.md §7).
+  const { data: readiness } = useQuery({
+    queryKey: readinessKey,
+    queryFn: () => collectionApi.getReadiness(orderId),
+    enabled: !!orderId,
+  });
+  const isReady = !!readiness?.ready;
+
   const is404 = (error as any)?.response?.status === 404;
 
   const createMutation = useMutation({
     mutationFn: () => collectionApi.createChecklist(orderId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+      showToast('Collection Review Started', 'The final quality review checklist is ready.');
+    },
+    onError: (err) => handleError(err),
   });
 
   const signoffMutation = useMutation({
     mutationFn: () => collectionApi.tailorSignoff(orderId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: readinessKey });
       queryClient.invalidateQueries({ queryKey: ['orders', orderId] });
+      showToast('Quality Check Complete', 'The final quality review has been recorded.');
     },
+    onError: (err) => handleError(err),
   });
 
   if (isLoading) {
@@ -78,7 +104,7 @@ export function CollectionChecklistPanel({ orderId, isOrderCompleted, lockedAt, 
         variant="caption"
         sx={{ fontWeight: 800, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 1, mb: 2, display: 'block' }}
       >
-        Collection Checklist
+        Final Quality Review
       </Typography>
 
       {/* Lock banner — always shown when order is permanently archived */}
@@ -107,7 +133,7 @@ export function CollectionChecklistPanel({ orderId, isOrderCompleted, lockedAt, 
       {/* State A — checklist does not exist */}
       {(is404 || (!checklist && !isLoading)) && (
         <>
-          {isOrderCompleted && canInitiate && !lockedAt && (
+          {isReady && canInitiate && !lockedAt && (
             <Button
               variant="outlined"
               size="small"
@@ -131,9 +157,9 @@ export function CollectionChecklistPanel({ orderId, isOrderCompleted, lockedAt, 
               Begin Collection
             </Button>
           )}
-          {!isOrderCompleted && (
+          {!isReady && (
             <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-              Available once all garments are completed
+              Available once every garment has finished production
             </Typography>
           )}
         </>
@@ -144,39 +170,52 @@ export function CollectionChecklistPanel({ orderId, isOrderCompleted, lockedAt, 
         <Stack spacing={2}>
           <ItemList items={checklist.items} />
 
-          {/* State B — tailor not yet signed off */}
-          {!checklist.tailorSignoffAt && !lockedAt && (
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={
-                signoffMutation.isPending
-                  ? <CircularProgress size={14} color="inherit" />
-                  : <CheckCircleOutlinedIcon />
-              }
-              disabled={signoffMutation.isPending}
-              onClick={() => signoffMutation.mutate()}
-              sx={{
-                borderRadius: 2,
-                fontWeight: 700,
-                fontSize: '12px',
-                textTransform: 'none',
-                bgcolor: '#1e5c3a',
-                '&:hover': { bgcolor: '#174d30' },
-                alignSelf: 'flex-start',
-              }}
-            >
-              Confirm Collection
-            </Button>
+          {/* State B — tailor's final quality review not yet completed.
+              canInitiate mirrors the same OWNER/MANAGER/TAILOR set that
+              holds Capability.UPDATE_PRODUCTION server-side — the backend
+              (not this check) is the actual authority. Disabled rather
+              than hidden when not ready, matching the disabled+hint
+              pattern already established for the QC/Collection Review
+              Photo Gate. */}
+          {!checklist.tailorSignoffAt && !lockedAt && canInitiate && (
+            <Stack spacing={1} alignItems="flex-start">
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={
+                  signoffMutation.isPending
+                    ? <CircularProgress size={14} color="inherit" />
+                    : <CheckCircleOutlinedIcon />
+                }
+                disabled={signoffMutation.isPending || !isReady}
+                onClick={() => signoffMutation.mutate()}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  textTransform: 'none',
+                  bgcolor: '#1e5c3a',
+                  '&:hover': { bgcolor: '#174d30' },
+                  alignSelf: 'flex-start',
+                }}
+              >
+                {signoffMutation.isPending ? 'Completing…' : 'Complete Quality Check'}
+              </Button>
+              {!isReady && (
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                  Every garment on this order must finish production before the review can be completed.
+                </Typography>
+              )}
+            </Stack>
           )}
 
-          {/* State C — tailor signed off, customer pending */}
+          {/* State C — tailor's review complete, customer pending */}
           {checklist.tailorSignoffAt && !checklist.customerSignoffAt && (
             <Stack spacing={1.5}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <CheckCircleOutlinedIcon sx={{ fontSize: 18, color: '#1e5c3a' }} />
                 <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e5c3a' }}>
-                  You confirmed collection on{' '}
+                  You completed the final quality review on{' '}
                   {new Date(checklist.tailorSignoffAt).toLocaleDateString('en-NG', {
                     day: 'numeric', month: 'short', year: 'numeric',
                   })}
@@ -211,7 +250,11 @@ export function CollectionChecklistPanel({ orderId, isOrderCompleted, lockedAt, 
               <Stack direction="row" spacing={1} alignItems="center">
                 <CheckCircleOutlinedIcon sx={{ fontSize: 18, color: '#1e5c3a' }} />
                 <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e5c3a' }}>
-                  Tailor confirmed on{' '}
+                  Final quality review completed
+                  {checklist.tailorSignoffBy && (
+                    <> by {checklist.tailorSignoffBy === currentUser?.id ? currentUser?.fullName : checklist.tailorSignoffBy}</>
+                  )}
+                  {' '}on{' '}
                   {new Date(checklist.tailorSignoffAt).toLocaleDateString('en-NG', {
                     day: 'numeric', month: 'short', year: 'numeric',
                   })}

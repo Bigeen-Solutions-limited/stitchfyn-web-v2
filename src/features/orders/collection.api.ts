@@ -25,6 +25,15 @@ export const collectionApi = {
     return data;
   },
 
+  // US-4.8's own readiness signal (backend-authoritative; the UI uses this
+  // only to decide what to show, never to enforce anything itself).
+  getReadiness: async (orderId: string): Promise<{ ready: boolean }> => {
+    const { data } = await apiClient.get<{ ready: boolean }>(
+      `/orders/${orderId}/collection-readiness`,
+    );
+    return data;
+  },
+
   createChecklist: async (orderId: string): Promise<CollectionChecklist> => {
     const { data } = await apiClient.post<CollectionChecklist>(
       `/orders/${orderId}/collection-checklist`,

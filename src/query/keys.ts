@@ -18,6 +18,10 @@ export const keys = {
   materials: {
     ledger: (orderId: string) => ['materials', orderId] as const,
   },
+  collection: {
+    checklist: (orderId: string) => ['collection', 'checklist', orderId] as const,
+    readiness: (orderId: string) => ['collection', 'readiness', orderId] as const,
+  },
   workflow: {
     stages: (orderId: string) => ['workflow', orderId, 'stages'] as const,
     garment: (garmentId: string) => ['workflow', 'garment', garmentId] as const,

@@ -86,6 +86,14 @@ export const errorMessages: Record<ErrorCode, ErrorMessage> = {
     title: 'Photo Required',
     detail: 'Add at least one progress photo before completing this stage.',
   },
+  FINAL_QUALITY_REVIEW_NOT_READY: {
+    title: 'Not Ready for Collection',
+    detail: 'Every garment on this order must finish production before the final quality review can be completed.',
+  },
+  FINAL_QUALITY_REVIEW_ALREADY_COMPLETED: {
+    title: 'Already Reviewed',
+    detail: 'The final quality review for this order has already been completed.',
+  },
   UNKNOWN_ERROR: {
     title: 'Unexpected Error',
     detail: 'We ran into an issue. Please refresh the page, or contact support if the issue persists.',
