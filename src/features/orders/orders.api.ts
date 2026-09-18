@@ -111,6 +111,14 @@ export const ordersApi = {
     return data
   },
 
+  reassignGarment: async (garmentId: string, targetOrderId: string, reason: string) => {
+    const { data } = await apiClient.post<Garment>(`/garments/${garmentId}/reassign`, {
+      targetOrderId,
+      reason,
+    })
+    return data
+  },
+
   updateOrder: async (id: string, data: { eventDate?: string, lockedMeasurementVersionId?: string }) => {
     const { data: result } = await apiClient.patch(`/orders/${id}`, data)
     return result
