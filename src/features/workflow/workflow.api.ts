@@ -121,10 +121,5 @@ export const workflowApi = {
       measurements
     });
     return data;
-  },
-
-  updateGarmentStage: async (garmentId: string, params: { stageId: string; assignedTailorId: string | null }) => {
-    const { data } = await apiClient.put(`/workflows/garments/${garmentId}/stage`, params);
-    return data;
   }
 };

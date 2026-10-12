@@ -46,6 +46,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import { RiskBadge } from '../components/ui/RiskBadge.tsx';
 import { useAvailableTransitions, useAttemptTransition } from '../features/production/hooks/useProductionMutation.ts';
+import { canAcknowledgeDeposit, waitingFor } from '../lib/activation';
 import { EditOrderModal } from '../features/orders/components/EditOrderModal.tsx';
 import { ReassignFabricDialog } from '../features/orders/components/ReassignFabricDialog.tsx';
 import { AuditTrailTimeline } from '../features/audit/components/AuditTrailTimeline.tsx';
@@ -383,7 +384,7 @@ export function OrderDetailPage() {
               {selectedGarment && isCompanyAdminOrManager && !isOrderLocked && availableTransitions.length > 0 && (() => {
                 const flags = order.unverifiedFlags ?? [];
                 const isBlocked = flags.length > 0;
-                const isOwner = user?.role === 'OWNER';
+                const canAcknowledge = canAcknowledgeDeposit(flags, user?.role);
 
                 const FLAG_META: Record<string, { icon: React.ReactElement; label: string }> = {
                   payment: { icon: <PaymentsOutlinedIcon sx={{ fontSize: 14 }} />, label: 'Deposit required' },
@@ -423,8 +424,10 @@ export function OrderDetailPage() {
 
                     <Stack spacing={1}>
                       {availableTransitions.map((status: string) => {
-                        const buttonDisabled = attemptTransition.isPending || (isBlocked && !isOwner);
-                        const showOwnerBypass = isBlocked && isOwner;
+                        // Cancelling is never gated; everything else waits for activation.
+                        const gated = isBlocked && status !== 'CANCELLED';
+                        const buttonDisabled = attemptTransition.isPending || (gated && !canAcknowledge);
+                        const showOwnerBypass = gated && canAcknowledge;
 
                         const btn = (
                           <Button
@@ -446,8 +449,8 @@ export function OrderDetailPage() {
                               fontWeight: 700,
                               fontSize: '11px',
                               textTransform: 'none',
-                              borderColor: isBlocked && !isOwner ? alpha('#9e9e9e', 0.4) : alpha('#1e5c3a', 0.3),
-                              color: isBlocked && !isOwner ? 'text.disabled' : '#1e5c3a',
+                              borderColor: gated && !canAcknowledge ? alpha('#9e9e9e', 0.4) : alpha('#1e5c3a', 0.3),
+                              color: gated && !canAcknowledge ? 'text.disabled' : '#1e5c3a',
                               '&:hover': { borderColor: '#1e5c3a', bgcolor: alpha('#1e5c3a', 0.04) },
                               '&.Mui-disabled': { borderColor: alpha('#9e9e9e', 0.3), color: 'text.disabled' },
                             }}
@@ -456,11 +459,11 @@ export function OrderDetailPage() {
                           </Button>
                         );
 
-                        if (isBlocked && !isOwner) {
+                        if (gated && !canAcknowledge) {
                           return (
                             <Tooltip
                               key={status}
-                              title="Complete the activation checklist to advance production"
+                              title={waitingFor(flags)}
                               placement="top"
                             >
                               {/* span needed so Tooltip works on disabled button */}
@@ -748,7 +751,7 @@ export function OrderDetailPage() {
         />
       )}
 
-      {/* Owner Activation Bypass Dialog */}
+      {/* Deposit acknowledgement dialog (D-1: OWNER/MANAGER, deposit step only) */}
       {bypassModal && selectedGarment && (
         <Dialog
           open={bypassModal.open}
@@ -771,10 +774,10 @@ export function OrderDetailPage() {
               </Box>
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                  Owner Bypass
+                  Acknowledge Deposit
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-                  Advance to <strong>{bypassModal.targetStatus.replace(/_/g, ' ')}</strong> despite pending activation items
+                  Advance to <strong>{bypassModal.targetStatus.replace(/_/g, ' ')}</strong> before the deposit is recorded
                 </Typography>
               </Box>
             </Stack>
@@ -813,8 +816,8 @@ export function OrderDetailPage() {
               fullWidth
               multiline
               minRows={3}
-              label="Bypass reason (required)"
-              placeholder="Explain why production is advancing despite pending activation items…"
+              label="Reason (required)"
+              placeholder="Explain why production can start before the deposit is recorded…"
               value={bypassReason}
               onChange={e => setBypassReason(e.target.value)}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
@@ -844,7 +847,7 @@ export function OrderDetailPage() {
                 '&:hover': { bgcolor: '#d35400' },
               }}
             >
-              Bypass &amp; Advance
+              Acknowledge &amp; Advance
             </Button>
           </DialogActions>
         </Dialog>

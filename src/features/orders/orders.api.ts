@@ -90,8 +90,10 @@ export const ordersApi = {
   },
 
   getOrderDetail: async (id: string) => {
-    const { data } = await apiClient.get<OrderDetailResponse>(`/orders/${id}`)
-    return data
+    const { data } = await apiClient.get<OrderDetailResponse & { unverified_flags?: Order["unverifiedFlags"] }>(`/orders/${id}`)
+    // The detail endpoint returns the activation flags at the top level;
+    // the page reads them off the order like the list does.
+    return { ...data, order: { ...data.order, unverifiedFlags: data.unverified_flags ?? [] } }
   },
 
   getOrderGarments: async (id: string) => {

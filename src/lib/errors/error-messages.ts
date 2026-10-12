@@ -94,6 +94,10 @@ export const errorMessages: Record<ErrorCode, ErrorMessage> = {
     title: 'Already Reviewed',
     detail: 'The final quality review for this order has already been completed.',
   },
+  ACTIVATION_INCOMPLETE: {
+    title: 'Production Blocked',
+    detail: 'Complete the activation checklist before advancing production.',
+  },
   UNKNOWN_ERROR: {
     title: 'Unexpected Error',
     detail: 'We ran into an issue. Please refresh the page, or contact support if the issue persists.',
