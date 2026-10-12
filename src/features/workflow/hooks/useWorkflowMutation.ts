@@ -6,6 +6,7 @@ import { queryClient } from "../../../query/queryClient"
 import { useToastStore } from "../../../components/feedback/Toast"
 import { useDomainError } from "../../../lib/errors"
 import { getDeviceId } from "../../../lib/device-id"
+import { enqueueStageUpdate, isNetworkFailure } from "../offline/stage-update-queue"
 
 export function useGarmentWorkflow(garmentId: string) {
   return useQuery({
@@ -20,9 +21,23 @@ export function useReportStageCompletion(garmentId: string, orderId?: string) {
   const { handleError } = useDomainError()
 
   return useMutation({
-    mutationFn: (params: { stageId: string; evidencePhotoUrls?: string[] }) =>
-      workflowApi.reportStageCompletion({ garmentId, ...params }),
-    onSuccess: () => {
+    // LR-5: offline (or the request never reaches the server) → queue it
+    // for /sync/batch instead of losing the tailor's update.
+    mutationFn: async (params: { stageId: string; evidencePhotoUrls?: string[] }) => {
+      const queue = () => enqueueStageUpdate({ garmentId, orderId, ...params }).then(() => ({ queued: true as const }))
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return queue()
+      try {
+        return await workflowApi.reportStageCompletion({ garmentId, ...params })
+      } catch (err) {
+        if (isNetworkFailure(err)) return queue()
+        throw err
+      }
+    },
+    onSuccess: (result) => {
+      if (result && typeof result === "object" && "queued" in result) {
+        showToast("Saved offline", "This stage update will sync when you're back online.")
+        return
+      }
       // PURE REFRESH
       queryClient.invalidateQueries({
         queryKey: keys.workflow.garment(garmentId),
