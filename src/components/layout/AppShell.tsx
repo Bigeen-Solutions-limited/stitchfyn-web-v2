@@ -3,12 +3,14 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { BottomNav } from './BottomNav';
+import { useStageUpdateSync } from '../../features/workflow/offline/useStageUpdateSync';
 
 interface AppShellProps {
   children: React.ReactNode;
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+  useStageUpdateSync();
   const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:768px)');
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
