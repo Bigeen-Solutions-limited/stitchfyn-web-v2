@@ -1,11 +1,16 @@
 import React from 'react';
-import { Box, Typography, Stack, Chip } from '@mui/material';
+import { Box, Typography, Stack, Chip, Button } from '@mui/material';
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import ContentCutOutlinedIcon from '@mui/icons-material/ContentCutOutlined';
 import DesignServicesOutlinedIcon from '@mui/icons-material/DesignServicesOutlined';
 import { truncateId, safeFormatDistanceToNow } from '../../../utils/format.ts';
 import { DeadlineBadge } from './DeadlineBadge.tsx';
 import type { ActivationFlag } from '../orders.api.ts';
+import { useAuthStore } from '../../auth/auth.store.ts';
+import { useRequestActivationReminder } from '../hooks/useRequestActivationReminder.ts';
+
+// Mirrors the backend's UPDATE_PRODUCTION capability (OWNER, MANAGER, TAILOR).
+const REMINDER_ROLES = ['OWNER', 'MANAGER', 'TAILOR'];
 
 interface OrderEntryItemProps {
   order: {
@@ -88,6 +93,11 @@ const ActivationChips: React.FC<{ flags?: ActivationFlag[] }> = ({ flags }) => {
 };
 
 export const OrderEntryItem: React.FC<OrderEntryItemProps> = ({ order, onClick }) => {
+  const role = useAuthStore((state) => state.user?.role);
+  const { mutate: sendReminder, isPending: isReminding } = useRequestActivationReminder();
+  const customerStepPending = !!order.unverifiedFlags?.some((f) => f === 'fabric' || f === 'design');
+  const canRemind = customerStepPending && !!role && REMINDER_ROLES.includes(role);
+
   return (
     <Box onClick={onClick} className="order-entry-card">
       <div className="card-top">
@@ -115,6 +125,20 @@ export const OrderEntryItem: React.FC<OrderEntryItemProps> = ({ order, onClick }
             </Typography>
           )}
           <ActivationChips flags={order.unverifiedFlags} />
+          {canRemind && (
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={isReminding}
+              onClick={(e) => {
+                e.stopPropagation();
+                sendReminder(order.id);
+              }}
+              sx={{ alignSelf: 'flex-start', mt: 1, borderRadius: 2, fontWeight: 700, fontSize: '11px' }}
+            >
+              {isReminding ? 'Sending…' : 'Remind customer'}
+            </Button>
+          )}
         </Stack>
         <div className="mobile-hide">
           <DeadlineBadge orderId={order.id} />

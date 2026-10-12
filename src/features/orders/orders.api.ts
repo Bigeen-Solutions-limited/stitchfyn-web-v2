@@ -111,6 +111,11 @@ export const ordersApi = {
     return data
   },
 
+  requestActivationReminder: async (orderId: string) => {
+    const { data } = await apiClient.post<{ pending: Array<'fabric' | 'design'> }>(`/orders/${orderId}/activation-reminder`)
+    return data
+  },
+
   reassignGarment: async (garmentId: string, targetOrderId: string, reason: string) => {
     const { data } = await apiClient.post<Garment>(`/garments/${garmentId}/reassign`, {
       targetOrderId,
