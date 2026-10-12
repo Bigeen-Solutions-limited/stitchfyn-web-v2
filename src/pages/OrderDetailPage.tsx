@@ -47,6 +47,7 @@ import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import { RiskBadge } from '../components/ui/RiskBadge.tsx';
 import { useAvailableTransitions, useAttemptTransition } from '../features/production/hooks/useProductionMutation.ts';
 import { canAcknowledgeDeposit, waitingFor } from '../lib/activation';
+import { OrderMessageThread } from '../features/orders/components/OrderMessageThread';
 import { EditOrderModal } from '../features/orders/components/EditOrderModal.tsx';
 import { ReassignFabricDialog } from '../features/orders/components/ReassignFabricDialog.tsx';
 import { AuditTrailTimeline } from '../features/audit/components/AuditTrailTimeline.tsx';
@@ -704,6 +705,11 @@ export function OrderDetailPage() {
                   </Box>
                 )}
               </Box>
+            </Card>
+
+            {/* LR-8: customer ↔ staff thread (AC 2.6) */}
+            <Card className="sf-card" sx={{ borderRadius: 3, p: 3 }}>
+              <OrderMessageThread orderId={order.id} />
             </Card>
 
             {/* Component C: History Logs */}
