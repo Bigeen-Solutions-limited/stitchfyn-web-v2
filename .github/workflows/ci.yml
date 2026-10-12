@@ -1,0 +1,28 @@
+name: CI
+
+# LR-3: typecheck + production build + unit tests on every push to main and
+# every PR. Lint is not gated yet: 154 pre-existing errors (launch-readiness
+# doc §5 "Quality"); add `npm run lint` here once they are cleared.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: https://api.example.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Typecheck and build
+        run: npm run build
+      - name: Unit tests
+        run: npx vitest run
