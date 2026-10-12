@@ -155,4 +155,16 @@ describe("parseApiError", () => {
     const result = parseApiError(error)
     expect(result).toEqual(errorMessages.AUTH_SESSION_EXPIRED)
   })
+  it("names the missing activation steps for ACTIVATION_INCOMPLETE (LR-1)", () => {
+    const error = {
+      isAxiosError: true,
+      response: {
+        data: { code: ErrorCodes.ACTIVATION_INCOMPLETE, metadata: { missingSteps: ["payment", "fabric"] } },
+      },
+    }
+
+    const result = parseApiError(error)
+    expect(result.title).toBe(errorMessages.ACTIVATION_INCOMPLETE.title)
+    expect(result.detail).toBe("Waiting for: Deposit, Fabric confirmation")
+  })
 })

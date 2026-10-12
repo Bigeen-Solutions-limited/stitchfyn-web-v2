@@ -3,6 +3,7 @@ import type { ErrorMessage } from './error-messages';
 import type { ErrorCode } from './error-codes';
 import { errorMessages } from './error-messages';
 import { ErrorCodes } from './error-codes';
+import { waitingFor } from '../activation';
 
 /**
  * Parses an unknown error (likely from an API call) into a user-friendly ErrorMessage object.
@@ -10,7 +11,7 @@ import { ErrorCodes } from './error-codes';
  */
 export function parseApiError(error: unknown): ErrorMessage {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ code?: string; metadata?: { reason?: string } }>;
+    const axiosError = error as AxiosError<{ code?: string; metadata?: { reason?: string; missingSteps?: string[] } }>;
 
     // 0. A structured metadata.reason is more specific than the bare
     // `code` (several distinct backend conditions share the same generic
@@ -25,6 +26,10 @@ export function parseApiError(error: unknown): ErrorMessage {
 
     // 1. Check for domain-specific error code in response body
     const errorCode = axiosError.response?.data?.code;
+    const missingSteps = axiosError.response?.data?.metadata?.missingSteps;
+    if (errorCode === ErrorCodes.ACTIVATION_INCOMPLETE && missingSteps?.length) {
+      return { ...errorMessages.ACTIVATION_INCOMPLETE, detail: waitingFor(missingSteps) };
+    }
     if (errorCode) {
       const mappedMessage = errorMessages[errorCode as ErrorCode];
       if (mappedMessage) {

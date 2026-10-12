@@ -108,25 +108,3 @@ export function useUploadProgressPhoto(garmentId: string) {
     },
   })
 }
-
-export function useUpdateGarmentStage(garmentId: string) {
-  const showToast = useToastStore((state) => state.showToast);
-  const { handleError } = useDomainError();
-
-  return useMutation({
-    mutationFn: (params: { stageId: string; assignedTailorId: string | null }) =>
-      workflowApi.updateGarmentStage(garmentId, params),
-    onSuccess: () => {
-      // PURE REFRESH
-      queryClient.invalidateQueries({ queryKey: keys.workflow.activeTasks });
-      queryClient.invalidateQueries({ queryKey: keys.workflow.garment(garmentId) });
-      queryClient.invalidateQueries({ queryKey: keys.orders.all });
-      queryClient.invalidateQueries({ queryKey: keys.analytics.overview });
-
-      showToast("Garment Updated", "Stage and tailor assignment synchronized.");
-    },
-    onError: (err: any) => {
-      handleError(err);
-    },
-  });
-}
