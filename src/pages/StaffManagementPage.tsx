@@ -3,8 +3,12 @@ import {
   useStaffList,
   useInviteStaff,
   useUpdateStaffStatus,
+  useRemoveStaff,
+  useChangeStaffRole,
+  useStaffAccessLog,
   useStores,
 } from "../features/auth/hooks/useStaff"
+import { ASSIGNABLE_STAFF_ROLES, type Staff, type StaffRole } from "../features/auth/staff.api"
 import { useAuthStore } from "../features/auth/auth.store"
 import { 
   Box, Typography, Button, Dialog, DialogTitle, DialogContent, 
@@ -30,6 +34,12 @@ export function StaffManagementPage() {
   const { data: stores, isLoading: isLoadingStores } = useStores()
   const inviteStaff = useInviteStaff()
   const updateStatus = useUpdateStaffStatus()
+  const removeStaff = useRemoveStaff()
+  const changeRole = useChangeStaffRole()
+  const isOwner = currentUser?.role === "OWNER"
+  const { data: accessLog } = useStaffAccessLog(isOwner)
+  // AC 8.3: removal is two-step — the button only opens this dialog.
+  const [removing, setRemoving] = useState<Staff | null>(null)
 
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [inviteData, setInviteData] = useState({
@@ -37,13 +47,12 @@ export function StaffManagementPage() {
     fullName: "",
     role: "TAILOR",
     storeId: "",
-    initialPassword: "",
   })
 
   const getRoleIcon = (role: string) => {
     switch(role) {
-      case 'COMPANY_ADMIN': return <AdminIcon />;
-      case 'STORE_MANAGER': return <SecurityIcon />;
+      case 'OWNER': return <AdminIcon />;
+      case 'MANAGER': return <SecurityIcon />;
       default: return <PersonIcon />;
     }
   };
@@ -60,7 +69,6 @@ export function StaffManagementPage() {
       fullName: "",
       role: "TAILOR",
       storeId: "",
-      initialPassword: "",
     })
     setIsInviteOpen(false)
   }
@@ -152,21 +160,18 @@ export function StaffManagementPage() {
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2, color: !member.isActive ? 'text.secondary' : 'text.primary' }}>
                           {member.fullName || "—"}
                         </Typography>
-                        {!member.isActive ? (
-                          <Chip 
-                            icon={<BlockIcon sx={{ fontSize: '14px !important' }} />}
-                            label="REVOKED"
-                            size="small"
-                            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, bgcolor: alpha('#d32f2f', 0.1), color: 'error.main' }}
-                          />
-                        ) : (
-                          <Chip 
-                            icon={<CheckCircleIcon sx={{ fontSize: '14px !important' }} />}
-                            label="ACTIVE"
-                            size="small"
-                            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 800, bgcolor: alpha('#1e5c3a', 0.1), color: 'primary.main' }}
-                          />
-                        )}
+                        <Chip
+                          icon={member.status === "ACTIVE"
+                            ? <CheckCircleIcon sx={{ fontSize: '14px !important' }} />
+                            : <BlockIcon sx={{ fontSize: '14px !important' }} />}
+                          label={member.status}
+                          size="small"
+                          sx={{
+                            height: 20, fontSize: '0.65rem', fontWeight: 800,
+                            bgcolor: member.status === "ACTIVE" ? alpha('#1e5c3a', 0.1) : alpha('#d32f2f', 0.1),
+                            color: member.status === "ACTIVE" ? 'primary.main' : 'error.main',
+                          }}
+                        />
                       </Stack>
                     }
                     secondary={
@@ -183,6 +188,9 @@ export function StaffManagementPage() {
                             {stores?.find((s) => s.id === member.storeId)?.name || "Global / HQ"}
                           </Typography>
                         </Stack>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          Last login: {member.lastLoginAt ? new Date(member.lastLoginAt).toLocaleString() : "never"}
+                        </Typography>
                       </Stack>
                     }
                   />
@@ -197,34 +205,46 @@ export function StaffManagementPage() {
                   width: { xs: '100%', md: 'auto' },
                   gap: 2
                 }}>
-                  <Chip 
-                    label={member.role?.replace("_", " ")}
-                    variant="outlined"
-                    sx={{ fontWeight: 700, borderRadius: '8px', color: 'text.secondary', borderColor: 'divider' }}
-                  />
-                  <Button 
-                    variant={member.isActive ? "outlined" : "contained"} 
-                    color={member.isActive ? "error" : "primary"}
-                    onClick={() =>
-                      updateStatus.mutate({
-                        id: member.id,
-                        isActive: !member.isActive,
-                      })
-                    }
-                    disabled={updateStatus.isPending || member.id === currentUser.id}
-                    sx={{ 
-                      borderRadius: '12px', 
-                      fontWeight: 800, 
-                      minWidth: '100px',
-                      height: '36px'
-                    }}
-                  >
-                    {updateStatus.isPending
-                      ? "..."
-                      : member.isActive
-                        ? "Revoke"
-                        : "Restore"}
-                  </Button>
+                  {isOwner && member.status !== "REMOVED" && member.role !== "OWNER" && member.id !== currentUser.id ? (
+                    <TextField
+                      select
+                      size="small"
+                      value={member.role}
+                      onChange={(e) => changeRole.mutate({ id: member.id, role: e.target.value as StaffRole })}
+                      disabled={changeRole.isPending}
+                      sx={{ minWidth: 140, '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    >
+                      {ASSIGNABLE_STAFF_ROLES.map((r) => (
+                        <MenuItem key={r} value={r}>{r.replace("_", " ")}</MenuItem>
+                      ))}
+                    </TextField>
+                  ) : (
+                    <Chip
+                      label={member.role?.replace("_", " ")}
+                      variant="outlined"
+                      sx={{ fontWeight: 700, borderRadius: '8px', color: 'text.secondary', borderColor: 'divider' }}
+                    />
+                  )}
+                  {member.status !== "REMOVED" && member.role !== "OWNER" && member.id !== currentUser.id && (
+                    <Button
+                      variant={member.isActive ? "outlined" : "contained"}
+                      color={member.isActive ? "error" : "primary"}
+                      onClick={() => updateStatus.mutate({ id: member.id, isActive: !member.isActive })}
+                      disabled={updateStatus.isPending}
+                      sx={{ borderRadius: '12px', fontWeight: 800, minWidth: '100px', height: '36px' }}
+                    >
+                      {member.isActive ? "Suspend" : "Reinstate"}
+                    </Button>
+                  )}
+                  {isOwner && member.status !== "REMOVED" && member.role !== "OWNER" && member.id !== currentUser.id && (
+                    <Button
+                      color="error"
+                      onClick={() => setRemoving(member)}
+                      sx={{ borderRadius: '12px', fontWeight: 700, height: '36px' }}
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </Box>
               </ListItem>
               {index < staff.length - 1 && <Box sx={{ height: '1px', bgcolor: 'divider', ml: { xs: 2.5, sm: 3 }, mr: { xs: 2.5, sm: 3 } }} />}
@@ -292,7 +312,7 @@ export function StaffManagementPage() {
                   onChange={(e) => setInviteData({ ...inviteData, role: e.target.value })}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                 >
-                  <MenuItem value="STORE_MANAGER">Store Manager</MenuItem>
+                  <MenuItem value="MANAGER">Manager</MenuItem>
                   <MenuItem value="TAILOR">Tailor</MenuItem>
                   <MenuItem value="FRONT_DESK">Front Desk Member</MenuItem>
                 </TextField>
@@ -315,16 +335,6 @@ export function StaffManagementPage() {
                   ))}
                 </TextField>
 
-                <TextField
-                  label="Temporary Password"
-                  required
-                  fullWidth
-                  size="small"
-                  value={inviteData.initialPassword}
-                  onChange={(e) => setInviteData({ ...inviteData, initialPassword: e.target.value })}
-                  placeholder="Set temp password"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
-                />
               </Stack>
             </Box>
           </DialogContent>
@@ -342,6 +352,60 @@ export function StaffManagementPage() {
           </DialogActions>
         </form>
       </Dialog>
+      {/* AC 8.3: second step of removal */}
+      <Dialog open={!!removing} onClose={() => setRemoving(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800 }}>Remove {removing?.fullName}?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            They will lose access immediately and permanently. Everything they recorded stays in your
+            history, marked as former staff. You can re-invite them later.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={() => setRemoving(null)} sx={{ color: 'text.secondary' }}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={removeStaff.isPending}
+            onClick={() => removing && removeStaff.mutate(removing.id, { onSuccess: () => setRemoving(null) })}
+            sx={{ borderRadius: '12px', fontWeight: 700 }}
+          >
+            Remove access
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* US-8.8 / AC 8.5: immutable access log */}
+      {isOwner && (
+        <Card sx={{ mt: 3, borderRadius: '24px', border: '1px solid', borderColor: 'divider', p: 3 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5 }}>Access log</Typography>
+          {(accessLog ?? []).length === 0 ? (
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>No access changes yet.</Typography>
+          ) : (
+            <Stack spacing={1}>
+              {accessLog!.map((entry) => (
+                <Typography key={entry.id} variant="body2">
+                  <strong>{entry.actorName ?? "System"}</strong> {describeAccessChange(entry)}{" "}
+                  <Typography component="span" variant="caption" sx={{ color: 'text.secondary' }}>
+                    · {new Date(entry.witnessedAt).toLocaleString()}
+                  </Typography>
+                </Typography>
+              ))}
+            </Stack>
+          )}
+        </Card>
+      )}
     </Box>
   )
+}
+
+function describeAccessChange(entry: { action: string; metadata: Record<string, unknown> }): string {
+  const name = String(entry.metadata.staffName ?? "a staff member")
+  switch (entry.action) {
+    case "STAFF_SUSPENDED": return `suspended ${name}`
+    case "STAFF_REINSTATED": return `reinstated ${name}`
+    case "STAFF_REMOVED": return `removed ${name}`
+    case "STAFF_ROLE_CHANGED": return `changed ${name}'s role from ${entry.metadata.fromRole} to ${entry.metadata.toRole}`
+    default: return entry.action
+  }
 }
