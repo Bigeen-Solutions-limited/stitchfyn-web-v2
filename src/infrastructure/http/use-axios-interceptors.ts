@@ -7,7 +7,7 @@ import { useAuthStore } from '../../features/auth/auth.store';
 import { parseApiError } from '../../lib/errors/parse-api-error';
 import type { ErrorMessage } from '../../lib/errors/error-messages';
 
-// Mutex state (module scope)
+// Shared across requests so only one token refresh runs at a time
 let isRefreshing = false;
 
 interface QueuedRequest {
@@ -33,12 +33,11 @@ export function useAxiosInterceptors() {
   const interceptorId = useRef<number | null>(null);
 
   useLayoutEffect(() => {
-    // Eject existing interceptor if any
     if (interceptorId.current !== null) {
       apiClient.interceptors.response.eject(interceptorId.current);
     }
 
-    // Register 401 Mutex + Navigation Interceptor
+    // On 401, refresh once and retry; send people to login or the 403 page when needed
     interceptorId.current = apiClient.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
@@ -46,7 +45,6 @@ export function useAxiosInterceptors() {
           _retry?: boolean;
         };
 
-        // 1. Handle 401 Unauthorized (Session Expired or Missing)
         if (error.response?.status === 401 && !originalRequest._retry) {
           if (isRefreshing) {
             return new Promise<string>((resolve, reject) => {
@@ -82,11 +80,7 @@ export function useAxiosInterceptors() {
             isRefreshing = false;
             useAuthStore.getState().clearAuth();
 
-            // Use useNavigate hook!
-            // /verify-email must stay excluded: it's a public link mailed to an
-            // unauthenticated owner (Company Owner Email Verification flow) — the
-            // silent-refresh-on-boot 401 it causes must not bounce them to /login
-            // before they get a chance to submit the token + password.
+            // /verify-email is a public link, so its expected 401 must not bounce people to login
             if (
               window.location.pathname !== "/login" &&
               window.location.pathname !== "/" &&
@@ -99,7 +93,6 @@ export function useAxiosInterceptors() {
           }
         }
 
-        // 2. Handle 403 Forbidden
         if (error.response?.status === 403) {
           if (window.location.pathname !== "/403") {
             navigate('/403');
@@ -107,25 +100,7 @@ export function useAxiosInterceptors() {
           return Promise.reject(error);
         }
 
-        // 3. Handle 5xx Errors (Server side) - DEACTIVATED
-        /*
-        if (error.response && error.response.status >= 500) {
-          if (window.location.pathname !== "/500") {
-            navigate('/500');
-          }
-          return Promise.reject(error);
-        }
-        */
-
-        // 4. Handle Network Errors (Server unreachable) - DEACTIVATED
-        /*
-        if (!error.response && error.message === "Network Error") {
-          navigate('/500');
-          return Promise.reject(error);
-        }
-        */
-
-        // 5. Attach parsed error
+        // Attach a friendly message for callers to show
         const parsedError = parseApiError(error);
         (error as AxiosError & { parsedError?: ErrorMessage }).parsedError = parsedError;
 

@@ -43,7 +43,7 @@ export interface WorkflowNode {
   estimated_duration_hours?: number;
 }
 
-export type WorkflowEdge = [string, string]; // [sourceStageId, targetStageId]
+export type WorkflowEdge = [string, string]; // [from stage, to stage]
 
 export interface WorkflowGraph {
   nodes: WorkflowNode[];

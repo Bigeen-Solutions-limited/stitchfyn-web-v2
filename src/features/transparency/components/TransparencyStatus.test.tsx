@@ -8,9 +8,7 @@ vi.mock('../hooks/useProjection', () => ({
   useProjection: vi.fn(),
 }))
 
-// Real flat shape proven by the backend integration suite
-// (transparency-store-status.integration.test.ts, test 1): capacityUtilization=75
-// maps to uiHint=AMBER, displayStatus='Heavy Load'. Deliberately has no `summary` key.
+// The real response for 75% utilisation (amber, "Heavy Load"), as returned by the server
 const AMBER_BUNDLE: VisibilityBundle = {
   capacity: { status: 'HEAVY', utilization: 75 },
   trust: { status: 'VERIFIED' },
@@ -20,8 +18,7 @@ const AMBER_BUNDLE: VisibilityBundle = {
   syncedAt: new Date().toISOString(),
 }
 
-// Real Slice 5B empty-state shape (transparency-store-status.integration.test.ts, test 2):
-// no projection row yet -> UNKNOWN/GRAY/"Insufficient Data", never a fabricated GREEN.
+// The real response when there is no data yet: grey, never a made-up green
 const GRAY_BUNDLE: VisibilityBundle = {
   capacity: { status: 'UNKNOWN' },
   trust: { status: 'UNKNOWN' },

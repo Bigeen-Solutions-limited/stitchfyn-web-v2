@@ -17,10 +17,9 @@ export function useUpdateMeasurements(id: string) {
     mutationFn: (measurements: Record<string, number>) => 
       customersApi.updateMeasurements(id, measurements),
     onSuccess: () => {
-      // Rule 3: Ensure invalidation of both customerProfile and customers list
+      // Refresh the profile and every customer list, so "last active" is current
       queryClient.invalidateQueries({ queryKey: keys.customers.detail(id) });
       queryClient.invalidateQueries({ queryKey: keys.customers.list(1, 10, '') }); // Invalidate general list to refresh "last active" data
-      // For a more robust approach, we can invalidate all list variations
       queryClient.invalidateQueries({ queryKey: ['customers', 'list'] });
     },
   });

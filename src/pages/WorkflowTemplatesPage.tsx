@@ -36,8 +36,6 @@ import {
 } from '../features/workflow/hooks/useWorkflowTemplates';
 import type { WorkflowTemplate } from '../features/workflow/workflow.api';
 
-// ─── Template Stage Panel ──────────────────────────────────────────────────────
-
 interface StagePanelProps {
   template: WorkflowTemplate;
 }
@@ -219,8 +217,6 @@ const StagePanel: React.FC<StagePanelProps> = ({ template }) => {
   );
 };
 
-// ─── Template Card ─────────────────────────────────────────────────────────────
-
 const TemplateCard: React.FC<{ template: WorkflowTemplate }> = ({ template }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -269,8 +265,6 @@ const TemplateCard: React.FC<{ template: WorkflowTemplate }> = ({ template }) =>
     </Card>
   );
 };
-
-// ─── Create Template Dialog ────────────────────────────────────────────────────
 
 interface CreateDialogProps {
   open: boolean;
@@ -332,8 +326,6 @@ const CreateTemplateDialog: React.FC<CreateDialogProps> = ({ open, onClose }) =>
     </Dialog>
   );
 };
-
-// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export const WorkflowTemplatesPage: React.FC = () => {
   const { data: templates = [], isLoading } = useWorkflowTemplates();

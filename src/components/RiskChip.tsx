@@ -7,10 +7,7 @@ interface RiskChipProps extends Omit<ChipProps, 'color'> {
   status: RiskStatus;
 }
 
-/**
- * RiskChip component derived from the custom 'risk' palette tokens.
- * This is the ONLY component allowed to use risk coloring for status.
- */
+// The only component allowed to use the risk colours for status
 export function RiskChip({ status, sx, ...props }: RiskChipProps) {
   const theme = useTheme();
 

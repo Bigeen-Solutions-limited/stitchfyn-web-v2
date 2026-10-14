@@ -11,7 +11,7 @@ const initialState: AuthState = {
   user: null,
   accessToken: null,
   isAuthenticated: false,
-  isLoading: true, // App starts in loading state to check silent refresh
+  isLoading: true, // true until the startup session check finishes
 };
 
 export const useAuthStore = create<AuthState & AuthActions>((set) => ({

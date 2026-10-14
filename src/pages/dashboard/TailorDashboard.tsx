@@ -20,8 +20,6 @@ import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '../../features/dashboard/analytics.api';
 import { keys } from '../../query/keys';
 
-// ─── Animated counter card ───────────────────────────────────────
-
 interface StatCardProps {
   label: string;
   value: number;
@@ -75,8 +73,6 @@ function StatCard({ label, value, icon: Icon, accentColor }: StatCardProps) {
     </Card>
   );
 }
-
-// ─── Main ────────────────────────────────────────────────────────
 
 export const TailorDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -162,7 +158,7 @@ export const TailorDashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* FAB */}
+      {/* New order button */}
       <Button
         onClick={() => navigate('/orders/new')}
         sx={{

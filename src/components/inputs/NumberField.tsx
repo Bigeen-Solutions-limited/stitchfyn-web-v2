@@ -21,12 +21,12 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   '& .MuiInputBase-input': {
     fontWeight: 700,
     fontSize: '1rem',
-    /* Hide spin buttons Chrome, Safari, Edge, Opera */
+    /* Hide the number spinners in Chrome, Safari and Edge */
     '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
       '-webkit-appearance': 'none',
       margin: 0,
     },
-    /* Hide spin buttons Firefox */
+    /* and in Firefox */
     '&[type=number]': {
       '-moz-appearance': 'textfield',
     },
@@ -51,13 +51,12 @@ export const NumberField = React.forwardRef<HTMLDivElement, NumberFieldProps>((p
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    // Allow empty string for clearing input
     if (val === "") {
         onChange?.("");
         return;
     }
 
-    // RegEx to allow only numbers and a single decimal point
+    // Digits and at most one decimal point
     const match = val.match(/^[0-9]*\.?[0-9]*$/);
     if (match) {
         onChange?.(parseFloat(val));
@@ -68,14 +67,14 @@ export const NumberField = React.forwardRef<HTMLDivElement, NumberFieldProps>((p
     <StyledTextField
       {...rest}
       ref={ref}
-      value={value === 0 ? "" : value} // Show empty string instead of 0 for initialization
+      value={value === 0 ? "" : value} // show an empty box rather than 0
       onChange={handleChange}
       onKeyDown={handleKeyDown}
       autoComplete="off"
-      type="text" // Using text with regex to completely control the numeric input and avoid browser numeric behaviors
+      type="text" // text plus our own check, to avoid the browser's number-input quirks
       inputProps={{
         inputMode: 'decimal',
-        onWheel: (e: any) => e.target.blur(), // Prevent accidental scroll changes
+        onWheel: (e: any) => e.target.blur(), // stop the mouse wheel changing the value
         ...rest.inputProps,
       }}
     />

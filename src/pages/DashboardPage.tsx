@@ -34,8 +34,6 @@ export const DashboardPage: React.FC = () => {
 
   const hasOrders = (data?.totalActiveOrders || 0) > 0;
 
-  // Role names from auth.types.ts: 'OWNER' | 'MANAGER' | 'TAILOR' | 'CUSTOMER'
-  
   if (role === 'TAILOR') {
     if (!hasOrders) return <TailorDashboardEmpty />;
     return <TailorDashboard />;
@@ -49,6 +47,6 @@ export const DashboardPage: React.FC = () => {
     return <ClientDashboard />;
   }
 
-  // Fallback or unauthorized
+  // Any other role sees the empty dashboard
   return <TailorDashboardEmpty />;
 };

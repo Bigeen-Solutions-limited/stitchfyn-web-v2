@@ -39,7 +39,6 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showCard, setShowCard] = useState(false);
   
-  // Auth state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +51,7 @@ export function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    // Phone login is not yet implemented on the backend, showing mock behavior
+    // Phone login isn't built on the server yet, so this only simulates it
     setTimeout(() => {
       setLoading(false);
       setError('Phone authentication is currently unavailable. Please use Email login.');

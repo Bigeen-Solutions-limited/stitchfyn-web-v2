@@ -7,7 +7,7 @@ export function useWorkflowTemplates() {
   return useQuery({
     queryKey: keys.workflow.templates,
     queryFn: () => workflowApi.getTemplates(),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 }
 

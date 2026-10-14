@@ -56,11 +56,7 @@ export function CollectionChecklistPanel({ orderId, lockedAt, canInitiate }: Pro
     },
   });
 
-  // US-4.8's own backend-authoritative readiness signal — a UX gate only.
-  // The tailor-signoff endpoint enforces the same condition independently;
-  // this query exists so the button can reflect that truthfully instead
-  // of relying on the pre-existing, structurally-unreachable
-  // garments.status check (see STITCHFYN_US4_8_FINAL_QUALITY_REVIEW_DISCOVERY.md §7).
+  // Whether the order is ready for the final quality check; the server enforces the same rule
   const { data: readiness } = useQuery({
     queryKey: readinessKey,
     queryFn: () => collectionApi.getReadiness(orderId),
@@ -107,7 +103,7 @@ export function CollectionChecklistPanel({ orderId, lockedAt, canInitiate }: Pro
         Final Quality Review
       </Typography>
 
-      {/* Lock banner — always shown when order is permanently archived */}
+      {/* Shown once the order is permanently archived */}
       {lockedAt && (
         <Stack
           direction="row"
@@ -130,7 +126,7 @@ export function CollectionChecklistPanel({ orderId, lockedAt, canInitiate }: Pro
         </Stack>
       )}
 
-      {/* State A — checklist does not exist */}
+      {/* No checklist yet */}
       {(is404 || (!checklist && !isLoading)) && (
         <>
           {isReady && canInitiate && !lockedAt && (
@@ -165,18 +161,12 @@ export function CollectionChecklistPanel({ orderId, lockedAt, canInitiate }: Pro
         </>
       )}
 
-      {/* States B, C, D — checklist exists */}
+      {/* Checklist exists */}
       {checklist && (
         <Stack spacing={2}>
           <ItemList items={checklist.items} />
 
-          {/* State B — tailor's final quality review not yet completed.
-              canInitiate mirrors the same OWNER/MANAGER/TAILOR set that
-              holds Capability.UPDATE_PRODUCTION server-side — the backend
-              (not this check) is the actual authority. Disabled rather
-              than hidden when not ready, matching the disabled+hint
-              pattern already established for the QC/Collection Review
-              Photo Gate. */}
+          {/* Tailor's final quality check not done yet; disabled with a hint until the order is ready */}
           {!checklist.tailorSignoffAt && !lockedAt && canInitiate && (
             <Stack spacing={1} alignItems="flex-start">
               <Button
@@ -209,7 +199,7 @@ export function CollectionChecklistPanel({ orderId, lockedAt, canInitiate }: Pro
             </Stack>
           )}
 
-          {/* State C — tailor's review complete, customer pending */}
+          {/* Tailor done, waiting on the customer */}
           {checklist.tailorSignoffAt && !checklist.customerSignoffAt && (
             <Stack spacing={1.5}>
               <Stack direction="row" spacing={1} alignItems="center">
@@ -244,7 +234,7 @@ export function CollectionChecklistPanel({ orderId, lockedAt, canInitiate }: Pro
             </Stack>
           )}
 
-          {/* State D — both signed off */}
+          {/* Both sides signed off */}
           {checklist.tailorSignoffAt && checklist.customerSignoffAt && (
             <Stack spacing={1.5}>
               <Stack direction="row" spacing={1} alignItems="center">

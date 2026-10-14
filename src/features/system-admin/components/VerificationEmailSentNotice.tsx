@@ -3,12 +3,7 @@ interface Props {
   onDismiss: () => void
 }
 
-/**
- * VerificationEmailSentNotice
- * Confirms company provisioning after CreateCompany submits. The owner sets
- * their own password via the emailed verification link — no credential is
- * shown or held here.
- */
+// The new owner sets their password from the emailed link, so no password is shown here
 export function VerificationEmailSentNotice({ ownerEmail, onDismiss }: Props) {
   return (
     <div style={{

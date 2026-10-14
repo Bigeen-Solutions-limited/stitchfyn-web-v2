@@ -1,10 +1,6 @@
 import type { ThemeOptions } from "@mui/material/styles"
 
-/**
- * SPECIAL RULE:
- * Deadline values on order views must always render as variant="h5" or larger.
- * This ensures high visibility for critical time-sensitive information.
- */
+// Deadlines on order screens must use h5 or larger
 export const typography: ThemeOptions["typography"] = {
   fontFamily: "'Inter', system-ui, sans-serif",
   h1: {

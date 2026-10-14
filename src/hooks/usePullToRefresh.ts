@@ -11,7 +11,7 @@ export function usePullToRefresh({ onRefresh, threshold = 80 }: PullToRefreshOpt
   const [refreshing, setRefreshing] = useState(false);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    // Only allow pull to refresh if we're at the top of the page
+    // Only from the top of the page
     if (window.scrollY === 0) {
       setStartY(e.touches[0].pageY);
     } else {
@@ -26,11 +26,10 @@ export function usePullToRefresh({ onRefresh, threshold = 80 }: PullToRefreshOpt
     const delta = currentY - startY;
 
     if (delta > 0) {
-      // Add resistance
+      // Make the pull feel heavier the further it goes
       const resistanceDelta = Math.pow(delta, 0.85);
       setPullDelta(resistanceDelta);
       
-      // Prevent scrolling while pulling
       if (delta > 10 && e.cancelable) {
         e.preventDefault();
       }

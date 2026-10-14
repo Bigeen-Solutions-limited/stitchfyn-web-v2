@@ -52,8 +52,6 @@ import { QueryLoading, QueryError, QueryEmpty } from '../components/feedback/Que
 import { useAvailableTransitions, useAttemptTransition } from '../features/production/hooks/useProductionMutation';
 import '../design-system/layout.css';
 
-// ─── Constants & Helpers ────────────────────────────────────────
-
 const STATUS_CONFIG: Record<string, { color: string; bgColor: string }> = {
   'Cutting':   { color: '#1a2340',          bgColor: 'rgba(26,35,64,0.07)'   },
   'Sewing':    { color: '#2d6a8f',          bgColor: 'rgba(45,106,143,0.08)' },
@@ -80,8 +78,6 @@ const formatTableDate = (dateStr?: string) => {
   if (!dateStr) return '--';
   try { return format(new Date(dateStr), 'MMM d, yyyy'); } catch { return dateStr; }
 };
-
-// ─── KPI Card ───────────────────────────────────────────────────
 
 interface KPICardProps {
   title: string;
@@ -131,8 +127,6 @@ function KPICard({ title, value, icon, accentColor }: KPICardProps) {
     </Card>
   );
 }
-
-// ─── Quick Update Modal ─────────────────────────────────────────
 
 interface QuickUpdateModalProps {
   task: ActiveFloorTask | null;
@@ -245,8 +239,6 @@ function QuickUpdateModal({ task, onClose }: QuickUpdateModalProps) {
   );
 }
 
-// ─── Execution Dialog ───────────────────────────────────────────
-
 interface ExecutionDialogProps {
   task: ActiveFloorTask | null;
   onClose: () => void;
@@ -298,8 +290,6 @@ function ExecutionDialog({ task, onClose }: ExecutionDialogProps) {
     </Dialog>
   );
 }
-
-// ─── Task Mobile Card ───────────────────────────────────────────
 
 interface TaskMobileCardProps {
   task: ActiveFloorTask;
@@ -395,8 +385,6 @@ function TaskMobileCard({ task, onQuickUpdate, navigate }: TaskMobileCardProps) 
     </Card>
   );
 }
-
-// ─── Main Page ─────────────────────────────────────────────────
 
 export function ProductionBoardPage() {
   const navigate = useNavigate();
@@ -496,7 +484,6 @@ export function ProductionBoardPage() {
   return (
     <Box sx={{ p: { xs: 2.5, md: 4, lg: 6 }, maxWidth: 1600, mx: 'auto', pb: 12 }}>
 
-      {/* Page header */}
       <Box sx={{ mb: 5 }}>
         <Stack
           direction={{ xs: 'column', md: 'row' }}

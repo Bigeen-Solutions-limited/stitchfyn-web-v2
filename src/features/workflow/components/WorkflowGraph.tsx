@@ -10,23 +10,13 @@ interface WorkflowGraphProps {
   orderId: string;
 }
 
-/**
- * Mandatory QC/Collection Review Photo Gate — PRD Epic 4 AC #5, the one
- * named exception to progress photos being optional everywhere else
- * (US-4.3). Mirrors WorkflowService.reportStageCompletion's own
- * QC_COLLECTION_REVIEW_STAGE_ID exactly (matched by stage id, the same
- * convention that stage's `qc_passed` notification milestone already
- * uses) — this is a UX mirror only. The backend independently rejects a
- * completion with no qualifying photo (409 PROGRESS_PHOTO_REQUIRED)
- * regardless of what this constant says.
- */
+// The quality check stage needs at least one photo before it can be completed; the server enforces this too.
 const QC_COLLECTION_REVIEW_STAGE_ID = 'qc';
 
 export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
   const { data: workflow, isLoading } = useGarmentWorkflow(garmentId);
   const reportCompletion = useReportStageCompletion(garmentId, orderId);
-  // Staff Progress-Photo Capture UI — one query for the whole garment,
-  // filtered per-stage below, rather than one query per row.
+  // One request for all of the garment's photos, split by stage below
   const { data: progressPhotos } = useProgressPhotos(garmentId);
 
   if (isLoading) return <div className="p-md text-muted animate-pulse">Syncing Workflow DAG...</div>;
@@ -35,12 +25,7 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
   const { stages, graphDefinition } = workflow;
   const edges: WorkflowEdge[] = graphDefinition?.edges || [];
 
-  /**
-   * Sequential DAG Enforcement
-   * 
-   * For each stage, determine if it is "unlocked" (all upstream dependencies
-   * have been completed). Root nodes (no incoming edges) are always unlocked.
-   */
+  // A stage is unlocked once every stage before it is complete; the first stages are always unlocked.
   const getUpstreamDependencies = (stageId: string): string[] => {
     return edges
       .filter(([, target]) => target === stageId)
@@ -48,8 +33,7 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
   };
 
   const isStageUnlocked = (stage: StageInstance): boolean => {
-    // Robust, fail-safe check for dependencies as per requirements
-    // Force it to be an array, handling nulls, undefined, or strings.
+    // The server may send dependencies as null, a string or an array, so normalise to an array
     let safeDeps: string[] = [];
     if ('dependencies' in stage) {
        const stageDeps = (stage as any).dependencies;
@@ -58,13 +42,11 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
         : (stageDeps ? JSON.parse(stageDeps as string) : []);
        safeDeps = parsedDeps.filter((dep: any) => typeof dep === 'string' && dep.trim() !== '');
     } else {
-       // Fallback to our existing edges computation
        safeDeps = getUpstreamDependencies(stage.stageId).filter(dep => typeof dep === 'string' && dep.trim() !== '');
     }
 
     const isRootNode = safeDeps.length === 0;
 
-    // Condition B: All upstream parents must be COMPLETED
     const isUnlocked = isRootNode || safeDeps.every((depId: string) => {
       const depStage = stages.find(s => s.stageId === depId);
       return depStage?.status === 'COMPLETED';
@@ -87,18 +69,12 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
           const isCompleted = stage.status === 'COMPLETED';
           const unlocked = isStageUnlocked(stage);
           
-          // An ACTIVE stage is always actionable, preserving backend-driven overrides (like Quick Update).
-          // However, if a stage is legally unlocked by the chronological DAG but falls out of ACTIVE state (due to an admin override leapfrogging it), it should still be conditionally actionable to recover completion flow.
+          // In-progress stages can always be worked on; an unlocked stage skipped by an admin override can still be completed.
           const isActionable = stage.status === 'IN_PROGRESS' || (unlocked && !isCompleted);
           const isLocked = !isActionable && !isCompleted && !unlocked;
 
-          // Staff Progress-Photo Capture UI — US-4.3. Computed once per
-          // stage so both the mandatory-gate check below and the capture
-          // control further down use the identical filtered list.
           const stagePhotos = (progressPhotos ?? []).filter((p) => p.stageId === stage.stageId);
 
-          // Mandatory QC/Collection Review Photo Gate — see the module-level
-          // comment on QC_COLLECTION_REVIEW_STAGE_ID above.
           const isQcCollectionReviewStage = stage.stageId === QC_COLLECTION_REVIEW_STAGE_ID;
           const missingRequiredQcPhoto = isQcCollectionReviewStage && stagePhotos.length === 0;
 
@@ -176,13 +152,7 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
                   )}
                 </div>
 
-                {/* Staff Progress-Photo Capture UI — US-4.3. Locked/
-                    not-yet-active stages show nothing here, per the locked
-                    product decision. Active stages show existing photos
-                    plus the capture control (hidden once the stage already
-                    has MAX_PROGRESS_PHOTOS_PER_STAGE_UI_HINT — the backend
-                    is the real enforcement). Completed stages retain their
-                    photos as historical evidence with no capture action. */}
+                {/* Photos: none for locked stages, capture for active ones (up to the limit), read-only once complete. */}
                 {!isLocked && (() => {
                   const canCapturePhoto = isActionable && stagePhotos.length < MAX_PROGRESS_PHOTOS_PER_STAGE_UI_HINT;
                   if (stagePhotos.length === 0 && !canCapturePhoto) return null;

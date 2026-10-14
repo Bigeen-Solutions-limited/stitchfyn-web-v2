@@ -74,7 +74,7 @@ export function useAssignUser(companyId: string) {
       showToast('User Assigned', 'User has been assigned to the company.', 'success')
     },
     onError: (error: any) => {
-      if (error.response?.status === 409) return // handled inline in component
+      if (error.response?.status === 409) return // the form shows this one itself
       showToast('Error', error.response?.data?.message || 'Failed to assign user', 'error')
     },
   })

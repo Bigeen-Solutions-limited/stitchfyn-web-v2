@@ -2,8 +2,7 @@ import axios from 'axios';
 import { apiClient } from '../../infrastructure/http/axios.client';
 import type { Garment } from './orders.api';
 
-// US-3.3: quantity is no longer submitted here — it was already recorded
-// on the garment at intake; confirming acknowledges that existing value.
+// Quantity is recorded at intake, so confirming doesn't send it
 export interface ConfirmFabricRequest {
   fabric_photo_id?: string | null;
 }
@@ -17,7 +16,7 @@ export interface GarmentSeal {
   fabricPhotoId: string | null;
   quantityConfirmed: string;
   generatedAt: string;
-  qrCodeDataUrl: string; // data:image/png;base64,...
+  qrCodeDataUrl: string; // a data: URL of a PNG
 }
 
 export interface PublicSealView {
@@ -30,7 +29,7 @@ export interface PublicSealView {
   qrCodeDataUrl: string;
 }
 
-// Authenticated — staff only
+// Staff only
 export const sealApi = {
   getGarmentSeal: async (orderId: string, garmentId: string): Promise<GarmentSeal> => {
     const { data } = await apiClient.get<GarmentSeal>(
@@ -39,8 +38,7 @@ export const sealApi = {
     return data;
   },
 
-  // channel is deliberately omitted — the backend defaults to 'in_person'
-  // when it's not sent, which is exactly this action's purpose.
+  // No channel sent: the server records in-person confirmation by default
   confirmFabric: async (garmentId: string, body: ConfirmFabricRequest = {}): Promise<Garment> => {
     const { data } = await apiClient.post<Garment>(
       `/garments/${garmentId}/confirm-fabric`,
@@ -50,7 +48,7 @@ export const sealApi = {
   },
 };
 
-// Unauthenticated — uses a bare axios instance, no Bearer token attached
+// No login token: anyone can verify a seal
 const publicClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: { 'Content-Type': 'application/json' },

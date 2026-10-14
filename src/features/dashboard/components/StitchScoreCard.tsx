@@ -63,7 +63,6 @@ export const StitchScoreCard: React.FC = () => {
     );
   }
 
-  // ACTIVE State
   return (
     <Card sx={{ p: { xs: 3, md: 4 }, borderRadius: '16px', backgroundImage: 'none', bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', position: 'relative', overflow: 'hidden' }}>
       {isFoundingMember && (
@@ -139,7 +138,6 @@ export const StitchScoreCard: React.FC = () => {
   );
 };
 
-// Helper sub-component
 const MetricBar = ({ label, value, color }: { label: string, value: number, color: string }) => (
   <Box>
     <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 1 }}>

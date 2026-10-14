@@ -12,9 +12,7 @@ vi.mock('../seal.api', () => ({
   },
 }))
 
-// US-3.3: defaults to a garment with a recorded quantity — the normal case
-// where the tailor already logged it at intake. Pass nulls to exercise the
-// "not recorded yet" path.
+// Defaults to a garment whose quantity was recorded at intake; pass nulls for "not recorded"
 function renderPanel(quantity: number | null = 5, quantityUnit: string | null = 'yards') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -65,9 +63,9 @@ describe('FabricSealPanel', () => {
     expect(screen.getByText(/5 yards/i)).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: /quantity/i })).not.toBeInTheDocument()
 
-    // Dialog's own submit button shares the same accessible name — take the last one (in the dialog)
+    // The dialog's submit button has the same name, so take the last one
     const dialogSubmit = screen.getAllByRole('button', { name: /confirm fabric/i }).at(-1)!
-    expect(dialogSubmit).not.toBeDisabled() // quantity already recorded — nothing to type
+    expect(dialogSubmit).not.toBeDisabled()
 
     fireEvent.click(dialogSubmit)
 
@@ -100,8 +98,7 @@ describe('FabricSealPanel', () => {
     await waitFor(() => {
       expect(sealApi.confirmFabric).toHaveBeenCalledTimes(1)
     })
-    // Dialog closes on success; the remaining trigger button must stay disabled
-    // (mutation.isSuccess), not re-openable for a second submit.
+    // After success the trigger stays disabled so it can't be submitted twice
     await waitFor(() => {
       const trigger = screen.getByRole('button', { name: /confirm fabric/i })
       expect(trigger).toBeDisabled()
@@ -117,7 +114,6 @@ describe('FabricSealPanel', () => {
     fireEvent.click(screen.getAllByRole('button', { name: /confirm fabric/i }).at(-1)!)
 
     expect(await screen.findByText(/failed to confirm fabric/i)).toBeInTheDocument()
-    // Dialog stays open on failure — recorded quantity is still shown
     expect(screen.getByText(/5 yards/i)).toBeInTheDocument()
   })
 })

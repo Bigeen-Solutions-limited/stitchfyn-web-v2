@@ -155,7 +155,7 @@ export function OrderDetailPage() {
         subtitle={`Event: ${new Date(order.eventDate).toLocaleDateString()}`}
       />
 
-      {/* 1. Global Header - Desktop Only */}
+      {/* Header, desktop only */}
       <Card 
         elevation={0} 
         className="sf-glass" 
@@ -281,10 +281,10 @@ export function OrderDetailPage() {
       </Box>
 
       <Grid container spacing={4}>
-        {/* 2. Left Sidebar (4 Columns) */}
+        {/* Left column */}
         <Grid size={{xs: 12, md: 4}}>
           <Stack spacing={3}>
-            {/* Component A: Client Perimeter */}
+            {/* Client details */}
             <Card className="sf-card" sx={{ p: 3, borderRadius: 3 }}>
               <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>Client Perimeter</Typography>
               <Stack spacing={2}>
@@ -303,12 +303,12 @@ export function OrderDetailPage() {
               </Stack>
             </Card>
 
-            {/* Payment Ledger — OWNER / MANAGER only */}
+            {/* Payments: owners and managers only */}
             {isCompanyAdminOrManager && (
               <PaymentPanel orderId={order.id} />
             )}
 
-            {/* Component B: Garment Selector */}
+            {/* Garment picker */}
             <Card className="sf-card" sx={{ p: 3, borderRadius: 3 }}>
               <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>Garment Inventory</Typography>
               <Stack spacing={1} sx={{ mb: 3 }}>
@@ -467,7 +467,7 @@ export function OrderDetailPage() {
                               title={waitingFor(flags)}
                               placement="top"
                             >
-                              {/* span needed so Tooltip works on disabled button */}
+                              {/* A disabled button can't show a tooltip, so wrap it */}
                               <span style={{ display: 'block' }}>{btn}</span>
                             </Tooltip>
                           );
@@ -480,7 +480,6 @@ export function OrderDetailPage() {
               })()}
             </Card>
 
-            {/* Component C: Quick Actions */}
             <Card className="sf-card" sx={{ p: 3, borderRadius: 3 }}>
               <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>Quick Actions</Typography>
               <Stack spacing={2}>
@@ -490,10 +489,10 @@ export function OrderDetailPage() {
           </Stack>
         </Grid>
 
-        {/* 3. Main Content Area (8 Columns) */}
+        {/* Main column */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* Component A: Garment Evidence */}
+            {/* Selected garment */}
             <Card className="sf-card" sx={{ p: 4, borderRadius: 3 }}>
               {selectedGarment ? (
                 <Stack spacing={4}>
@@ -573,16 +572,12 @@ export function OrderDetailPage() {
                     </Grid>
                   </Grid>
 
-                  {/* Fabric Evidence Capture — keyed by garment so capture
-                      state (selected file, this-session uploads) never
-                      leaks from one garment to another when switching the
-                      selector above. */}
+                  {/* Keyed by garment so one garment's photos never show under another */}
                   <FabricEvidenceCapturePanel
                     key={selectedGarment.id}
                     garmentId={selectedGarment.id}
                   />
 
-                  {/* Fabric Safety Seal */}
                   <FabricSealPanel
                     orderId={order.id}
                     garmentId={selectedGarment.id}
@@ -590,24 +585,20 @@ export function OrderDetailPage() {
                     quantityUnit={selectedGarment.quantityUnit ?? null}
                   />
 
-                  {/* Material Audit Trail — US-3.7. Garment-scoped (contextId,
-                      not targetId), keyed by garment so switching the
-                      selector above swaps to that garment's own history
-                      rather than showing a stale one. */}
+                  {/* This garment's fabric history; keyed so switching garments never shows a stale one */}
                   <AuditTrailTimeline
                     key={`material-audit-${selectedGarment.id}`}
                     contextId={selectedGarment.id}
                     title="Material Audit Trail"
                   />
 
-                  {/* Design Brief */}
                   <DesignBriefPanel
                     orderId={order.id}
                     garmentId={selectedGarment.id}
                     garmentTier={order.garmentTier ?? 'STANDARD'}
                   />
 
-                  {/* Fitting Appointments — BESPOKE orders only */}
+                  {/* Fittings apply to bespoke orders only */}
                   {order.garmentTier === 'BESPOKE' && garments && (
                     <FittingsPanel
                       orderId={order.id}
@@ -617,7 +608,7 @@ export function OrderDetailPage() {
                     />
                   )}
 
-                  {/* Measurements Grid - Dense Key/Value format as requested */}
+                  {/* Measurements */}
                   <Box>
                     <Typography variant="caption" color="text.secondary" fontWeight={800} sx={{ textTransform: 'uppercase', mb: 2, display: 'block' }}>
                       Precision Measurements
@@ -673,7 +664,6 @@ export function OrderDetailPage() {
               )}
             </Card>
 
-            {/* Component B: Production Workflow */}
             <Card className="sf-card" sx={{ p: 0, borderRadius: 3, overflow: 'hidden' }}>
               <Box sx={{ px: 3, pt: 3, pb: 0, bgcolor: 'rgba(0,0,0,0.01)', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
@@ -707,12 +697,12 @@ export function OrderDetailPage() {
               </Box>
             </Card>
 
-            {/* LR-8: customer ↔ staff thread (AC 2.6) */}
+            {/* Messages between the customer and staff */}
             <Card className="sf-card" sx={{ borderRadius: 3, p: 3 }}>
               <OrderMessageThread orderId={order.id} />
             </Card>
 
-            {/* Component C: History Logs */}
+            {/* History */}
             <Grid size = {{xs: 12}}>
                 <Card className="sf-card" sx={{ height: '100%', borderRadius: 3, p: 3 }}>
                   <AuditTrailTimeline targetId={order.id} />
@@ -728,7 +718,6 @@ export function OrderDetailPage() {
         </Grid>
       </Grid>
 
-      {/* Collection Checklist — full-width below main grid */}
       <Card className="sf-card" sx={{ p: 3, borderRadius: 3, mt: 4 }}>
         <CollectionChecklistPanel
           orderId={order.id}
@@ -757,7 +746,7 @@ export function OrderDetailPage() {
         />
       )}
 
-      {/* Deposit acknowledgement dialog (D-1: OWNER/MANAGER, deposit step only) */}
+      {/* Owners and managers may waive only the deposit step, with a reason */}
       {bypassModal && selectedGarment && (
         <Dialog
           open={bypassModal.open}
@@ -859,7 +848,6 @@ export function OrderDetailPage() {
         </Dialog>
       )}
 
-      {/* Forensic Proof Dialog */}
       <Dialog
         open={showForensicProof}
         onClose={() => setShowForensicProof(false)}

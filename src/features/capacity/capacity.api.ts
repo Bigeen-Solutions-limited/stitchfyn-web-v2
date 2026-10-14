@@ -40,7 +40,7 @@ export const capacityApi = {
       } catch (error: any) {
         if (error.response?.status === 429 && retries < maxRetries) {
           retries++;
-          const delay = Math.pow(2, retries) * 500; // Exponential backoff: 1000ms, 2000ms, 4000ms
+          const delay = Math.pow(2, retries) * 500; // back off: 1s, 2s, 4s
           await sleep(delay);
           continue;
         }

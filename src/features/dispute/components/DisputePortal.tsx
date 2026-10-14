@@ -17,15 +17,7 @@ interface DisputePortalProps {
   orderId: string;
 }
 
-/**
- * DisputePortal
- * 
- * The Pure Projection Layer for REQ-014.
- * RESPONSIBILITY:
- * - Render the backend standoff projection.
- * - Provide command gates for evidence submission and resolution.
- * - Visual "Amber Alert" aesthetic for frozen workflows.
- */
+// Shows the dispute status from the server and the evidence and resolution actions
 export const DisputePortal: React.FC<DisputePortalProps> = ({ orderId }) => {
   const { data: projection, isLoading } = useDisputeProjection(orderId);
   const { mutate: submitEvidence } = useSubmitEvidence(orderId);

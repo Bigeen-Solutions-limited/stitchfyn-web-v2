@@ -1,14 +1,4 @@
-// Persistent local storage for fabric photos captured while offline.
-//
-// Deliberately a thin, hand-written wrapper over the native IndexedDB API
-// rather than a new dependency (Dexie/idb/localforage) — this app has zero
-// existing offline-storage infrastructure (see the offline capture &
-// synchronization discovery), and one small object store doesn't earn a
-// new library. Scope is intentionally narrow: this file only persists
-// fabric-evidence capture records, nothing else, and stores nothing beyond
-// what fabric-evidence.api.ts's upload call needs to retry —
-// specifically NOT an access token, NOT unrelated order/customer data, and
-// NOT a server-generated evidence id (none exists yet for a pending item).
+// Stores fabric photos taken offline in IndexedDB until they can be uploaded; never stores tokens or other data.
 
 import { MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES } from '../fabric-evidence.api';
 
@@ -17,12 +7,7 @@ const DB_VERSION = 1;
 const STORE_NAME = 'pending';
 const GARMENT_INDEX = 'garmentId';
 
-/**
- * Thrown by enqueuePendingEvidence() for a file over the 5 MiB product
- * limit. Distinct from a generic storage failure so callers can tell "this
- * was rejected because it's too large" apart from "IndexedDB itself
- * failed" and show the right message for each.
- */
+// A file over the 5 MB limit, kept separate from storage failures so the message can say which
 export class OversizedFabricEvidenceError extends Error {
   public readonly sizeBytes: number;
 
@@ -40,12 +25,12 @@ export type PendingFabricEvidenceStatus = 'pending' | 'syncing' | 'failed';
 export type PendingFabricEvidenceFailureReason = 'network' | 'authorization' | 'validation' | 'unknown';
 
 export interface PendingFabricEvidenceRecord {
-  /** Also the idempotency clientId sent to the server. */
+  // Also the idempotency key sent to the server
   id: string;
   garmentId: string;
   deviceId: string;
   imageFile: File;
-  /** Device capture time, ISO 8601 — becomes the audit record's occurredAt. */
+  // When the photo was taken, as reported by the device
   deviceCapturedAt: string;
   status: PendingFabricEvidenceStatus;
   failureReason?: PendingFabricEvidenceFailureReason;
@@ -80,18 +65,7 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
-/**
- * Persists a newly-captured photo as a pending item. Throws (never
- * silently no-ops) on any storage failure — including quota exceeded —
- * so the caller can surface a real error instead of claiming the photo is
- * safely queued when it isn't.
- *
- * Defense-in-depth: FabricEvidenceCapturePanel already rejects an oversized
- * file before it ever reaches this function, so this guard should never
- * actually fire via the normal UI flow — it exists for future callers,
- * programming error, or direct invocation, none of which this function can
- * assume were already validated upstream.
- */
+// Saves a new photo for later upload; throws on any failure so the app never claims it was saved when it wasn't
 export async function enqueuePendingEvidence(
   record: Omit<PendingFabricEvidenceRecord, 'status' | 'attempts' | 'createdAt'>,
 ): Promise<void> {

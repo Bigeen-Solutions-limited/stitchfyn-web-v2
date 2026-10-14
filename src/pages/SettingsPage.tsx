@@ -94,7 +94,7 @@ export const SettingsPage: React.FC = () => {
         boxShadow: '0 20px 60px rgba(0,0,0,0.05)',
         bgcolor: alpha('#fff', 0.8)
       }}>
-        {/* Navigation Pane */}
+        {/* Tab list */}
         <Box sx={{ 
           width: isMobile ? '100%' : 280, 
           borderRight: isMobile ? 'none' : '1px solid', 

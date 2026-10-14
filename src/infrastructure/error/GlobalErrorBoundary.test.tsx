@@ -27,8 +27,7 @@ describe('GlobalErrorBoundary', () => {
   });
 
   it('shows the fallback UI when a child throws during render', () => {
-    // React logs the caught error to the console (both its own dev warning and
-    // our componentDidCatch's own console.error) - expected noise for this test.
+    // React logs the caught error; silence that expected noise
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(

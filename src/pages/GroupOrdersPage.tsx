@@ -30,8 +30,6 @@ import { groupOrderApi, type GroupOrderListItem } from '../features/group-order/
 import { keys } from '../query/keys';
 import { showToast } from '../components/feedback/Toast';
 
-// ─── Create Dialog ─────────────────────────────────────────────────────────────
-
 interface CreateGroupDialogProps {
   open: boolean;
   onClose: () => void;
@@ -107,8 +105,6 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) 
   );
 };
 
-// ─── Group Card ────────────────────────────────────────────────────────────────
-
 const GroupCard: React.FC<{ group: GroupOrderListItem }> = ({ group }) => {
   const navigate = useNavigate();
   const eventDate = new Date(group.eventDate);
@@ -173,8 +169,6 @@ const GroupCard: React.FC<{ group: GroupOrderListItem }> = ({ group }) => {
     </Card>
   );
 };
-
-// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export const GroupOrdersPage: React.FC = () => {
   const [page, setPage] = useState(1);

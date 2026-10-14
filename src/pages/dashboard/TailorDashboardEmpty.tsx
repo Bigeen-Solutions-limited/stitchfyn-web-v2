@@ -190,7 +190,7 @@ export const TailorDashboardEmpty: React.FC = () => {
         </Grid>
       </Box>
 
-      {/* FAB */}
+      {/* New order button */}
       <Button
         onClick={() => navigate('/orders/new')}
         sx={{

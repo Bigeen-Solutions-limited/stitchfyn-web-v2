@@ -41,9 +41,7 @@ function getStageStyle(status: StageInstance['status']) {
 
 export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ garmentId }) => {
   const { data: workflow, isLoading } = useGarmentWorkflow(garmentId);
-  // Staff Progress-Photo Capture UI — read-only here (no capture action;
-  // that belongs to WorkflowGraph). Photos must remain visible on this tab
-  // too so they don't appear to "disappear" when switching from DAG View.
+  // Photos are shown read-only here too, so they don't seem to vanish when switching tabs
   const { data: progressPhotos } = useProgressPhotos(garmentId);
 
   if (isLoading) {
@@ -67,7 +65,7 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
 
   const { stages, graphDefinition } = workflow;
 
-  // Build ordered stage list using graphDefinition nodes order, falling back to stages array
+  // Order stages as the template does, falling back to the stage list
   const orderedNodes = graphDefinition?.nodes ?? [];
   const orderedStages = orderedNodes.length > 0
     ? orderedNodes
@@ -101,7 +99,6 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
         }}
       />
 
-      {/* Stage list */}
       <Stack spacing={0}>
         {orderedStages.map((stage, idx) => {
           const nodeInfo = graphDefinition?.nodes.find((n) => n.id === stage.stageId);
@@ -185,11 +182,7 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
                   )}
                 </Stack>
 
-                {/* Staff Progress-Photo Capture UI — read-only display.
-                    Shown for stages that have been reached (IN_PROGRESS,
-                    INHIBITED — started but currently flagged, COMPLETED);
-                    PENDING/BLOCKED (not yet active) show nothing, matching
-                    WorkflowGraph's own locked-stage rule. */}
+                {/* Photos for stages that have started; not-yet-started stages show none */}
                 {(stage.status === 'IN_PROGRESS' || stage.status === 'INHIBITED' || stage.status === 'COMPLETED') && (() => {
                   const stagePhotos = (progressPhotos ?? []).filter((p) => p.stageId === stage.stageId);
                   return <ProgressPhotoThumbnails photos={stagePhotos} />;

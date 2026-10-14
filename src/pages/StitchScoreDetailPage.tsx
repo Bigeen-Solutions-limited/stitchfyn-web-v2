@@ -21,8 +21,6 @@ import {
 } from '@mui/icons-material';
 import { useStitchScore } from '../features/dashboard/useStitchScore';
 
-// ─── Score Ring ────────────────────────────────────────────────────────────────
-
 const ScoreRing: React.FC<{ score: number }> = ({ score }) => {
   const color = score >= 80 ? '#1e5c3a' : score >= 60 ? '#d97706' : '#dc2626';
   const label = score >= 80 ? 'EXCELLENT' : score >= 60 ? 'GOOD' : 'NEEDS WORK';
@@ -61,8 +59,6 @@ const ScoreRing: React.FC<{ score: number }> = ({ score }) => {
     </Box>
   );
 };
-
-// ─── Metric Row ────────────────────────────────────────────────────────────────
 
 interface MetricRowProps {
   icon: React.ElementType;
@@ -117,8 +113,6 @@ const MetricRow: React.FC<MetricRowProps> = ({ icon: Icon, label, description, v
   </Box>
 );
 
-// ─── Qualifying Banner ─────────────────────────────────────────────────────────
-
 const QualifyingBanner: React.FC<{ progress: number }> = ({ progress }) => (
   <Card
     sx={{
@@ -160,8 +154,6 @@ const QualifyingBanner: React.FC<{ progress: number }> = ({ progress }) => (
     </Stack>
   </Card>
 );
-
-// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export const StitchScoreDetailPage: React.FC = () => {
   const { data, isLoading } = useStitchScore();

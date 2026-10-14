@@ -10,10 +10,6 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-/**
- * Route guard component for React Router.
- * Handles loading states, authentication, and RBAC.
- */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredPermission,
   allowedRoles,
@@ -23,7 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { hasCapability } = usePermissions();
   const location = useLocation();
 
-  // 1. App-wide silent refresh in progress
+  // Still checking the session
   if (isLoading) {
     return (
       <div className="full-screen-skeleton">
@@ -32,27 +28,24 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // 2. Not authenticated — send to login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 2.5. Authenticated but must change password — gate all other pages
+  // A required password change blocks every other page
   if (user?.mustChangePassword && location.pathname !== '/change-password') {
     return <Navigate to="/change-password" replace />;
   }
 
-  // 3. Authenticated but missing specific permission — treat as 404
+  // Missing permission looks like a missing page
   if (requiredPermission && !hasCapability(requiredPermission as any)) {
     return <Navigate to="/404" replace />;
   }
 
-  // 4. Authenticated but wrong role — cleanly intercept at router level
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     const fallback = user.role === 'TAILOR' ? '/production' : '/dashboard';
     return <Navigate to={fallback} replace />;
   }
 
-  // 5. Authorized — render children
   return <>{children}</>;
 };

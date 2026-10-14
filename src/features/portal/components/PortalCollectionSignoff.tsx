@@ -33,10 +33,9 @@ export function PortalCollectionSignoff({ portalToken }: Props) {
     },
   });
 
-  // render nothing if checklist not created yet or loading
+  // Nothing to show until the checklist exists and the tailor has signed
   if (isLoading || !checklist) return null;
 
-  // render nothing if tailor hasn't confirmed yet
   if (!checklist.tailorSignoffAt) return null;
 
   return (

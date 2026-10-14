@@ -12,7 +12,7 @@ export function useCapacity() {
   const snapshotQuery = useQuery({
     queryKey: CAPACITY_KEYS.snapshot(),
     queryFn: capacityApi.getSnapshot,
-    refetchInterval: 30000, // Refresh every 30s
+    refetchInterval: 30000,
   });
 
   const reserveMutation = useMutation({

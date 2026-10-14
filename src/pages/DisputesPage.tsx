@@ -50,16 +50,12 @@ import type { RaiseDisputeDTO, SubmitEvidenceDTO, ResolveDisputeDTO } from '../f
 import { useAuthStore } from '../features/auth/auth.store';
 import type { Capability } from '../features/auth/auth.types';
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
-
 const ITEMS_PER_PAGE = 10;
 
 type FilterTab = 'ALL' | 'ACTIVE' | 'RESOLVED';
 
 const ACTIVE_STATUSES: DisputeStatus[] = ['OPEN', 'EVIDENCE_REQUIRED', 'UNDER_REVIEW'];
 const RESOLVED_STATUSES: DisputeStatus[] = ['RESOLVED', 'TERMINATED'];
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function getStatusConfig(status: DisputeStatus) {
   switch (status) {
@@ -89,8 +85,6 @@ function getCategoryColor(category: string) {
 function hasCapability(capabilities: Capability[], cap: Capability): boolean {
   return capabilities.includes(cap);
 }
-
-// ─── Raise Dispute Dialog ──────────────────────────────────────────────────────
 
 interface RaiseDisputeDialogProps {
   open: boolean;
@@ -214,8 +208,6 @@ const RaiseDisputeDialog: React.FC<RaiseDisputeDialogProps> = ({ open, onClose }
   );
 };
 
-// ─── Submit Evidence Dialog ────────────────────────────────────────────────────
-
 interface EvidenceDialogProps {
   open: boolean;
   onClose: () => void;
@@ -320,8 +312,6 @@ const EvidenceSubmitDialog: React.FC<EvidenceDialogProps> = ({ open, onClose, di
     </Dialog>
   );
 };
-
-// ─── Resolve Dispute Dialog ────────────────────────────────────────────────────
 
 interface ResolveDialogProps {
   open: boolean;
@@ -441,8 +431,6 @@ const ResolveDisputeDialog: React.FC<ResolveDialogProps> = ({ open, onClose, dis
   );
 };
 
-// ─── Dispute Card ──────────────────────────────────────────────────────────────
-
 interface DisputeCardProps {
   dispute: DisputeListItem;
   onViewOrder: (orderId: string) => void;
@@ -531,7 +519,6 @@ const DisputeCard: React.FC<DisputeCardProps> = ({ dispute, onViewOrder, canSubm
               />
             </Stack>
 
-            {/* Reference number */}
             {dispute.referenceNumber && (
               <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.25 }}>
                 <GavelIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
@@ -544,7 +531,6 @@ const DisputeCard: React.FC<DisputeCardProps> = ({ dispute, onViewOrder, canSubm
               </Stack>
             )}
 
-            {/* Description */}
             <Typography
               variant="body2"
               sx={{
@@ -560,7 +546,7 @@ const DisputeCard: React.FC<DisputeCardProps> = ({ dispute, onViewOrder, canSubm
               {dispute.description}
             </Typography>
 
-            {/* Bilateral resolution confirmation state */}
+            {/* Whether each side has confirmed the resolution */}
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
               <Chip
                 size="small"
@@ -647,7 +633,6 @@ const DisputeCard: React.FC<DisputeCardProps> = ({ dispute, onViewOrder, canSubm
               View Order
             </Button>
 
-            {/* Evidence Package button */}
             {canSubmitNow && (
               <Button
                 size="small"
@@ -670,7 +655,6 @@ const DisputeCard: React.FC<DisputeCardProps> = ({ dispute, onViewOrder, canSubm
               </Button>
             )}
 
-            {/* Resolution Dashboard button */}
             {canResolveNow && (
               <Button
                 size="small"
@@ -693,7 +677,7 @@ const DisputeCard: React.FC<DisputeCardProps> = ({ dispute, onViewOrder, canSubm
               </Button>
             )}
 
-            {/* Confirm Resolution (bilateral tailor sign-off) */}
+            {/* The tailor's side of the two-sided resolution sign-off */}
             {canConfirmResolution &&
               (dispute.status === 'OPEN' || dispute.status === 'UNDER_REVIEW') &&
               !dispute.tailorConfirmedResolvedAt && (
@@ -741,8 +725,6 @@ const DisputeCard: React.FC<DisputeCardProps> = ({ dispute, onViewOrder, canSubm
     </>
   );
 };
-
-// ─── Customer Evidence Portal ──────────────────────────────────────────────────
 
 const CustomerEvidencePortal: React.FC = () => {
   const { data, isLoading } = useDisputesList(1, 5);
@@ -919,7 +901,7 @@ const CustomerEvidencePortal: React.FC = () => {
   );
 };
 
-// ─── Management View (OWNER / MANAGER) ────────────────────────────────────────
+// Owners and managers manage disputes; customers see the evidence portal
 
 export const DisputesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -934,7 +916,7 @@ export const DisputesPage: React.FC = () => {
   return <ManagementDisputeView canRaise={canRaise} canResolve={canResolve} onNavigate={navigate} />;
 };
 
-// Split into sub-component so hooks rules work after the early return above.
+// A separate component so its hooks can run after the early return above
 const ManagementDisputeView: React.FC<{
   canRaise: boolean;
   canResolve: boolean;
@@ -1099,7 +1081,6 @@ const ManagementDisputeView: React.FC<{
         </Stack>
       )}
 
-      {/* Pagination */}
       {!isLoading && data && data.totalPages > 1 && activeTab === 'ALL' && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Pagination

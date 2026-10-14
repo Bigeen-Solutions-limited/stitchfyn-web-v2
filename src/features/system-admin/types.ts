@@ -1,5 +1,4 @@
-// src/features/system-admin/types.ts
-// Frontend type mirrors for the system-admin backend domain
+// Mirrors the system-admin types on the server
 
 export type SubscriptionTier = 'TRIAL' | 'STARTER' | 'PROFESSIONAL'
 export type CompanyStatus = 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED'
@@ -64,8 +63,6 @@ export interface OverviewStats {
     daysRemaining: number
   }>
 }
-
-// ─── DTOs ────────────────────────────────────────────────────────────────────
 
 export interface CreateCompanyDTO {
   companyName: string

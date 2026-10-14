@@ -59,7 +59,6 @@ export function ChangePasswordPage() {
 
     try {
       await changePasswordApi(currentPassword, newPassword);
-      // Clear the mustChangePassword flag in local state
       if (user && accessToken) {
         setAuth(accessToken, { ...user, mustChangePassword: false });
       }

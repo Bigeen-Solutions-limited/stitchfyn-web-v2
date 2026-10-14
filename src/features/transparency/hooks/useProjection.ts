@@ -20,7 +20,7 @@ export const useProjection = (storeId?: string): ProjectionState => {
     queryKey: ['transparency', activeStoreId],
     queryFn: () => transparencyApi.getStoreStatus(activeStoreId!),
     enabled: !!activeStoreId,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   const isStale = useMemo(() => {

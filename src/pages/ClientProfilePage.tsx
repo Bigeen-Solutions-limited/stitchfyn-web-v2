@@ -55,7 +55,6 @@ export function ClientProfilePage() {
   const [newFieldName, setNewFieldName] = useState('');
   const inputRefs = useRef<Record<string, any>>({});
 
-  // Initialize form values when modal opens or profile changes
   useEffect(() => {
     if (profile?.latestMeasurement) {
       setFormValues(profile.latestMeasurement.measurements);
@@ -80,8 +79,6 @@ export function ClientProfilePage() {
     if (currentIndex < keys.length - 1) {
       const nextKey = keys[currentIndex + 1];
       inputRefs.current[nextKey]?.focus();
-    } else {
-      // If it's the last one, we might want to focus the "Add Custom" field or just stay put
     }
   };
 
@@ -108,7 +105,7 @@ export function ClientProfilePage() {
   const { customer, latestMeasurement, orderHistory } = profile;
 
   const handleUpdateSubmit = async () => {
-    // Validation: Ensure at least one measurement is entered
+    // At least one measurement must be entered
     const hasMeasurements = Object.values(formValues).some(v => v > 0);
     if (!hasMeasurements) {
       showToast("Validation Error", "Please enter at least one measurement before committing.", "error");
@@ -326,7 +323,7 @@ export function ClientProfilePage() {
                       ...order,
                       customerName: customer.name,
                       garmentName: "Archived Production",
-                      eventDate: "" // Not always available in summary
+                      eventDate: "" // the summary doesn't include it
                     }}
                     onClick={() => navigate(`/orders/${order.id}`)}
                   />

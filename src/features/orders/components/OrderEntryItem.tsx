@@ -9,7 +9,7 @@ import type { ActivationFlag } from '../orders.api.ts';
 import { useAuthStore } from '../../auth/auth.store.ts';
 import { useRequestActivationReminder } from '../hooks/useRequestActivationReminder.ts';
 
-// Mirrors the backend's UPDATE_PRODUCTION capability (OWNER, MANAGER, TAILOR).
+// The roles allowed to update production on the server
 const REMINDER_ROLES = ['OWNER', 'MANAGER', 'TAILOR'];
 
 interface OrderEntryItemProps {

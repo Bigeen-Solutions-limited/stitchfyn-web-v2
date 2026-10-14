@@ -1,10 +1,7 @@
 import { apiClient } from "../../infrastructure/http/axios.client"
 import type { LoginDTO, AuthResponse } from "./auth.types"
 
-/**
- * Login with email and password.
- * Backend sets HttpOnly refresh cookie automatically.
- */
+// The server also sets the refresh cookie
 export async function loginApi(dto: LoginDTO): Promise<AuthResponse> {
   const response = await apiClient.post("/auth/login", dto)
   const raw = response.data
@@ -23,10 +20,7 @@ export async function loginApi(dto: LoginDTO): Promise<AuthResponse> {
   }
 }
 
-/**
- * Call refresh endpoint to get new access token using HttpOnly cookie.
- * No request body needed.
- */
+// Gets a new access token using the refresh cookie
 export async function refreshApi(): Promise<AuthResponse> {
   const response = await apiClient.post("/auth/refresh")
   const raw = response.data
@@ -44,9 +38,6 @@ export async function refreshApi(): Promise<AuthResponse> {
   }
 }
 
-/**
- * Clear session on backend (HttpOnly cookie will be wiped).
- */
 export async function logoutApi(): Promise<void> {
   await apiClient.post("/auth/logout")
 }
@@ -74,17 +65,13 @@ export interface TenantDTO {
   role: string;
 }
 
-/**
- * List all tenants (store contexts) the current user can access.
- */
+// Every store the user can work in
 export async function getTenantsApi(): Promise<TenantDTO[]> {
   const response = await apiClient.get("/auth/tenants")
   return response.data
 }
 
-/**
- * Switch the active store context. Returns a fresh token pair.
- */
+// Switches store and returns new tokens
 export async function switchTenantApi(storeId: string): Promise<AuthResponse> {
   const response = await apiClient.post("/auth/switch-tenant", { storeId })
   const raw = response.data

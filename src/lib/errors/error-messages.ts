@@ -62,14 +62,7 @@ export const errorMessages: Record<ErrorCode, ErrorMessage> = {
     title: 'Check Your Inputs',
     detail: 'One or more fields have invalid values. Please review and correct them.',
   },
-  // Generic siblings of DomainError's own base codes (ARCHITECTURE.md's
-  // {code, message, metadata} shape) — every NotFoundError/ConflictError in
-  // the app sends exactly one of these two, but neither had a mapped
-  // message before, so they all fell through to UNKNOWN_ERROR. Added here
-  // (not a new error framework — the existing lookup table) because the
-  // Staff Progress-Photo Capture UI's own 404 (bad garment/stage) and 409
-  // (3-photo limit) needed a real message, and this is the established
-  // mechanism for that.
+  // Generic not-found and conflict codes, so they get a real message
   NOT_FOUND: {
     title: 'Not Found',
     detail: 'We couldn\'t find what you\'re looking for.',

@@ -5,11 +5,7 @@ interface Props {
   onDismiss: () => void
 }
 
-/**
- * TemporaryPasswordDisclosure
- * Renders a one-time password after company creation or user assignment.
- * Never persists the password. Dismissal is final.
- */
+// Shows a one-time password once; it is never stored, and closing it is final
 export function TemporaryPasswordDisclosure({ password, onDismiss }: Props) {
   const [copied, setCopied] = useState(false)
 

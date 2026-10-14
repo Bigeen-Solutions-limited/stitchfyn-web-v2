@@ -1,13 +1,13 @@
 import { apiClient } from "../../infrastructure/http/axios.client"
 
-/** LR-8: one message in the order's staff ↔ customer thread. */
+// One message in the order's thread between the customer and staff
 export interface OrderThreadMessage {
   id: string
   senderType: "staff" | "customer"
   senderName: string
   body: string
   sentAt: string
-  /** Customer message sent during the 7-day countdown. */
+  // Sent by the customer in the last 7 days before the event
   isUrgent: boolean
 }
 

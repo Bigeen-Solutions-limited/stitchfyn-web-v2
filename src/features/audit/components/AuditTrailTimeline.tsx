@@ -26,27 +26,13 @@ import type { AuditRecord } from '../types';
 
 interface AuditTrailTimelineProps {
   targetId?: string;
-  // US-3.7: garment-scoped material history. Mutually exclusive with
-  // targetId in practice (contextId wins if both are somehow passed) — a
-  // distinct prop rather than overloading targetId, since they hit
-  // different backend routes (/audit/context/:id vs /audit/target/:id)
-  // and mean different things (one garment's events vs. one order's).
+  // One garment's history; takes priority over targetId and uses a different endpoint
   contextId?: string;
-  // US-3.7: lets a garment-scoped instance say "Material Audit Trail"
-  // instead of the generic "Immutable Audit Trail" label, so it's clear
-  // which garment's history is on screen. Existing order-level call sites
-  // are unaffected — they simply don't pass this prop.
+  // Optional heading, e.g. "Material Audit Trail" for one garment
   title?: string;
 }
 
-/**
- * AuditTrailTimeline — The Immutable Timeline
- *
- * RESPONSIBILITY:
- * - Render chronological audit logs strictly by witnessed_at.
- * - Display "Temporal Drift" warning if occurred_at and witnessed_at differ by >1h.
- * - NO mutation triggers.
- */
+// Read-only audit history, ordered by when the server recorded each event; flags events recorded over an hour after they happened.
 export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId, contextId, title }) => {
   const { data: records, isLoading } = useQuery({
     queryKey: ['audit-trail', contextId ? `context:${contextId}` : targetId ? `target:${targetId}` : 'all'],
@@ -98,13 +84,12 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
           const witnessed = new Date(record.witnessedAt);
           const occurred = new Date(record.occurredAt);
           
-          // Temporal Drift Calculation: difference > 1 hour (3600000ms)
+          // Flag events recorded more than an hour after they happened
           const driftMs = Math.abs(witnessed.getTime() - occurred.getTime());
           const hasDrift = driftMs > 3600000;
 
           return (
             <Box key={record.id} sx={{ display: 'flex', position: 'relative', pb: 4 }}>
-              {/* Connector line */}
               {index < records.length - 1 && (
                 <Box sx={{ 
                   position: 'absolute', 
@@ -117,7 +102,6 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
                 }} />
               )}
 
-              {/* Icon / Node */}
               <Avatar 
                 sx={{ 
                   width: 40, 
@@ -133,7 +117,6 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
                 {styles.icon}
               </Avatar>
 
-              {/* Content Card */}
               <Box sx={{ flex: 1 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
                   <Typography variant="body2" fontWeight={700}>
@@ -166,7 +149,6 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
                   ))}
                 </Stack>
 
-                {/* Temporal Drift Warning Flag */}
                 <Stack direction="row" spacing={2} alignItems="center">
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <EventNoteIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
@@ -193,7 +175,7 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
                   )}
                 </Stack>
 
-                {/* Cryptographic Signature (Small Print) */}
+                {/* Signature */}
                 <Box sx={{ mt: 1.5, p: 1, bgcolor: alpha('#000', 0.02), borderRadius: 1, border: '1px dashed', borderColor: 'divider' }}>
                    <Stack direction="row" spacing={1} alignItems="center">
                       <SecurityIcon sx={{ fontSize: 10, color: 'text.disabled' }} />

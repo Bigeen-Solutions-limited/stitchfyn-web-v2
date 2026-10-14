@@ -3,21 +3,14 @@ import { inventoryApi } from './inventory.api';
 import { keys } from '../../query/keys';
 import { useToastStore } from '../../components/feedback/Toast';
 
-/**
- * Hook to fetch the Material Stock positions.
- * Implements 30s staleTime for snappy but accurate dashboard telemetry.
- */
 export const useInventory = () => {
   return useQuery({
     queryKey: keys.inventory.overview,
     queryFn: inventoryApi.getInventoryOverview,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
   });
 };
 
-/**
- * Mutation hook to record a new material shipment.
- */
 export const useReceiveShipment = () => {
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);
@@ -35,9 +28,6 @@ export const useReceiveShipment = () => {
   });
 };
 
-/**
- * Mutation hook to update the fabric photo for an existing material.
- */
 export const useUpdateMaterialImage = () => {
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);
@@ -55,9 +45,6 @@ export const useUpdateMaterialImage = () => {
   });
 };
 
-/**
- * Mutation hook to register a brand new material record.
- */
 export const useRegisterMaterial = () => {
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);

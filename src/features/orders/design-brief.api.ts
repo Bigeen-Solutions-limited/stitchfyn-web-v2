@@ -20,7 +20,7 @@ export interface DesignBrief {
   backFinish: string | null;
   additionalNotes: string | null;
   referenceImageIds: string[];
-  confirmedByCustomerAt: string | null; // set by API when customer confirms via portal
+  confirmedByCustomerAt: string | null; // set when the customer confirms in the portal
   sectionVersions: SectionVersion[];
 }
 

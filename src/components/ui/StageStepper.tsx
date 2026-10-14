@@ -2,7 +2,7 @@
 
 interface StageStepperProps {
   totalStages: number;
-  currentStage: number; // 0-indexed
+  currentStage: number; // starts at 0
   status?: 'NORMAL' | 'WARNING';
 }
 

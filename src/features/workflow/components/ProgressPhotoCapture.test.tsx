@@ -153,7 +153,6 @@ describe('ProgressPhotoCapture', () => {
     await waitFor(() => {
       expect(showToastSpy).toHaveBeenCalledWith('Photo Limit Reached', expect.any(String), 'error')
     })
-    // No inline error Alert exists anywhere in this component's DOM.
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     showToastSpy.mockRestore()
   })
@@ -165,8 +164,7 @@ describe('ProgressPhotoCapture', () => {
     fireEvent.change(getFileInput(), { target: { files: [makeImageFile()] } })
     await waitFor(() => expect(progressPhotoApi.upload).toHaveBeenCalledTimes(1))
 
-    // The button is enabled again (not stuck in a permanent "Uploading…"
-    // disabled state) — the file input accepts a new selection to retry.
+    // The button is usable again so staff can retry
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /add progress photo/i })).not.toHaveAttribute('aria-disabled', 'true')
     })
@@ -184,11 +182,7 @@ describe('ProgressPhotoCapture', () => {
 
     fireEvent.change(getFileInput(), { target: { files: [makeImageFile()] } })
 
-    // The trigger is a MUI Button rendered as <label> (component="label",
-    // so tapping it opens the file picker) — native `disabled` doesn't
-    // apply to a <label>; MUI instead sets aria-disabled and blocks
-    // interaction via its own Mui-disabled styling, so that's what a test
-    // checks here rather than the (inapplicable) disabled DOM property.
+    // The button is a <label>, so MUI marks it aria-disabled instead of disabled
     const button = await screen.findByRole('button', { name: /uploading/i })
     expect(button).toHaveAttribute('aria-disabled', 'true')
 

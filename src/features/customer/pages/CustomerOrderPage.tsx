@@ -78,8 +78,7 @@ export function CustomerOrderPage() {
         </div>
       </div>
 
-      {/* Activation Step 2 (fabric) before Step 3 (design), matching the
-          PRD's own step ordering. */}
+      {/* Fabric comes before design, matching the activation steps */}
       {order.fabricGarments.map((garment) => (
         <PortalFabricConfirm key={garment.garmentId} portalToken={id || ''} garment={garment} />
       ))}

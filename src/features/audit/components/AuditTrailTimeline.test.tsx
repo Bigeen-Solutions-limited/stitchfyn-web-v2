@@ -133,7 +133,7 @@ describe('AuditTrailTimeline', () => {
       expect(panelA.textContent).toContain('Silk')
       expect(panelB.textContent).toContain('Velvet')
     })
-    // Neither garment's fabric type leaks into the other panel.
+    // Each garment's panel shows only its own fabric
     expect(panelA.textContent).not.toContain('Velvet')
     expect(panelB.textContent).not.toContain('Silk')
   })
@@ -159,9 +159,7 @@ describe('AuditTrailTimeline', () => {
     vi.mocked(apiClient.get).mockRejectedValue(new Error('network error'))
     const { container } = renderTimeline({ contextId: 'garment-1' })
 
-    // Wait for the query to actually settle (loading -> error) before
-    // asserting on the post-loading render, not just for the mock to have
-    // been invoked — those are two different moments.
+    // Wait until loading has finished, not just until the request was made
     await waitFor(() => {
       expect(screen.queryByText(/synchronizing/i)).not.toBeInTheDocument()
     })

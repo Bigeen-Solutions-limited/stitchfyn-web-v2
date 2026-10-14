@@ -10,7 +10,7 @@ export function useCustomerSearch(query: string) {
     queryKey: keys.customers.search(query),
     queryFn: () => customersApi.searchCustomers(query),
     enabled: query.length >= 2,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 }
 

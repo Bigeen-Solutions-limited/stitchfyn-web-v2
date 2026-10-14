@@ -229,7 +229,7 @@ function AppointmentCard({ appointment, orderId }: { appointment: FittingAppoint
         <OutcomeChip outcome={appointment.outcome} />
       </Stack>
 
-      {/* Outcome selector — only when no outcome recorded yet */}
+      {/* Only until an outcome is recorded */}
       {appointment.outcome === null && (
         <TextField
           select
@@ -260,7 +260,7 @@ export function FittingsPanel({ orderId, garments, isOrderCompleted, hasAvailabl
   });
 
   const hasPassed = fittings.some((f) => f.outcome === 'passed');
-  // Gate: all transitions gone (or order done) and no fitting has passed
+  // Warn when the order can't move on and no fitting has passed yet
   const showGateWarning = !hasPassed && (isOrderCompleted || !hasAvailableTransitions);
 
   return (

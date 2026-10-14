@@ -6,10 +6,7 @@ interface DeadlineDisplayProps {
   riskStatus: RiskStatus
 }
 
-/**
- * DeadlineDisplay component.
- * Special Rule: Must always render as variant="h5" or larger.
- */
+// Deadlines must always be at least h5 so they stand out
 export function DeadlineDisplay({
   deadline,
   riskStatus,

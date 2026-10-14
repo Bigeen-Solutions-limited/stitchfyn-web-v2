@@ -12,15 +12,11 @@ vi.mock('../fabric-evidence.api', () => ({
   fabricEvidenceApi: {
     uploadFabricEvidencePhoto: vi.fn(),
   },
-  // Real value, not a mock — fabric-evidence-offline-db.ts (unmocked, real
-  // module) also imports this from '../fabric-evidence.api', so the guard
-  // it enforces and the boundary this test exercises must agree.
+  // The real limit, so the panel and the offline store check the same value
   MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES: 5 * 1024 * 1024,
 }))
 
-// Never imported by the component under test — mocked here purely to make
-// the "no confirmation side effect" guarantee an explicit, regression-proof
-// assertion rather than a structural accident of what happens to be wired up.
+// Mocked only to assert that uploading never confirms the fabric
 vi.mock('../seal.api', () => ({
   sealApi: {
     getGarmentSeal: vi.fn(),
@@ -44,11 +40,7 @@ function makeImageFile(name = 'fabric.jpg', sizeBytes = 1024): File {
   return file
 }
 
-// A genuine server rejection (e.g. 500) — has `error.response`, so the
-// component's offline-detection (`!error.response`) must NOT queue this;
-// it belongs in the normal error state, same as before offline capture
-// existed. A bare `new Error(...)` (no `.response`) is what now represents
-// a connectivity failure — see the offline-queueing tests below.
+// A server rejection has a response, so it must show an error rather than queue offline
 function makeServerError(status: number, message = 'Upload failed.'): AxiosError<{ message?: string }> {
   return {
     isAxiosError: true,
@@ -60,16 +52,11 @@ function makeServerError(status: number, message = 'Upload failed.'): AxiosError
 }
 
 function getFileInput(): HTMLInputElement {
-  // The input is visually hidden (MUI's <Button component="label"> pattern),
-  // not inaccessible — queried directly since it has no accessible role.
+  // The input is visually hidden, not inaccessible, and has no role to query by
   return document.querySelector('input[type="file"]') as HTMLInputElement
 }
 
-// Offline capture & sync: every upload now carries an idempotency key
-// (clientId/deviceId/deviceCapturedAt), including the normal online path —
-// see fabric-evidence-sync-manager.ts / the panel's captureAttempt state.
-// Existing call-site assertions below match on this shape rather than the
-// bare (garmentId, file) pair the pre-offline version used.
+// Every upload, online or offline, carries an idempotency key
 const anyIdempotency = expect.objectContaining({
   clientId: expect.any(String),
   deviceId: expect.any(String),
@@ -120,8 +107,7 @@ describe('FabricEvidenceCapturePanel', () => {
     await waitFor(() => {
       expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-1', file, anyIdempotency)
     })
-    // Same File reference, not a string — proves no FileReader/base64 step
-    // sits between selection and upload.
+    // The same File object, so there is no base64 step before upload
     const [, uploadedArg] = vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mock.calls[0]
     expect(uploadedArg).toBeInstanceOf(File)
   })
@@ -137,9 +123,7 @@ describe('FabricEvidenceCapturePanel', () => {
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
 
-    // US-3.1: selection alone is enough to trigger the upload call — there
-    // is never a moment where an "Upload Photo" button exists to be
-    // clicked, before or after the mutation resolves.
+    // Choosing a photo starts the upload; there is never an Upload button
     expect(screen.queryByRole('button', { name: /^upload photo$/i })).not.toBeInTheDocument()
     await screen.findByText(/photo uploaded/i)
     expect(screen.queryByRole('button', { name: /^upload photo$/i })).not.toBeInTheDocument()
@@ -204,8 +188,7 @@ describe('FabricEvidenceCapturePanel', () => {
     expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledTimes(2)
     expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenNthCalledWith(2, 'garment-1', file, anyIdempotency)
 
-    // The retry replays the SAME idempotency key as the first attempt —
-    // required so the server recognizes it as one submission, not two.
+    // The retry reuses the first attempt's key, so the server sees one submission
     const calls = vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mock.calls
     expect(calls[1][2]).toEqual(calls[0][2])
   })
@@ -220,15 +203,11 @@ describe('FabricEvidenceCapturePanel', () => {
 
     fireEvent.change(getFileInput(), { target: { files: [file] } })
 
-    // Upload starts on selection alone — the only control visible during
-    // the in-flight window is the disabled "Uploading…" indicator.
     const uploadingButton = await screen.findByRole('button', { name: /uploading/i })
     expect(uploadingButton).toBeDisabled()
-    // The capture control itself is gone too (input unmounts outside 'idle'),
-    // so a repeat tap on it can't re-trigger a selection mid-upload either.
+    // The capture control is gone while uploading, so it can't trigger another upload
     expect(screen.queryByRole('button', { name: /capture fabric photo/i })).not.toBeInTheDocument()
 
-    // Clicking the disabled indicator must not fire a second call.
     fireEvent.click(uploadingButton)
     fireEvent.click(uploadingButton)
 
@@ -271,7 +250,7 @@ describe('FabricEvidenceCapturePanel', () => {
     await waitFor(() => {
       expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-A', fileA, anyIdempotency)
     })
-    // Garment B's panel must still be in its idle state — untouched by A's upload.
+    // Garment B is untouched by A's upload
     expect(panelB.querySelector('img[alt="Uploaded fabric evidence"]')).toBeNull()
     expect(panelA.querySelector('img[alt="Uploaded fabric evidence"]')).toBeTruthy()
 
@@ -281,7 +260,6 @@ describe('FabricEvidenceCapturePanel', () => {
       expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith('garment-B', fileB, anyIdempotency)
     })
     expect(panelB.querySelector('img[alt="Uploaded fabric evidence"]')).toBeTruthy()
-    // A's own evidence list is unaffected by B's later upload.
     expect(panelA.querySelectorAll('img[alt="Uploaded fabric evidence"]')).toHaveLength(1)
   })
 
@@ -359,9 +337,7 @@ describe('FabricEvidenceCapturePanel', () => {
   describe('Offline capture & synchronization', () => {
     it('a connectivity failure (no server response) persists the photo offline instead of showing a dead-end error', async () => {
       const file = makeImageFile()
-      // No `.response` — the exact signal (axios sets this for a genuine
-      // network failure/timeout) the component uses to distinguish
-      // "we're offline" from "the server rejected this".
+      // No response is how the panel tells "offline" apart from "rejected"
       vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mockRejectedValue(new Error('Network Error'))
       renderPanel('garment-offline-1')
 
@@ -373,10 +349,7 @@ describe('FabricEvidenceCapturePanel', () => {
       const pending = await getAllPendingEvidence()
       expect(pending).toHaveLength(1)
       expect(pending[0].garmentId).toBe('garment-offline-1')
-      // Not `.toBe(file)` — IndexedDB always clones, never preserves
-      // reference identity, even in a real browser. Size/type surviving
-      // the round trip is the correctness bar (see fabric-evidence-
-      // offline-db.test.ts for the `.name`-specific test-environment note).
+      // IndexedDB clones files, so compare size rather than identity
       expect(pending[0].imageFile.size).toBe(file.size)
       expect(pending[0].status).toBe('pending')
     })
@@ -389,8 +362,7 @@ describe('FabricEvidenceCapturePanel', () => {
       await screen.findByText(/saved offline/i)
       first.unmount()
 
-      // A fresh mount reads from IndexedDB, not component state — this is
-      // what "survives reload" actually means for a persisted queue.
+      // A fresh mount reads from IndexedDB, which is what surviving a reload means
       renderPanel('garment-offline-2')
       expect(await screen.findByText(/saved offline — pending sync/i)).toBeInTheDocument()
     })
@@ -426,7 +398,6 @@ describe('FabricEvidenceCapturePanel', () => {
       await screen.findByText(/saved offline/i)
 
       useAuthStore.getState().setAuth('fake-token', { id: 'user-1', email: 'u@test.com', fullName: 'U', role: 'MANAGER' } as any)
-      // Still failing the same way on reconnect (e.g. still offline).
       window.dispatchEvent(new Event('online'))
       await waitFor(async () => {
         const pending = await getAllPendingEvidence()
@@ -452,7 +423,6 @@ describe('FabricEvidenceCapturePanel', () => {
       expect(pending).toHaveLength(1)
       expect(pending[0].status).toBe('failed')
 
-      // Manual retry succeeds.
       vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mockResolvedValueOnce({
         id: 'photo-retry', garmentId: 'garment-offline-5', orderId: 'order-1', companyId: 'c1',
         cloudinaryPublicId: 'stitchfyn/fabric-evidence/x', secureUrl: 'https://res.cloudinary.com/mock/x.jpg',
@@ -487,7 +457,7 @@ describe('FabricEvidenceCapturePanel', () => {
       await screen.findByText(/saved offline/i)
 
       vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mockClear()
-      // No setAuth() call here — session unavailable.
+      // No session, so nothing may sync
       window.dispatchEvent(new Event('online'))
       await new Promise((r) => setTimeout(r, 50))
 

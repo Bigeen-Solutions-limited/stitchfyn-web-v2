@@ -2,10 +2,7 @@ import { useEffect, useRef } from "react"
 import { useAuthStore } from "./auth.store"
 import { refreshApi } from "./auth.api"
 
-/**
- * Hook to be called ONCE in App.tsx root.
- * Handles the silent refresh lifecycle on application boot.
- */
+// Restores the session on app start; call once at the root
 export function useSilentRefresh() {
   const { setAuth, clearAuth, setLoading } = useAuthStore()
   const hasRun = useRef(false)
@@ -20,7 +17,7 @@ export function useSilentRefresh() {
         setAuth(accessToken, user)
       })
       .catch(() => {
-        clearAuth() // Silent failure — user stays logged out
+        clearAuth() // no session: stay signed out
       })
       .finally(() => {
         setLoading(false)
