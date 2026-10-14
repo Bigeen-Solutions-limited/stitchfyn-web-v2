@@ -58,5 +58,4 @@ export const CapacitySettingsPanel: React.FC = () => {
   );
 };
 
-// Add Stack to imports
 import { Stack } from '@mui/material';

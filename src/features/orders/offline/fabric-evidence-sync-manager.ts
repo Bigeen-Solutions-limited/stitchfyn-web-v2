@@ -1,15 +1,4 @@
-// Flushes the persistent fabric-evidence offline queue once connectivity
-// (and an authenticated session) are actually available again.
-//
-// Deliberately NOT a general sync framework: this manager only knows about
-// one thing — fabric_evidence_photos submissions via the existing
-// fabricEvidenceApi.uploadFabricEvidencePhoto() multipart endpoint. No
-// polling loop: it reacts to the browser's online event, to a component
-// mounting (see useFabricEvidenceOfflineQueue), and to an explicit manual
-// retry. navigator.onLine gates whether an attempt is even made (cheap,
-// avoids a pointless request while visibly offline) but the actual
-// request's success/failure — not navigator.onLine — is what's treated as
-// authoritative, per the offline capture & synchronization requirements.
+// Uploads photos saved offline when the browser comes back online, a screen opens, or staff tap retry; a failed request, not navigator.onLine, decides if we're still offline.
 import type { AxiosError } from 'axios';
 import { useAuthStore } from '../../auth/auth.store';
 import { fabricEvidenceApi, type FabricEvidencePhoto } from '../fabric-evidence.api';
@@ -42,34 +31,26 @@ function notify(event: QueueEvent) {
 function classifyFailure(error: AxiosError): { reason: PendingFabricEvidenceFailureReason; permanent: boolean; abortFlush: boolean } {
   const status = error.response?.status;
   if (!error.response) {
-    // No response at all — connectivity loss, DNS failure, or our own
-    // 15s upload timeout. This is exactly the case navigator.onLine can't
-    // reliably predict (a flaky connection can report "online" while every
-    // request still fails), so it's what actually drives "still offline."
+    // No response: still offline, even if the browser says otherwise
     return { reason: 'network', permanent: false, abortFlush: true };
   }
   if (status === 401) {
-    // Session-wide — every other queued item will fail the same way.
+    // Every other item would fail the same way
     return { reason: 'authorization', permanent: false, abortFlush: true };
   }
   if (status === 403 || status === 404 || status === 409 || status === 400 || status === 413 || status === 422) {
-    // Specific to this item (capability/garment state/validation) — other
-    // queued items (possibly other garments) may still succeed.
+    // A problem with this item only; others may still succeed
     return { reason: status === 403 ? 'authorization' : 'validation', permanent: true, abortFlush: false };
   }
-  // Unrecognized/server error — treat as transient, try again later, but
-  // don't assume every other item will fail the same way.
+  // Unknown server error: try again later without giving up on the rest
   return { reason: 'unknown', permanent: false, abortFlush: false };
 }
 
-/**
- * Attempts to flush every pending item. Safe to call repeatedly/concurrently
- * — re-entrant calls are no-ops while a flush is already running.
- */
+// Uploads every saved photo; safe to call repeatedly, since overlapping calls do nothing
 export async function attemptFabricEvidenceSync(): Promise<void> {
   if (isSyncing) return;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-  if (!useAuthStore.getState().accessToken) return; // wait for the user to (re)authenticate
+  if (!useAuthStore.getState().accessToken) return; // wait until the user signs in again
 
   isSyncing = true;
   try {
@@ -109,12 +90,12 @@ async function syncOne(item: PendingFabricEvidenceRecord): Promise<void> {
         errorMessage: extractMessage(axiosErr),
       });
     } else {
-      // Transient (network/auth/unknown) — leave it retryable, not "failed".
+      // A temporary failure: leave it to retry rather than marking it failed
       await updatePendingEvidence(item.id, { status: 'pending' });
     }
     notify({ type: 'changed', garmentId: item.garmentId });
     if (reason === 'network' || reason === 'authorization') {
-      // Every remaining item is about to fail the same way — stop hammering.
+      // Stop: every remaining item would fail the same way
       throw new StopFlush();
     }
   }
@@ -126,7 +107,7 @@ function extractMessage(error: AxiosError<{ message?: string }>): string {
   return error.response?.data?.message || error.message || 'Sync failed. It will retry automatically.';
 }
 
-/** Re-queues one failed item and immediately attempts to flush it. */
+// Re-queues one failed photo and tries to upload it straight away
 export async function retryFabricEvidenceItem(id: string, garmentId: string): Promise<void> {
   await updatePendingEvidence(id, { status: 'pending' });
   notify({ type: 'changed', garmentId });

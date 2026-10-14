@@ -10,7 +10,7 @@ export interface Customer {
 
 export interface CustomerSummary extends Customer {
   totalOrders: number;
-  lastOrderDate: string | null; // ISO string from API
+  lastOrderDate: string | null; // ISO date
 }
 
 export interface CustomerListResponse {

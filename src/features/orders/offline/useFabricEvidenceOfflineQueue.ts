@@ -3,13 +3,7 @@ import type { FabricEvidencePhoto } from '../fabric-evidence.api';
 import { getPendingForGarment, type PendingFabricEvidenceRecord } from './fabric-evidence-offline-db';
 import { attemptFabricEvidenceSync, subscribeFabricEvidenceQueue } from './fabric-evidence-sync-manager';
 
-/**
- * Garment-scoped view of the offline fabric-evidence queue. Loads whatever
- * is already persisted (survives reload/restart, per the offline capture
- * requirement), re-reads on every queue change, and opportunistically
- * attempts a flush on mount — the cheapest possible "try to sync when the
- * user comes back to this screen" trigger, without a polling loop.
- */
+// The saved-offline photos for one garment; re-reads on every change and tries to upload when the screen opens
 export function useFabricEvidenceOfflineQueue(garmentId: string, onSynced?: (photo: FabricEvidencePhoto) => void) {
   const [items, setItems] = useState<PendingFabricEvidenceRecord[]>([]);
   const onSyncedRef = useRef(onSynced);

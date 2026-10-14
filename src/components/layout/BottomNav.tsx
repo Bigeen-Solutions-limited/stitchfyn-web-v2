@@ -31,7 +31,7 @@ export const BottomNav: React.FC = () => {
     if (pathname.startsWith('/production')) return 2;
     if (pathname.startsWith('/customers')) return 3;
     if (pathname === '/dashboard') return 0;
-    return -1; // "More" is active if it's one of the other pages, but we'll reflect it via the drawer
+    return -1; // other pages highlight "More" through the drawer
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {

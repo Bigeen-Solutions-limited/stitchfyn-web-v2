@@ -93,7 +93,6 @@ export function PaymentPanel({ orderId }: PaymentPanelProps) {
 
   return (
     <Card className="sf-card" sx={{ p: 3, borderRadius: 3 }}>
-      {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Stack direction="row" spacing={1.5} alignItems="center">
           <PaymentsOutlinedIcon sx={{ color: 'primary.main', fontSize: 20 }} />
@@ -297,7 +296,6 @@ export function PaymentPanel({ orderId }: PaymentPanelProps) {
             History
           </Typography>
           <Stack divider={<Divider />}>
-            {/* Column headers */}
             <Box
               sx={{
                 display: 'grid',

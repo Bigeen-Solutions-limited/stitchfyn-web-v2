@@ -1,6 +1,6 @@
 import { apiClient } from '../../infrastructure/http/axios.client';
 
-// Align with backend DTOs
+// Must match the server's request shapes
 export interface RaiseDisputeDTO {
   orderId: string;
   category: 'MATERIAL' | 'MEASUREMENT' | 'FINANCIAL' | 'AESTHETIC';
@@ -107,7 +107,7 @@ export interface PortalSubmitEvidenceDTO {
   metadata?: Record<string, any>;
 }
 
-// Customer-facing surface — portal-token authenticated, no staff JWT.
+// For customers in the portal, using their portal link instead of a staff login
 export const portalDisputeApi = {
   getProjection: async (portalToken: string): Promise<DisputeStandoffDTO | null> => {
     try {

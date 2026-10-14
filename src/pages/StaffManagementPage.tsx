@@ -38,7 +38,7 @@ export function StaffManagementPage() {
   const changeRole = useChangeStaffRole()
   const isOwner = currentUser?.role === "OWNER"
   const { data: accessLog } = useStaffAccessLog(isOwner)
-  // AC 8.3: removal is two-step — the button only opens this dialog.
+  // Removing staff takes two steps: the button only opens a confirmation
   const [removing, setRemoving] = useState<Staff | null>(null)
 
   const [isInviteOpen, setIsInviteOpen] = useState(false)
@@ -123,7 +123,6 @@ export function StaffManagementPage() {
         </Box>
       </header>
 
-      {/* Roster List Rendering */}
       <Card sx={{ borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid', borderColor: 'divider' }}>
         <List sx={{ p: 0 }}>
           {staff?.map((member, index) => (
@@ -352,7 +351,7 @@ export function StaffManagementPage() {
           </DialogActions>
         </form>
       </Dialog>
-      {/* AC 8.3: second step of removal */}
+      {/* Removal confirmation */}
       <Dialog open={!!removing} onClose={() => setRemoving(null)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>Remove {removing?.fullName}?</DialogTitle>
         <DialogContent>
@@ -375,7 +374,7 @@ export function StaffManagementPage() {
         </DialogActions>
       </Dialog>
 
-      {/* US-8.8 / AC 8.5: immutable access log */}
+      {/* Staff access history, owners only; entries can't be changed */}
       {isOwner && (
         <Card sx={{ mt: 3, borderRadius: '24px', border: '1px solid', borderColor: 'divider', p: 3 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5 }}>Access log</Typography>

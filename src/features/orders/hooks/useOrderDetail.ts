@@ -11,7 +11,7 @@ export function useOrderDetail(id: string) {
 }
 
 export function useMaterials(orderId: string) {
-  // REDUNDANT: USE materials/hooks/useMaterialMutation instead
+  // Deprecated: use materials/hooks/useMaterialMutation
   return useQuery({
     queryKey: ['DEPRECATED_materials', orderId],
     queryFn: async () => [],
@@ -20,7 +20,7 @@ export function useMaterials(orderId: string) {
 }
 
 export function useMeasurements(orderId: string) {
-  // REDUNDANT: USE measurement/hooks/useMeasurementMutation instead
+  // Deprecated: use measurement/hooks/useMeasurementMutation
   return useQuery({
     queryKey: ['DEPRECATED_measurements', orderId],
     queryFn: async () => [],

@@ -7,17 +7,7 @@ interface ProgressPhotoThumbnailsProps {
   photos: ProgressPhoto[];
 }
 
-/**
- * Display-only — reused by both WorkflowGraph (DAG View) and
- * WorkflowStageTimeline (Stage Timeline) so a completed stage's photos are
- * visible from either tab, never disappearing on tab switch. No
- * delete/edit action anywhere — photos are evidence.
- *
- * No existing lightbox/image-preview pattern exists elsewhere in this app
- * (checked InventoryPage/NewOrderPage's own Dialog usage, both unrelated
- * forms) — this is the smallest sensible preview: tap a thumbnail, see the
- * full image in a plain MUI Dialog, no new image framework.
- */
+// Read-only stage photos, tap to enlarge; there is no delete because photos are evidence.
 export function ProgressPhotoThumbnails({ photos }: ProgressPhotoThumbnailsProps) {
   const [openPhoto, setOpenPhoto] = useState<ProgressPhoto | null>(null);
 

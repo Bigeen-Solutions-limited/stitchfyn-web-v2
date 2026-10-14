@@ -16,7 +16,7 @@ export function useReassignGarment(sourceOrderId: string) {
     mutationFn: ({ garmentId, targetOrderId, reason }: ReassignVars) =>
       ordersApi.reassignGarment(garmentId, targetOrderId, reason),
     onSuccess: (_garment, { garmentId, targetOrderId }) => {
-      // ['orders', id] is a prefix of both the order detail and its garments list.
+      // ['orders', id] covers both the order detail and its garment list
       queryClient.invalidateQueries({ queryKey: ['orders', sourceOrderId] });
       queryClient.invalidateQueries({ queryKey: ['orders', targetOrderId] });
       queryClient.invalidateQueries({ queryKey: ['orders', 'list'] });

@@ -1,10 +1,4 @@
-// A stable, per-browser identifier used ONLY to scope fabric-evidence
-// offline-sync idempotency (garment.confirmationDeviceId and
-// SyncAction.deviceId already establish this exact convention server-side
-// — see the offline capture & synchronization discovery). Not a secret, not
-// an auth credential, not tied to any account: safe to keep in
-// localStorage indefinitely, unlike the access token, which is
-// deliberately never persisted here or anywhere else in this app.
+// A per-browser id used to avoid saving retried uploads twice; not a secret, so localStorage is fine.
 const STORAGE_KEY = 'stitchfyn_device_id';
 
 export function getDeviceId(): string {
@@ -15,11 +9,7 @@ export function getDeviceId(): string {
     window.localStorage.setItem(STORAGE_KEY, id);
     return id;
   } catch {
-    // localStorage unavailable (private mode, disabled storage) — fall
-    // back to a session-only id. Idempotency degrades gracefully: retries
-    // within the same page load still dedupe; a full reload gets a new
-    // device id, which only means a replay after reload is treated as a
-    // new submission (safe, just non-optimal), never a wrong one.
+    // No localStorage (e.g. private mode): use an id for this page load only
     return crypto.randomUUID();
   }
 }

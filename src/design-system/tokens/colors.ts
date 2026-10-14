@@ -28,7 +28,7 @@ export const cssTokens = `
     --sf-font-heading: 'Outfit', sans-serif;
     --sf-font-body: 'Inter', system-ui, sans-serif;
 
-    /* Fabric thread texture — diagonal weave, the StitchFYN signature */
+    /* Faint diagonal fabric weave used as the background texture */
     --sf-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Cpath d='M0 4L4 0' stroke='rgba(30%2C92%2C58%2C0.045)' stroke-width='0.6'/%3E%3Cpath d='M-1 1L1 -1M3 5L5 3' stroke='rgba(30%2C92%2C58%2C0.03)' stroke-width='0.4'/%3E%3C/svg%3E");
   }
 `;

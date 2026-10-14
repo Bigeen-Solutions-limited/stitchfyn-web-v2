@@ -43,15 +43,11 @@ import { TransparencyStatus } from '../../features/transparency/components/Trans
 import { CapacityVisualizer } from '../../features/transparency/components/CapacityVisualizer';
 import { QueryLoading, QueryError, QueryEmpty } from '../../components/feedback/QueryState';
 
-// ─── Animations ─────────────────────────────────────────────────
-
 const livePulse = keyframes`
   0%   { box-shadow: 0 0 0 0   rgba(30, 92, 58, 0.25); }
   70%  { box-shadow: 0 0 0 8px rgba(30, 92, 58, 0); }
   100% { box-shadow: 0 0 0 0   rgba(30, 92, 58, 0); }
 `;
-
-// ─── Activity icon map ───────────────────────────────────────────
 
 const getActivityIcon = (iconType?: string) => {
   switch (iconType) {
@@ -62,8 +58,6 @@ const getActivityIcon = (iconType?: string) => {
     default:         return History;
   }
 };
-
-// ─── KPI Card — matches production board stat-panel style ────────
 
 interface KPICardProps {
   label: string;
@@ -111,8 +105,6 @@ function KPICard({ label, value, icon: Icon, accentColor }: KPICardProps) {
   );
 }
 
-// ─── Store load badge ────────────────────────────────────────────
-
 const LOAD_LABEL: Record<string, string> = {
   RED: 'Overloaded',
   AMBER: 'Heavy load',
@@ -124,8 +116,6 @@ const LOAD_COLOR: Record<string, string> = {
   AMBER: '#c49a1a',
   GREEN: '#1e5c3a',
 };
-
-// ─── Main Component ──────────────────────────────────────────────
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -153,8 +143,6 @@ export const AdminDashboard: React.FC = () => {
     );
   }
 
-  // ── Data derivations ──────────────────────────────────────────
-
   const stats = {
     activeOrders:    analytics?.totalActiveOrders ?? 0,
     highRisk:        analytics?.highRiskGarments ?? 0,
@@ -165,7 +153,7 @@ export const AdminDashboard: React.FC = () => {
   const activity: ActivityItem[] = analytics?.activityFeed ?? [];
   const recentOrders = ordersData?.items ?? [];
 
-  // Inventory as percentage of ledger — real values only
+  // Stock as a share of everything received; real values only
   const stocks = (rawInventory ?? []).map(item => {
     const pct = item.totalLedger > 0
       ? Math.round((item.quantityAvailable / item.totalLedger) * 100)
@@ -176,7 +164,7 @@ export const AdminDashboard: React.FC = () => {
     return { materialId: item.materialId, name: item.name, level: pct, barColor };
   });
 
-  // Bottleneck board — real counts only, relative to max stage
+  // Tasks per stage, scaled to the busiest stage
   const tasksByStage = analytics?.tasksByStage ?? {};
   const stageNames = Object.keys(tasksByStage);
   const maxStageCount = Math.max(...Object.values(tasksByStage), 1);
@@ -189,7 +177,6 @@ export const AdminDashboard: React.FC = () => {
   return (
     <Box sx={{ pb: 10, position: 'relative' }}>
 
-      {/* ── Page header ──────────────────────────────────────── */}
       <Box sx={{ mb: 5 }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -243,7 +230,7 @@ export const AdminDashboard: React.FC = () => {
         </Stack>
       </Box>
 
-      {/* ── At-risk callout ───────────────────────────────────── */}
+      {/* At-risk orders */}
       {atRiskOrders.length > 0 && (
         <Box
           sx={{
@@ -272,7 +259,7 @@ export const AdminDashboard: React.FC = () => {
         </Box>
       )}
 
-      {/* ── KPI strip ─────────────────────────────────────────── */}
+      {/* Key figures */}
       <Grid container spacing={2.5} sx={{ mb: 5 }}>
         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
           <Card
@@ -305,7 +292,7 @@ export const AdminDashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* ── Store distribution ────────────────────────────────── */}
+      {/* Load per store */}
       {(analytics?.storeDistribution ?? []).length > 0 && (
         <Box sx={{ mb: 5 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.secondary', mb: 2, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: 0.8 }}>
@@ -373,14 +360,12 @@ export const AdminDashboard: React.FC = () => {
         </Box>
       )}
 
-      {/* ── Main grid ─────────────────────────────────────────── */}
       <Grid container spacing={4}>
 
-        {/* Left column: 8/12 */}
+        {/* Left column */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={4}>
 
-            {/* StitchScore */}
             <StitchScoreCard />
 
             {/* Work distribution */}
@@ -491,7 +476,7 @@ export const AdminDashboard: React.FC = () => {
           </Stack>
         </Grid>
 
-        {/* Right column: 4/12 */}
+        {/* Right column */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
 
@@ -622,7 +607,7 @@ export const AdminDashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* ── FAB ──────────────────────────────────────────────── */}
+      {/* Quick actions button */}
       <SpeedDial
         ariaLabel="Quick actions"
         sx={{ position: 'fixed', bottom: { xs: 88, md: 24 }, right: 24, zIndex: 1200 }}

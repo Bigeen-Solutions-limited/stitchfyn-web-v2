@@ -9,7 +9,7 @@ import '../features/orders/styles/orders.css';
 
 export function OrdersPage() {
   const navigate = useNavigate();
-  // Wire Pull-to-Refresh to a mock behavior (in a real app, this would refetch data)
+  // Pull-to-refresh is a placeholder: it doesn't refetch yet
   const { refreshing, pullDelta } = usePullToRefresh({
     onRefresh: async () => {
       await new Promise(resolve => setTimeout(resolve, 1500));

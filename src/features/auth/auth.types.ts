@@ -19,7 +19,7 @@ export interface AuthUser {
   email: string;
   fullName: string;
   role: StitchFynRole;
-  capabilities: Capability[]; // Atomic claims derived from backend calculus
+  capabilities: Capability[]; // permissions worked out by the server
   avatarUrl?: string;
   mustChangePassword?: boolean;
 }

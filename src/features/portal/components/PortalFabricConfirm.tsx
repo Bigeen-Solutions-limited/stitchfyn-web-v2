@@ -30,17 +30,7 @@ const btnStyle = {
   cursor: 'pointer',
 } as const;
 
-/**
- * Customer-facing fabric confirmation — Slice 5, revised for US-3.3. Same
- * structural pattern as PortalDesignBriefConfirm.tsx (read-only display + a
- * single mutation), extended with a Dispute action, since this is the only
- * portal confirmation surface the PRD requires both actions on.
- *
- * Quantity is now the tailor-logged value already on the garment record
- * (garment.quantity/quantityUnit) — the customer reviews and confirms it
- * here, they no longer type their own. This closes the gap the previous
- * version of this comment described (see the Slice 5 report).
- */
+// The customer reviews and confirms the fabric quantity the tailor recorded, or raises a dispute.
 export function PortalFabricConfirm({ portalToken, garment }: Props) {
   const queryClient = useQueryClient();
   const queryKey = ['customer', 'order', portalToken];

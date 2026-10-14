@@ -5,12 +5,7 @@ interface Props {
   children: React.ReactNode
 }
 
-/**
- * SystemAdminGuard
- * Renders children only when the authenticated user has role SYSTEM_ADMIN.
- * Returns null for ANY other condition — no redirect, no error message.
- * This prevents route discovery via redirect patterns.
- */
+// Shows nothing at all to anyone but a system admin, so the admin routes can't be discovered
 export function SystemAdminGuard({ children }: Props) {
   const { user, isLoading } = useAuthStore()
 

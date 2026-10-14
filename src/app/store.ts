@@ -5,7 +5,6 @@ interface UIState {
   theme: 'light' | 'dark';
   pendingCommandIds: string[];
   
-  // Actions
   toggleSidebar: () => void;
   addPendingCommand: (id: string) => void;
   removePendingCommand: (id: string) => void;

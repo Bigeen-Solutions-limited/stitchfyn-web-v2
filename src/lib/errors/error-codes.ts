@@ -22,7 +22,7 @@ export const ErrorCodes = {
   // Collection / final quality review
   FINAL_QUALITY_REVIEW_NOT_READY:       'FINAL_QUALITY_REVIEW_NOT_READY',
   FINAL_QUALITY_REVIEW_ALREADY_COMPLETED: 'FINAL_QUALITY_REVIEW_ALREADY_COMPLETED',
-  // Activation gate (LR-1)
+  // Activation
   ACTIVATION_INCOMPLETE:     'ACTIVATION_INCOMPLETE',
   // General
   TENANT_MISMATCH:           'TENANT_MISMATCH',

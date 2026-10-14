@@ -240,7 +240,6 @@ export function InventoryPage() {
                     </Box>
                   </Box>
 
-                  {/* Actions */}
                   <Stack spacing={1} sx={{ mt: { xs: 1, md: 0 }, minWidth: { md: 180 } }}>
                     <Button
                       variant="outlined"

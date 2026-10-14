@@ -15,7 +15,7 @@ export const CapacityVisualizer: React.FC = () => {
     switch (uiHint) {
       case 'RED': return '#EF4444';
       case 'AMBER': return '#F59E0B';
-      case 'GRAY': return '#9CA3AF'; // Grey — same treatment as stale, not a fabricated nominal
+      case 'GRAY': return '#9CA3AF'; // no data looks like stale data, never a made-up "all good"
       case 'GREEN':
       default: return '#10B981';
     }

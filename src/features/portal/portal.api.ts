@@ -1,4 +1,3 @@
-// src/features/portal/portal.api.ts
 import { apiClient } from "../../infrastructure/http/axios.client";
 
 export interface Milestone {

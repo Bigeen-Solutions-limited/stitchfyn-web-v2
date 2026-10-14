@@ -105,10 +105,8 @@ describe('WorkflowGraph — Staff Progress-Photo Capture UI integration', () => 
     renderGraph()
 
     await screen.findByText(/CUTTING/)
-    // "sewing" is PENDING with an unmet upstream dependency ("cutting" not
-    // completed) — locked. No capture control, no evidence section for it.
+    // Sewing is locked until cutting is done, so it gets no photo controls
     expect(screen.getByText(/SEWING/)).toBeInTheDocument()
-    // Only one "Add Progress Photo" button exists (cutting's, not sewing's).
     expect(screen.getAllByRole('button', { name: /add progress photo/i })).toHaveLength(1)
   })
 

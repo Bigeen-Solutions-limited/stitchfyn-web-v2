@@ -65,7 +65,6 @@ export function SealVerificationPage() {
         py: { xs: 4, sm: 6 },
       }}
     >
-      {/* Brand header */}
       <Typography
         sx={{
           fontFamily: '"Playfair Display", serif',
@@ -174,7 +173,6 @@ export function SealVerificationPage() {
           </Box>
         </Box>
 
-        {/* Footer */}
         <Box sx={{ borderTop: '1px solid #e5e0d8', px: 3, py: 2, textAlign: 'center' }}>
           <Typography variant="caption" sx={{ color: '#6b6b6b' }}>
             Protected by{' '}

@@ -7,7 +7,6 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({ error, onRetry, title = "Synchronization Error" }: ErrorStateProps) {
-  // Extract domain code if available in axios error
   const errorCode = error?.response?.data?.code || (error instanceof Error ? 'GENERIC_ERROR' : undefined);
   const message = mapErrorCode(errorCode);
 
@@ -46,7 +45,7 @@ export function ErrorState({ error, onRetry, title = "Synchronization Error" }: 
         RETRY SYNCHRONIZATION
       </button>
 
-      {/* Never show stack trace or raw message in production-grade workshop UI */}
+      {/* Raw error text is shown in development only */}
       {import.meta.env.DEV && error?.message && (
         <div style={{ marginTop: 'var(--space-xl)', fontSize: '10px', color: 'var(--color-text-muted)', opacity: 0.5 }}>
           Dev Note: {error.message}

@@ -10,32 +10,7 @@ interface ProgressPhotoCaptureProps {
   stageId: string;
 }
 
-/**
- * Staff Progress-Photo Capture UI — a new, dedicated component (not a
- * repurposing of FabricEvidenceCapturePanel, which stays garment/material-
- * intake-scoped). Reuses that panel's proven camera idiom only:
- * `<input type="file" accept="image/*" capture="environment">`, one tap,
- * automatic upload on selection, no separate "Upload" confirmation step.
- *
- * Deliberately diverges from FabricEvidenceCapturePanel's own inline-Alert
- * state machine — this component has NO local success/error UI at all.
- * Both surface through the workflow feature's existing global toast /
- * useDomainError() convention (see useUploadProgressPhoto's onSuccess/
- * onError), per the locked product decision to preserve that architecture
- * rather than introduce a second error-handling pattern.
- *
- * The optional note is entered BEFORE capture (there's no post-capture
- * confirm step to attach it at, since upload is automatic on selection).
- * It is never required — an empty note simply isn't sent.
- *
- * Server-authoritative: no optimistic photo is added locally. The parent
- * (WorkflowGraph) only renders this component at all when the stage is
- * active/actionable AND has fewer than the photo limit — once a
- * successful upload's query invalidation brings the count to 3, the
- * parent stops rendering this control entirely on its next render. The
- * backend's own createWithinLimit is the actual enforcement; this is a UX
- * optimization only.
- */
+// Takes a progress photo and uploads it straight away; success and errors show as toasts, and the optional note is typed before capture.
 export function ProgressPhotoCapture({ garmentId, stageId }: ProgressPhotoCaptureProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState('');
@@ -51,11 +26,7 @@ export function ProgressPhotoCapture({ garmentId, stageId }: ProgressPhotoCaptur
     if (!file) return;
 
     if (file.size > MAX_PROGRESS_PHOTO_IMAGE_SIZE_BYTES) {
-      // Reject-and-recapture, per the locked product decision — never
-      // compress/resize. This never reaches the mutation (nothing was
-      // sent), so it's surfaced via the same global toast directly rather
-      // than introducing a second, request-shaped error path for a
-      // purely client-side check.
+      // Too large: ask for a retake, never resize; nothing was sent, so show the toast directly
       showToast(
         'Photo Too Large',
         `That photo is ${(file.size / (1024 * 1024)).toFixed(1)}MB — the limit is 5MB. Please retake at a lower resolution.`,

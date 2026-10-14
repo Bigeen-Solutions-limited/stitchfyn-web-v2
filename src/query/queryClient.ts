@@ -5,7 +5,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (failureCount, error) => {
-        // Don't retry on 404 or 401
+        // Retrying a 404 or 401 can't help
         if (error instanceof AxiosError) {
           if (error.response?.status === 404 || error.response?.status === 401) {
             return false;
@@ -14,10 +14,9 @@ export const queryClient = new QueryClient({
         return failureCount < 3;
       },
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
     },
     mutations: {
-      // Global mutation error handling should go here if needed
     }
   },
 });

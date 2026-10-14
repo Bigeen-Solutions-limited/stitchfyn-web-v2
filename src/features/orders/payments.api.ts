@@ -13,7 +13,7 @@ export interface PaymentRecord {
 }
 
 export interface PaymentSummary {
-  totalAgreed: number | null; // kobo, null if orders.total_price not set
+  totalAgreed: number | null; // kobo; null when no total price is set
   totalPaid: number; // kobo
   outstandingBalance: number; // kobo
   records: PaymentRecord[];
@@ -38,7 +38,7 @@ export const paymentsApi = {
   },
 };
 
-// ─── Currency helpers (kobo ↔ naira) — keep conversion logic here only ───────
+// Kobo and naira conversion lives only here
 export const kobotoNaira = (kobo: number): number => kobo / 100;
 export const nairaToKobo = (naira: number): number => Math.round(naira * 100);
 export const formatNaira = (kobo: number): string =>

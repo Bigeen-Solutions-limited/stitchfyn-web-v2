@@ -107,7 +107,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
 
   const drawerContent = (
     <Box className="sidebar-container">
-      {/* Header */}
       <Box className="sidebar-header">
         <IconButton onClick={toggleSidebar} sx={{ color: 'white' }}>
           <MenuIcon sx={{ fontSize: 24 }} />
@@ -129,7 +128,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
         </Stack>
       </Box>
 
-      {/* Navigation */}
       <List sx={{ px: 0 }}>
         {filteredNavItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -184,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
         })}
       </List>
 
-      {/* Forensic Center — OWNER only */}
+      {/* Owners only */}
       {user?.role === 'OWNER' && (
         <Box>
           <Box sx={{ px: 2, pt: 2, pb: 0.5 }}>
@@ -269,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
           </List>
         )}
 
-        {/* Store Switcher — shown only when user has access to multiple tenants */}
+        {/* Only for users with more than one store */}
         {tenants.length > 1 && (
           <Box sx={{ px: 2, pb: 1 }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>

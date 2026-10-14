@@ -1,7 +1,7 @@
 import { apiClient } from "../../infrastructure/http/axios.client";
 
 export type StaffRole = "OWNER" | "MANAGER" | "TAILOR" | "FRONT_DESK";
-/** Roles an owner can assign (D-5: never Owner). */
+// Roles an owner can give; Owner is never one of them
 export const ASSIGNABLE_STAFF_ROLES: StaffRole[] = ["MANAGER", "TAILOR", "FRONT_DESK"];
 
 export interface Staff {
@@ -11,7 +11,6 @@ export interface Staff {
   role: StaffRole;
   storeId: string | null;
   isActive: boolean;
-  /** AC 8.1 */
   status: "ACTIVE" | "SUSPENDED" | "REMOVED";
   lastLoginAt: string | null;
   removedAt: string | null;
@@ -47,7 +46,7 @@ export const staffApi = {
     await apiClient.put(`/staff/${id}/status`, { isActive });
   },
 
-  /** AC 8.3: called only from the second (confirmation) step. */
+  // Only call from the confirmation step
   removeStaff: async (id: string): Promise<void> => {
     await apiClient.post(`/staff/${id}/remove`, { confirm: true });
   },

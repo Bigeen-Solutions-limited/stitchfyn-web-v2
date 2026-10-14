@@ -6,7 +6,7 @@ import { useDomainError } from "../../../lib/errors"
 
 const MAX_CHARS = 1000
 
-/** LR-8 (AC 2.6): the customer's messages for this order, and the staff reply box. */
+// The customer's messages for this order, with a reply box for staff
 export function OrderMessageThread({ orderId }: { orderId: string }) {
   const queryClient = useQueryClient()
   const { handleError } = useDomainError()

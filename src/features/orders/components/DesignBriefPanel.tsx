@@ -33,7 +33,6 @@ interface DesignBriefPanelProps {
   garmentTier: 'STANDARD' | 'COMPLEX' | 'BESPOKE';
 }
 
-// ─── Brief creation form ────────────────────────────────────────────────────
 interface BriefFormState {
   silhouette: string;
   neckline: string;
@@ -97,7 +96,6 @@ function BriefFields({
   );
 }
 
-// ─── Read-only brief display ────────────────────────────────────────────────
 function BriefReadOnly({ brief }: { brief: ReturnType<typeof designBriefApi.getBrief> extends Promise<infer T> ? T : never }) {
   const isConfirmed = !!brief.confirmedByCustomerAt;
   const isBespoke = brief.briefType === 'technical';
@@ -193,7 +191,6 @@ function BriefReadOnly({ brief }: { brief: ReturnType<typeof designBriefApi.getB
   );
 }
 
-// ─── Add Section sub-form ───────────────────────────────────────────────────
 function AddSectionForm({ orderId, garmentId, onSuccess }: { orderId: string; garmentId: string; onSuccess: () => void }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -262,7 +259,6 @@ function AddSectionForm({ orderId, garmentId, onSuccess }: { orderId: string; ga
   );
 }
 
-// ─── Main panel ────────────────────────────────────────────────────────────
 export function DesignBriefPanel({ orderId, garmentId, garmentTier }: DesignBriefPanelProps) {
   const queryClient = useQueryClient();
   const briefType: BriefType = garmentTier === 'BESPOKE' ? 'technical' : 'basic';
@@ -275,7 +271,7 @@ export function DesignBriefPanel({ orderId, garmentId, garmentTier }: DesignBrie
     queryKey: ['design-brief', orderId, garmentId],
     queryFn: () => designBriefApi.getBrief(orderId, garmentId),
     retry: (failureCount, err: any) => {
-      // Don't retry 404s — it just means no brief yet
+      // A 404 just means there is no brief yet, so don't retry it
       if (err?.response?.status === 404) return false;
       return failureCount < 2;
     },
@@ -310,7 +306,6 @@ export function DesignBriefPanel({ orderId, garmentId, garmentTier }: DesignBrie
     );
   }
 
-  // No brief yet (404) or other fetch error that isn't 404
   if (!brief || is404) {
     return (
       <Box sx={{ pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
@@ -336,7 +331,6 @@ export function DesignBriefPanel({ orderId, garmentId, garmentTier }: DesignBrie
           No design brief yet
         </Typography>
 
-        {/* Creation dialog */}
         <Dialog
           open={dialogOpen}
           onClose={() => !createMutation.isPending && setDialogOpen(false)}
@@ -399,7 +393,6 @@ export function DesignBriefPanel({ orderId, garmentId, garmentTier }: DesignBrie
     );
   }
 
-  // Brief exists
   return (
     <Box sx={{ pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>

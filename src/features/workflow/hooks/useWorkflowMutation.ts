@@ -21,8 +21,7 @@ export function useReportStageCompletion(garmentId: string, orderId?: string) {
   const { handleError } = useDomainError()
 
   return useMutation({
-    // LR-5: offline (or the request never reaches the server) → queue it
-    // for /sync/batch instead of losing the tailor's update.
+    // If the request can't reach the server, queue it to sync later instead of losing it
     mutationFn: async (params: { stageId: string; evidencePhotoUrls?: string[] }) => {
       const queue = () => enqueueStageUpdate({ garmentId, orderId, ...params }).then(() => ({ queued: true as const }))
       if (typeof navigator !== "undefined" && navigator.onLine === false) return queue()
@@ -38,7 +37,6 @@ export function useReportStageCompletion(garmentId: string, orderId?: string) {
         showToast("Saved offline", "This stage update will sync when you're back online.")
         return
       }
-      // PURE REFRESH
       queryClient.invalidateQueries({
         queryKey: keys.workflow.garment(garmentId),
       })
@@ -55,11 +53,7 @@ export function useReportStageCompletion(garmentId: string, orderId?: string) {
       showToast("Action Successful", "Information updated.")
     },
     onError: (err: any) => {
-      // A rejected completion (e.g. 409 PROGRESS_PHOTO_REQUIRED from the
-      // QC/Collection Review Photo Gate) leaves the stage incomplete on
-      // the server — refetch so a stale client's view (workflow status,
-      // progress-photo count) re-syncs to the true state rather than
-      // continuing to show whatever it optimistically assumed.
+      // The server refused (e.g. a required photo is missing), so refetch the real state
       queryClient.invalidateQueries({ queryKey: keys.workflow.garment(garmentId) })
       queryClient.invalidateQueries({ queryKey: keys.workflow.progressPhotos(garmentId) })
       handleError(err)
@@ -81,13 +75,7 @@ export function useCompleteStage(orderId: string) {
   }
 }
 
-/**
- * Staff Progress-Photo Capture UI.
- *
- * Server-authoritative by design — no optimistic photo entry is ever added
- * locally; the UI only ever renders what this query returns, refetched
- * after a successful upload.
- */
+// Shows only what the server returns; nothing is added locally before upload
 export function useProgressPhotos(garmentId: string) {
   return useQuery({
     queryKey: keys.workflow.progressPhotos(garmentId),
@@ -103,18 +91,13 @@ export function useUploadProgressPhoto(garmentId: string) {
   return useMutation({
     mutationFn: ({ stageId, file, note }: { stageId: string; file: File; note?: string }) =>
       progressPhotoApi.upload(garmentId, stageId, file, note, {
-        // Generated fresh per capture — makes even this fully-online path
-        // idempotent against a double-tap/retry, the same convention
-        // established for fabric evidence. Not offline queueing: nothing
-        // here persists across a reload or retries after a page leave.
+        // New key per photo, so a double tap or retry isn't saved twice
         clientId: crypto.randomUUID(),
         deviceId: getDeviceId(),
         deviceCapturedAt: new Date().toISOString(),
       }),
     onSuccess: () => {
-      // PURE REFRESH — progress photos live in their own table, untouched
-      // by stage completion, so only this query needs invalidating (not
-      // keys.workflow.garment, which reflects stage state, not photos).
+      // Photos are stored separately from stage state, so only this list needs refreshing
       queryClient.invalidateQueries({ queryKey: keys.workflow.progressPhotos(garmentId) })
       showToast("Photo Added", "Progress photo uploaded.")
     },

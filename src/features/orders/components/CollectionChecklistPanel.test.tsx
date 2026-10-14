@@ -71,7 +71,7 @@ describe('CollectionChecklistPanel — US-4.8 Final Quality Review', () => {
     expect(screen.getByText('Stitching and finishing inspected')).toBeInTheDocument()
     expect(screen.getByText('Customer satisfied with garment condition')).toBeInTheDocument()
 
-    // Non-interactive: no checkbox/button role attached to any item label.
+    // Items are read-only: no checkbox roles
     expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
   })
 
@@ -162,13 +162,9 @@ describe('CollectionChecklistPanel — US-4.8 Final Quality Review', () => {
     const button = await screen.findByRole('button', { name: /complete quality check/i })
     fireEvent.click(button)
 
-    // handleError() routes a 409 to the toast store, never to navigation —
-    // there is no router/navigate mock here at all, so a would-be /403
-    // redirect (a concern of the separate, untouched axios interceptor)
-    // has nothing to call; this proves the component itself never invokes
-    // any navigation on a rejected mutation.
+    // A 409 goes to a toast, never to navigation (there is no router mock here to call)
     await waitFor(() => expect(collectionApi.tailorSignoff).toHaveBeenCalledTimes(1))
-    // The checklist remains in its pre-completion state — no silent state change.
+    // The checklist keeps its pre-completion state
     expect(screen.getByRole('button', { name: /complete quality check/i })).toBeInTheDocument()
   })
 

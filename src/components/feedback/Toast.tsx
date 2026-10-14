@@ -16,15 +16,12 @@ export const useToastStore = create<ToastState>((set) => ({
   toast: null,
   showToast: (title, detail, type = 'success') => {
     set({ toast: { title, detail, type } });
-    setTimeout(() => set({ toast: null }), 5000); // 5 seconds for structured toasts
+    setTimeout(() => set({ toast: null }), 5000);
   },
   hideToast: () => set({ toast: null }),
 }));
 
-/**
- * Standalone showToast function for use outside of React hooks or in components
- * that haven't been refactored to use useToastStore directly.
- */
+// For code outside React components
 export const showToast = (title: string, detail: string, type: 'success' | 'error' = 'success') => {
   useToastStore.getState().showToast(title, detail, type);
 };

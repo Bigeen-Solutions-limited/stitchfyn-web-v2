@@ -70,7 +70,7 @@ export interface AccessLogEntry {
 
 const ACCESS_ACTIONS = ["STAFF_SUSPENDED", "STAFF_REINSTATED", "STAFF_REMOVED", "STAFF_ROLE_CHANGED"];
 
-/** US-8.8: the sealed access-control decisions, newest first. */
+// Staff access decisions, newest first
 export function useStaffAccessLog(enabled: boolean) {
   return useQuery({
     queryKey: [...keys.staff.all, "access-log"],

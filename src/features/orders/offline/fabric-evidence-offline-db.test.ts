@@ -77,10 +77,7 @@ describe('fabric-evidence-offline-db', () => {
   })
 
   it('the stored image bytes/type survive the IndexedDB round trip unmodified', async () => {
-    // Checks size/type, not `.name` — Node's structuredClone (what
-    // fake-indexeddb clones through) currently downgrades a cloned File to
-    // a plain Blob, dropping its name; real browsers preserve File
-    // identity fully. See src/test/setup.ts for the full explanation.
+    // Check size and type, not name: the test environment drops File names when cloning
     const file = makeFile('proof.jpg')
     await enqueuePendingEvidence({ id: 'c1', garmentId: 'garment-A', deviceId: 'd1', imageFile: file, deviceCapturedAt: new Date().toISOString() })
 
@@ -92,18 +89,13 @@ describe('fabric-evidence-offline-db', () => {
   it('surviving a simulated reload: a fresh read (no in-memory state) still finds the persisted item', async () => {
     await enqueuePendingEvidence({ id: 'c1', garmentId: 'garment-A', deviceId: 'd1', imageFile: makeFile(), deviceCapturedAt: new Date().toISOString() })
 
-    // Nothing here holds a reference to the write above — this call opens
-    // a brand-new IndexedDB connection, the same as a page reload would.
+    // Opens a new IndexedDB connection, like a page reload would
     const reread = await getPendingForGarment('garment-A')
     expect(reread).toHaveLength(1)
   })
 
   describe('5 MiB defense-in-depth guard', () => {
-    // FabricEvidenceCapturePanel already rejects an oversized file before
-    // it ever calls enqueuePendingEvidence — these tests call it directly,
-    // proving the function enforces the limit independently of that
-    // upstream check (future callers, programming error, stale client
-    // state, direct invocation).
+    // The panel already blocks oversized files; these prove this function blocks them on its own
 
     it('rejects a file over the 5 MiB limit with a distinguishable error and persists nothing', async () => {
       const oversized = makeFile('huge.jpg', MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES + 1)

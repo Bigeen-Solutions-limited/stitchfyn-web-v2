@@ -21,8 +21,7 @@ import { sealApi } from '../seal.api';
 interface FabricSealPanelProps {
   orderId: string;
   garmentId: string;
-  // US-3.3: the quantity recorded on the garment at intake. Confirming
-  // reviews/acknowledges this value — it is never re-entered here.
+  // Recorded at intake; confirming only acknowledges it
   quantity: number | null;
   quantityUnit: string | null;
 }
@@ -65,9 +64,7 @@ export function FabricSealPanel({ orderId, garmentId, quantity, quantityUnit }: 
     },
   });
 
-  // Confirmation is permanent (DB-enforced) the instant it succeeds — once
-  // it has, the trigger stays disabled rather than racing the seal refetch
-  // to decide whether to show the button again.
+  // Confirmation is permanent, so keep the button disabled once it succeeds
   const alreadyConfirming = confirmMutation.isPending || confirmMutation.isSuccess;
 
   return (
@@ -119,8 +116,7 @@ export function FabricSealPanel({ orderId, garmentId, quantity, quantityUnit }: 
         </Stack>
       )}
 
-      {/* Confirmation dialog — in-person confirmation only; the customer's own
-          portal/SMS/WhatsApp channels are separate, unauthenticated flows */}
+      {/* In-person confirmation; the customer's own confirmation happens in the portal */}
       <Dialog
         open={dialogOpen}
         onClose={() => !confirmMutation.isPending && setDialogOpen(false)}
@@ -195,7 +191,6 @@ export function FabricSealPanel({ orderId, garmentId, quantity, quantityUnit }: 
 
       {seal && (
         <Stack spacing={2}>
-          {/* QR code + code side by side on desktop, stacked on mobile */}
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={2}

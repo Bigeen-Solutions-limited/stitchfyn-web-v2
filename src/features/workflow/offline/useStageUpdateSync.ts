@@ -3,10 +3,7 @@ import { useToastStore } from '../../../components/feedback/Toast';
 import { queryClient } from '../../../query/queryClient';
 import { flushStageUpdates } from './stage-update-queue';
 
-/**
- * LR-5: replays offline stage updates on app start and whenever the
- * browser comes back online. Mounted once, in AppShell.
- */
+// Sends offline stage updates on app start and whenever the browser comes back online
 export function useStageUpdateSync() {
   const showToast = useToastStore((state) => state.showToast);
 

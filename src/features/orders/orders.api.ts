@@ -10,7 +10,7 @@ export interface Order {
   customerName: string
   eventDate: string
   lockedMeasurementVersionId: string | null
-  orderNumber: number // From decimal/int in database
+  orderNumber: number
   status: string
   garmentName: string
   deadline: string
@@ -91,8 +91,7 @@ export const ordersApi = {
 
   getOrderDetail: async (id: string) => {
     const { data } = await apiClient.get<OrderDetailResponse & { unverified_flags?: Order["unverifiedFlags"] }>(`/orders/${id}`)
-    // The detail endpoint returns the activation flags at the top level;
-    // the page reads them off the order like the list does.
+    // The detail endpoint returns activation flags separately; attach them to the order like the list does
     return { ...data, order: { ...data.order, unverifiedFlags: data.unverified_flags ?? [] } }
   },
 

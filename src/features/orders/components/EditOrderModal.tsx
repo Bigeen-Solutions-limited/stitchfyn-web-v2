@@ -33,9 +33,7 @@ export function EditOrderModal({ open, onClose, order }: EditOrderModalProps) {
   const handleSubmit = () => {
     if (!order) return;
     
-    // Convert local YYYY-MM-DD string to valid ISO string without timezone shift by making sure it represents a proper UTC start of day or local start of day. 
-    // The prompt requested a clean ISO string to the backend to avoid timezone shifting.
-    // Standard approach: 
+    // Send the date as an ISO string
     const dateObj = new Date(dateStr);
     const isoString = dateObj.toISOString();
     

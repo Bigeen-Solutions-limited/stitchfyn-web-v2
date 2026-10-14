@@ -26,13 +26,7 @@ interface FabricEvidenceCapturePanelProps {
   garmentId: string;
 }
 
-// @fastify/multipart is configured with the same limit server-side
-// (MAX_UPLOAD_FILE_SIZE_BYTES, stitchfyn-api/src/app/app.ts). A typical
-// modern phone camera photo can exceed this (a single 12MP+ JPEG is often
-// 3-8MB), so this is checked client-side to fail fast with a clear message
-// rather than silently attempting an upload that will 413. Product
-// decision: oversized images are rejected outright — never compressed,
-// resized, or uploaded first to discover the problem afterward.
+// Same limit as the server; checked here so oversized phone photos are rejected before uploading, never resized.
 const MAX_FILE_SIZE_BYTES = MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES;
 
 type CaptureState = 'idle' | 'uploading' | 'success' | 'error' | 'queued';
@@ -42,7 +36,6 @@ interface CaptureAttempt {
   deviceCapturedAt: string;
 }
 
-/** Manages its own object URL lifecycle for one queued item's File. */
 function PendingEvidenceThumbnail({ file }: { file: File }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -61,49 +54,19 @@ function PendingEvidenceThumbnail({ file }: { file: File }) {
   );
 }
 
-/**
- * Fabric Evidence Capture — Slice 4, revised for US-3.1 (single-tap capture)
- *
- * Deliberately separate from FabricSealPanel: this component only captures
- * and uploads fabric_evidence_photos rows via the Slice 3 endpoint. It
- * never sets garments.confirmed_at and never triggers a Fabric Safety
- * Seal — confirmation is a distinct, later, customer-facing step.
- *
- * State is per-garment (keyed by garmentId via the parent's `key` prop, see
- * OrderDetailPage) so garment A's captures are never conflated with
- * garment B's — each mounted instance of this component only ever knows
- * about its own garmentId.
- *
- * US-3.1: selecting/capturing a valid photo uploads it immediately — there
- * is no intermediate "ready" preview state and no separate Upload Photo
- * tap. The file input is only ever rendered while state === 'idle', so it
- * unmounts the instant a file is accepted, which is what actually prevents
- * a stray double `change` event (or a repeat tap on the — now-hidden —
- * capture button) from firing a second upload; the `state !== 'idle'`
- * guard at the top of handleFileChange is defense in depth for the same
- * event landing before that re-render commits.
- */
+// Uploads fabric photos for one garment the moment they are taken; it never confirms the fabric or creates a seal.
 export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCapturePanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [state, setState] = useState<CaptureState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  // Evidence uploaded THIS session — there is no GET endpoint for fabric
-  // evidence yet (Slice 3 deliberately added creation only), so photos
-  // uploaded in a prior session are not shown here on reload. See the
-  // Slice 4 report's "unresolved risks" for this gap.
+  // Only this session's uploads: there is no endpoint yet to list earlier ones.
   const [uploadedPhotos, setUploadedPhotos] = useState<FabricEvidencePhoto[]>([]);
-  // Set once per newly-selected file (not per upload attempt) so a manual
-  // "Retry" after a genuine server error replays the SAME idempotency key
-  // — required for the offline capture & sync contract: a retried
-  // submission must be recognized as the same one, not a fresh duplicate.
+  // One key per photo, so a retry is recognised by the server as the same upload, not a duplicate.
   const [captureAttempt, setCaptureAttempt] = useState<CaptureAttempt | null>(null);
 
-  // Offline capture & synchronization: photos already queued (this
-  // session or a prior one — the queue is IndexedDB-backed, so it survives
-  // reload/restart) for THIS garment. onSynced appends the now-confirmed
-  // photo to uploadedPhotos, same as a normal immediate success would.
+  // Photos saved offline for this garment; they survive a reload and join uploadedPhotos once synced.
   const pendingItems = useFabricEvidenceOfflineQueue(garmentId, (photo) => {
     setUploadedPhotos((prev) => (prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]));
   });
@@ -153,9 +116,7 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
           const status = error.response?.status;
 
           if (!status) {
-            // No server response at all — connectivity is the actual
-            // problem, not the photo or the request. Persist it instead of
-            // showing a dead-end error the user can't act on offline.
+            // No response means we are offline, so save the photo to sync later.
             try {
               await enqueuePendingEvidence({
                 id: idempotency.clientId,
@@ -171,13 +132,7 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
               setCaptureAttempt(null);
               if (inputRef.current) inputRef.current.value = '';
             } catch (enqueueError) {
-              // Do NOT claim this was safely saved offline. Distinguish an
-              // oversized file (should be structurally unreachable via this
-              // UI — handleFileChange already rejects it before selection —
-              // but enqueuePendingEvidence enforces it independently as a
-              // defense-in-depth boundary) from a genuine storage failure
-              // (quota, private browsing, etc.), so the message matches
-              // what actually happened.
+              // Saving offline failed (too large, or device storage full/blocked), so say so honestly.
               setState('error');
               setErrorMessage(
                 enqueueError instanceof OversizedFabricEvidenceError
@@ -204,7 +159,7 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (state !== 'idle') return; // belt-and-suspenders: the input is unmounted outside 'idle' anyway
+    if (state !== 'idle') return; // ignore a second tap that lands before the input disappears
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       setSelectedFile(null);
@@ -219,18 +174,13 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
     setErrorMessage(null);
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
-    // Generated once, at the moment of capture — not at upload-attempt
-    // time — so every retry (online or via the offline queue) of THIS
-    // photo carries the same idempotency key and the same device-claimed
-    // capture instant.
+    // Made once at capture time so every retry carries the same key and capture time.
     const idempotency: CaptureAttempt = { clientId: crypto.randomUUID(), deviceCapturedAt: new Date().toISOString() };
     setCaptureAttempt(idempotency);
-    startUpload(file, idempotency); // US-3.1: no separate Upload Photo tap — upload starts on selection
+    startUpload(file, idempotency);
   }
 
   function handleRetry() {
-    // Re-attempts the SAME already-selected file with the SAME idempotency
-    // key — no recapture needed, and a genuine duplicate is impossible.
     if (!selectedFile || !captureAttempt) return;
     startUpload(selectedFile, captureAttempt);
   }
@@ -336,11 +286,7 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
         </Button>
       )}
 
-      {/* US-3.1: upload starts automatically on selection — there is no
-          preview/confirm step to stop at, just an in-progress indicator
-          while the existing mutation runs. The button is disabled (not
-          removed) so a duplicate tap during this window is a no-op rather
-          than a second submission. */}
+      {/* Disabled rather than hidden, so a second tap while uploading does nothing. */}
       {state === 'uploading' && previewUrl && (
         <Stack spacing={1.5} alignItems="flex-start">
           <Box

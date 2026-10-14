@@ -2,8 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { ordersApi } from '../orders.api.ts';
 import { useToastStore } from '../../../components/feedback/Toast.tsx';
 
-// A reminder changes no server-rendered state (the activation flags are
-// derived from fabric/design/payment), so there is nothing to invalidate.
+// A reminder changes nothing on screen, so there is nothing to refetch
 export function useRequestActivationReminder() {
   const showToast = useToastStore((state) => state.showToast);
 

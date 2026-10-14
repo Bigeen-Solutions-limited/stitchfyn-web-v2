@@ -5,11 +5,6 @@ export type { DisputeListItem, DisputesListResponse, DisputeStatus, DisputeCateg
 import { keys } from '../../query/keys';
 import { useToastStore } from '../../components/feedback/Toast';
 
-/**
- * useDisputesList
- *
- * Paginated list of all company disputes for the management view.
- */
 export function useDisputesList(page = 1, limit = 10) {
   return useQuery({
     queryKey: keys.disputes.list(page, limit),
@@ -17,11 +12,6 @@ export function useDisputesList(page = 1, limit = 10) {
   });
 }
 
-/**
- * useDisputeProjection
- *
- * Subscribes the UI to the backend's standoff projection.
- */
 export function useDisputeProjection(orderId: string) {
   return useQuery({
     queryKey: keys.disputes.projection(orderId),
@@ -31,11 +21,6 @@ export function useDisputeProjection(orderId: string) {
   });
 }
 
-/**
- * useRaiseDispute
- * 
- * Mutation to initialize the arbitration state machine.
- */
 export function useRaiseDispute() {
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);
@@ -43,7 +28,6 @@ export function useRaiseDispute() {
   return useMutation({
     mutationFn: (dto: RaiseDisputeDTO) => disputeApi.raiseDispute(dto),
     onSuccess: (_, variables) => {
-      // PURE REFRESH: Invalidate and refetch server state
       queryClient.invalidateQueries({ queryKey: keys.disputes.projection(variables.orderId) });
       queryClient.invalidateQueries({ queryKey: keys.orders.detail(variables.orderId) });
       showToast("Dispute raised. Physical workflow frozen.", "warning");
@@ -55,9 +39,6 @@ export function useRaiseDispute() {
   });
 }
 
-/**
- * useSubmitEvidence
- */
 export function useSubmitEvidence(orderId: string) {
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);
@@ -74,11 +55,7 @@ export function useSubmitEvidence(orderId: string) {
   });
 }
 
-/**
- * useTailorResolve
- *
- * Records the tailor's bilateral resolution confirmation.
- */
+// The tailor's side of the two-sided resolution sign-off
 export function useTailorResolve(orderId: string) {
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);
@@ -96,9 +73,6 @@ export function useTailorResolve(orderId: string) {
   });
 }
 
-/**
- * useResolveDispute
- */
 export function useResolveDispute(orderId: string) {
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);

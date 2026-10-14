@@ -1,12 +1,4 @@
-// LR-5: stage completions made while offline are persisted here and replayed
-// through POST /sync/batch when connectivity returns.
-//
-// Same shape as the fabric-evidence offline queue (thin IndexedDB wrapper,
-// no new dependency, no polling — flushes on the browser's `online` event
-// and on app start). Conflict rule is deterministic: the SERVER WINS. Every
-// item the server accepted or rejected is removed; a rejection is reported
-// to the user with the server's reason. Only items that never reached the
-// server (network failure, expired session) stay queued.
+// Stage completions made offline are saved here and sent through POST /sync/batch when back online; the server's decision is final.
 import axios from 'axios';
 import { apiClient } from '../../../infrastructure/http/axios.client';
 import { useAuthStore } from '../../auth/auth.store';
@@ -16,7 +8,7 @@ const DB_NAME = 'stitchfyn-stage-update-queue';
 const STORE_NAME = 'pending';
 
 export interface QueuedStageUpdate {
-  /** Also the idempotency clientId sent to the server. */
+  // Also the idempotency key sent to the server
   id: string;
   garmentId: string;
   orderId?: string;
@@ -84,18 +76,13 @@ async function removeStageUpdate(id: string): Promise<void> {
   await withStore('readwrite', (store) => store.delete(id));
 }
 
-/** True when a request failed without ever reaching the server. */
 export function isNetworkFailure(error: unknown): boolean {
   return axios.isAxiosError(error) && !error.response;
 }
 
 let isFlushing = false;
 
-/**
- * Sends every queued update in device order as one batch. Re-entrant calls
- * are no-ops. Returns null when nothing was attempted (offline, signed out,
- * empty queue, already flushing, or the request never reached the server).
- */
+// Sends every queued update in order as one batch; returns null if nothing was sent
 export async function flushStageUpdates(): Promise<StageSyncResult | null> {
   if (isFlushing) return null;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
@@ -123,8 +110,7 @@ export async function flushStageUpdates(): Promise<StageSyncResult | null> {
         })),
       });
     } catch (error) {
-      // Never reached the server, or the session expired: keep everything
-      // queued for the next attempt.
+      // Never reached the server or the session expired: keep everything for next time
       if (isNetworkFailure(error) || (axios.isAxiosError(error) && error.response?.status === 401)) return null;
       throw error;
     }
@@ -139,7 +125,7 @@ export async function flushStageUpdates(): Promise<StageSyncResult | null> {
       const update = byId.get(c.clientId);
       if (update) result.conflicts.push({ update, message: c.message });
     }
-    // Server wins: whatever it decided is final for these items.
+    // The server's decision is final, so drop everything it answered
     for (const u of [...result.synced, ...result.conflicts.map((c) => c.update)]) {
       await removeStageUpdate(u.id);
     }

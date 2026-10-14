@@ -3,7 +3,6 @@ import { parseApiError } from "./parse-api-error"
 import { ErrorCodes } from "./error-codes"
 import { errorMessages } from "./error-messages"
 
-// Mock axios.isAxiosError
 vi.mock("axios", async () => {
   const actual = (await vi.importActual("axios")) as any
   return {
@@ -44,7 +43,6 @@ describe("parseApiError", () => {
   it("returns connection error message for network error (no response)", () => {
     const error = {
       isAxiosError: true,
-      // no response property
     }
 
     const result = parseApiError(error)

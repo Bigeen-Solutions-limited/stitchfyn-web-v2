@@ -29,7 +29,7 @@ export function ReassignFabricDialog({
     }
   }, [open]);
 
-  // GET /orders returns one row per garment, so a multi-garment order repeats.
+  // The order list has one row per garment, so remove repeated orders
   const targets = [
     ...new Map(
       (ordersPage?.items ?? []).filter((o) => o.id !== currentOrderId).map((o) => [o.id, o] as const),

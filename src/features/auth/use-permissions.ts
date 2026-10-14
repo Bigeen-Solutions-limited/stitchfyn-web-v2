@@ -1,9 +1,6 @@
 import { useAuthStore } from './auth.store';
 
-/**
- * Capability Definitions
- * These must match the backend auth.types.ts exactly.
- */
+// Must match the server's capability names
 export const AuthCapabilities = {
   MANAGE_ORDERS: 'MANAGE_ORDERS',
   BYPASS_CAPACITY: 'BYPASS_CAPACITY',
@@ -19,17 +16,10 @@ export const AuthCapabilities = {
 
 export type CapabilityType = (typeof AuthCapabilities)[keyof typeof AuthCapabilities];
 
-/**
- * Hook for component-level capability gating.
- * Adheres to the "Pure Projection" doctrine.
- */
 export function usePermissions() {
   const user = useAuthStore((state) => state.user);
 
-  /**
-   * Checks if the user has a specific atomic capability.
-   * NEVER check role names in the UI.
-   */
+  // Check capabilities, never role names
   const hasCapability = (cap: CapabilityType): boolean => {
     if (!user || !user.capabilities) return false;
     return user.capabilities.includes(cap);

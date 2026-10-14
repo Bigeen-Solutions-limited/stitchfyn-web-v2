@@ -8,7 +8,7 @@ export const components: Components<Omit<Theme, 'components'>> = {
         -moz-osx-font-smoothing: grayscale;
         background-color: #f5f4f0;
       }
-      /* Reduced-motion: disable transitions for users who prefer it */
+      /* Turn off animations for people who ask for reduced motion */
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;

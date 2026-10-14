@@ -76,7 +76,6 @@ export function SplashScreen() {
           </Box>
         </Fade>
 
-        {/* Headline */}
         <Fade in={startAnimations} timeout={400} style={{ transitionDelay: '200ms' }}>
           <Box sx={{ mb: 2, transform: startAnimations ? 'translateY(0)' : 'translateY(20px)', transition: 'transform 400ms ease-out 200ms' }}>
             <Typography
@@ -94,7 +93,6 @@ export function SplashScreen() {
           </Box>
         </Fade>
 
-        {/* Subheadline */}
         <Fade in={startAnimations} timeout={400} style={{ transitionDelay: '350ms' }}>
           <Typography
             variant="body1"
@@ -155,7 +153,6 @@ export function SplashScreen() {
           ))}
         </Stack>
 
-        {/* CTA Button */}
         <Grow in={startAnimations} timeout={300} style={{ transitionDelay: '600ms' }}>
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <Button

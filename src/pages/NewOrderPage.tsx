@@ -123,11 +123,7 @@ export function NewOrderPage() {
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [materialQuantity, setMaterialQuantity] = useState<number | "">("");
-  // US-3.3: the controlled unit for the garment's own structured fabric
-  // quantity record — distinct from the Material Vault's canonicalUnit
-  // (that's free text set at material registration and isn't guaranteed to
-  // match this small, validated set). Defaults to the common case to keep
-  // intake fast.
+  // Unit for the garment's fabric quantity; separate from the material's own free-text unit.
   const [quantityUnit, setQuantityUnit] = useState<"yards" | "meters">("yards");
   const [eventOccasion, setEventOccasion] = useState("");
   const [garmentCategory, setGarmentCategory] = useState("");
@@ -171,7 +167,7 @@ export function NewOrderPage() {
     }
   };
 
-  // 1. Initial Load: Pre-load customer if ID in URL
+  // Pre-load the customer when the URL has ?customerId=
   useEffect(() => {
     const customerId = searchParams.get("customerId");
     if (customerId && !selectedCustomer) {
@@ -195,18 +191,16 @@ export function NewOrderPage() {
     }
   }, [searchParams, queryClient, selectedCustomer]);
 
-  // 2. Intelligence Gate: Check compatibility when template is selected
+  // Adds the garment and checks whether the customer's saved measurements fit its template
   const handleTemplateSelection = async (template: any) => {
     const templateId = template.id;
 
-    // Add to items
     setOrderItems([...orderItems, {
       templateId: template.id,
       estimatedTotalDurationHours: 24,
       assignedTailorId: role === 'TAILOR' ? user?.id : null
     }]);
 
-    // If we have a customer, check measurements for this template
     if (selectedCustomer?.id) {
        try {
          const profile = await queryClient.fetchQuery({
@@ -224,7 +218,7 @@ export function NewOrderPage() {
            showToast("Measurement Intelligence", "Compatible existing measurements found and auto-selected.", "success");
          }
        } catch (error) {
-         // Log for observability, but degrade silently
+         // Not critical: log it and let staff enter measurements by hand
          console.error("Measurement intelligence fetch failed", error);
        }
     }
@@ -238,7 +232,7 @@ export function NewOrderPage() {
     }
   };
 
-  // THE AGGREGATION FORGE
+  // Every measurement field needed by the selected garments, without duplicates
   const dynamicMeasurementFields = useMemo(() => {
     if (!templates || !orderItems || orderItems.length === 0) return [];
     const uniqueFields = new Set<string>();
@@ -254,17 +248,15 @@ export function NewOrderPage() {
     return Array.from(uniqueFields);
   }, [orderItems, templates]);
 
-  // Sync Template Fields into Entries
+  // Keep the measurement list in step with the selected garments, pre-filled from the customer's profile
   useEffect(() => {
     setMeasurementEntries(prev => {
       const existingLabels = new Set(prev.map(e => e.label));
       const next = [...prev];
       let changed = false;
 
-      // Seed from customer profile if available and not already in ledger
       const customerMeasurements = selectedCustomer?.latestMeasurement?.measurements || {};
 
-      // First, ensure all existing customer measurements are in the list if they are not already
       Object.entries(customerMeasurements).forEach(([label, value]) => {
         if (!existingLabels.has(label)) {
           next.push({
@@ -276,7 +268,7 @@ export function NewOrderPage() {
           existingLabels.add(label);
           changed = true;
         } else {
-          // If it exists, update the value IF it's empty (intelligent seeding)
+          // Only fill a value the tailor has left empty
           const idx = next.findIndex(e => e.label === label);
           if (idx !== -1 && next[idx].value === "") {
             next[idx].value = String(value);
@@ -342,9 +334,7 @@ export function NewOrderPage() {
       let finalMeasurementVersionId = autoSelectedMeasurement?.measurementId;
 
       if (!finalMeasurementVersionId) {
-        // Validation: at least one measurement is required UNLESS the selected
-        // template(s) genuinely require none (e.g. "General / Other") — the
-        // backend already permits an empty measurement set for that case.
+        // At least one measurement is required, unless the garment needs none (e.g. "General / Other")
         const numericMeasurements: Record<string, number> = {};
         measurementEntries.forEach(entry => {
           const val = parseFloat(entry.value);
@@ -357,11 +347,7 @@ export function NewOrderPage() {
           throw new Error("Validation Failed: At least one measurement metric is required to commit order.");
         }
 
-        // Measurement lifecycle integrity: order intake follows the same
-        // draft -> complete -> locked+hashed path as a standalone measurement.
-        // The Measurement domain owns this transition (completeMeasurement) —
-        // order creation only ever references the resulting locked version,
-        // it never performs the lock itself.
+        // Save and lock the measurements first; the order only points at the locked version
         showToast("Recording measurement snapshot...", "Saving draft measurement.", "success");
         const mv = await createMeasurement.mutateAsync({
           customerId: finalCustomerId,
@@ -384,7 +370,7 @@ export function NewOrderPage() {
         return;
       }
 
-      // Capacity pre-flight: warn if store is over capacity (non-blocking — OWNER can override)
+      // Warn if the store is over capacity; this never blocks the order
       try {
         const capacityCheck = await storesApi.checkCapacity(finalStoreId);
         if (!capacityCheck.canAccept) {
@@ -394,7 +380,7 @@ export function NewOrderPage() {
           );
         }
       } catch {
-        // Capacity check is advisory — never block order creation if the endpoint fails
+        // If the capacity check itself fails, carry on with the order
       }
 
       showToast("Finalizing order & calculating risk...", "Almost there.", "success");
@@ -416,10 +402,7 @@ export function NewOrderPage() {
           fabricType: inventory?.find(m => m.materialId === selectedMaterialId)?.name || null,
           colorSwatch: fabricDetails.colorSwatch,
           designNotes: fabricDetails.designNotes,
-          // US-3.3: the garment's own structured fabric quantity record —
-          // same number the tailor entered above for the Material Vault
-          // reservation (materialQuantity, below), explicitly wired into
-          // both destinations rather than only feeding the inventory side.
+          // The same quantity is saved on the garment and used for the material reservation
           quantity: materialQuantity || undefined,
           quantityUnit: materialQuantity ? quantityUnit : undefined
         })),
@@ -435,7 +418,7 @@ export function NewOrderPage() {
       const errorData = err.response?.data;
       let errorMessage = errorData?.message || err.message || "Failed to finalize order";
 
-      // The UI Guardrail: Use centralized mapping for dignified error feedback
+      // Turn the server's error code into a friendly message
       if (errorData?.code) {
         errorMessage = mapErrorCode(errorData.code);
 
@@ -1303,13 +1286,7 @@ export function NewOrderPage() {
               </Box>
 
               <Grid container spacing={4}>
-                {/* Fabric evidence capture moved to the order detail page
-                    (Slice 4) — one photo per garment, uploaded through the
-                    authenticated fabric-evidence-photos endpoint once real
-                    garment IDs exist, instead of a single base64 photo
-                    shared across every garment in the order. This card is
-                    now informational only; it no longer writes
-                    fabricImageBase64. */}
+                {/* Information only: fabric photos are taken per garment on the order page after the order exists. */}
                 <Grid size={{ xs: 12, md: 5 }}>
                   <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 1.5, display: 'block', letterSpacing: 1.5 }}>
                     FABRIC EVIDENCE
@@ -1361,7 +1338,7 @@ export function NewOrderPage() {
                     p: 3
                   }}>
                     <Stack spacing={3}>
-                      {/* EMPTY VAULT GUARDRAIL */}
+                      {/* No materials registered yet */}
                       {inventory !== undefined && inventory.length === 0 && (
                         <Box sx={{
                           p: 2,

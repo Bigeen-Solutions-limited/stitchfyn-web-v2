@@ -108,9 +108,9 @@ export function RolePermissionsMatrix() {
     );
   }
 
-  // Only show configurable roles in the matrix (exclude OWNER, CUSTOMER, SYSTEM_ADMIN)
+  // Owner, customer and system admin can't be configured
   const configurableRoles = data?.roles.filter(r => CONFIGURABLE_ROLES.includes(r.role)) ?? [];
-  // Get capabilities from first configurable role
+  // Every role has the same capability list, so read it from the first
   const capabilities = configurableRoles[0]?.capabilities.map(c => c.capability) ?? [];
 
   return (
@@ -126,7 +126,6 @@ export function RolePermissionsMatrix() {
         </Typography>
       </header>
 
-      {/* Owner always-on notice */}
       <Alert
         severity="info"
         icon={<LockIcon fontSize="inherit" />}
@@ -135,7 +134,6 @@ export function RolePermissionsMatrix() {
         <strong>Owner</strong> has all capabilities permanently enabled and cannot be restricted.
       </Alert>
 
-      {/* Matrix table */}
       <Paper
         variant="outlined"
         sx={{
@@ -144,7 +142,6 @@ export function RolePermissionsMatrix() {
           borderColor: 'divider',
         }}
       >
-        {/* Header row */}
         <Box
           sx={{
             display: 'grid',
@@ -168,7 +165,6 @@ export function RolePermissionsMatrix() {
           ))}
         </Box>
 
-        {/* Capability rows */}
         {capabilities.map((cap, idx) => (
           <Box
             key={cap}
@@ -185,7 +181,6 @@ export function RolePermissionsMatrix() {
               transition: 'background-color 0.15s ease',
             }}
           >
-            {/* Capability label */}
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                 {CAPABILITY_LABELS[cap] ?? cap}
@@ -195,7 +190,6 @@ export function RolePermissionsMatrix() {
               </Typography>
             </Box>
 
-            {/* Toggle per role */}
             {configurableRoles.map(r => {
               const entry = r.capabilities.find(c => c.capability === cap);
               const isEnabled = entry?.isEnabled ?? false;
@@ -254,7 +248,6 @@ export function RolePermissionsMatrix() {
         ))}
       </Paper>
 
-      {/* Legend */}
       <Stack direction="row" spacing={3} sx={{ mt: 3 }}>
         <Stack direction="row" spacing={1} alignItems="center">
           <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />

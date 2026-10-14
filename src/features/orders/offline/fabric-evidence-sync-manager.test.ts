@@ -8,10 +8,7 @@ vi.mock('../fabric-evidence.api', () => ({
   fabricEvidenceApi: {
     uploadFabricEvidencePhoto: vi.fn(),
   },
-  // Real value, not a mock — fabric-evidence-offline-db.ts (unmocked, real
-  // module) also imports this from '../fabric-evidence.api', and its
-  // enqueuePendingEvidence() guard checks against it on every enqueue()
-  // call this file's tests make.
+  // The real limit, since the offline store checks against it
   MAX_FABRIC_EVIDENCE_IMAGE_SIZE_BYTES: 5 * 1024 * 1024,
 }))
 
@@ -79,7 +76,7 @@ describe('fabric-evidence-sync-manager', () => {
 
   it('does nothing without an authenticated session, and does not delete the queued item', async () => {
     await enqueue('c1')
-    // No setAuth() — accessToken stays null.
+    // No session
 
     await attemptFabricEvidenceSync()
 
@@ -96,10 +93,7 @@ describe('fabric-evidence-sync-manager', () => {
 
     expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledWith(
       'garment-A',
-      // Blob, not File — Node's structuredClone (what fake-indexeddb
-      // clones through) downgrades a cloned File to a plain Blob; see
-      // src/test/setup.ts. uploadFabricEvidencePhoto()'s real signature
-      // already accepts File | Blob for exactly this reason.
+      // A Blob, because the test environment turns cloned Files into Blobs
       expect.any(Blob),
       { clientId: 'c1', deviceId: 'device-1', deviceCapturedAt: '2026-09-10T09:00:00.000Z' },
     )
@@ -142,7 +136,6 @@ describe('fabric-evidence-sync-manager', () => {
 
     await attemptFabricEvidenceSync()
 
-    // Only the first item was even attempted.
     expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledTimes(1)
   })
 
@@ -206,7 +199,7 @@ describe('fabric-evidence-sync-manager', () => {
     vi.mocked(fabricEvidenceApi.uploadFabricEvidencePhoto).mockResolvedValue(makePhoto())
 
     await attemptFabricEvidenceSync()
-    await attemptFabricEvidenceSync() // nothing left to flush
+    await attemptFabricEvidenceSync()
 
     expect(fabricEvidenceApi.uploadFabricEvidencePhoto).toHaveBeenCalledTimes(1)
   })
@@ -220,7 +213,7 @@ describe('fabric-evidence-sync-manager', () => {
     )
 
     const first = attemptFabricEvidenceSync()
-    const second = attemptFabricEvidenceSync() // re-entrant while first is mid-flight — must no-op
+    const second = attemptFabricEvidenceSync() // a second call while one is running must do nothing
     resolveUpload!(makePhoto())
     await Promise.all([first, second])
 

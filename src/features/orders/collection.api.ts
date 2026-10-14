@@ -25,8 +25,7 @@ export const collectionApi = {
     return data;
   },
 
-  // US-4.8's own readiness signal (backend-authoritative; the UI uses this
-  // only to decide what to show, never to enforce anything itself).
+  // Whether the order is ready for the final quality check; for display only
   getReadiness: async (orderId: string): Promise<{ ready: boolean }> => {
     const { data } = await apiClient.get<{ ready: boolean }>(
       `/orders/${orderId}/collection-readiness`,

@@ -50,11 +50,11 @@ export function CustomersPage() {
     }
   };
 
-  // Debounce logic
+  // Wait for typing to pause before searching
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
-      setPage(1); // Reset to page 1 on search
+      setPage(1);
     }, 500);
 
     return () => clearTimeout(timer);
@@ -130,7 +130,6 @@ export function CustomersPage() {
         </Box>
       </header>
 
-      {/* Global Search Bar */}
       <Box sx={{ mb: 3 }}>
         <TextField
           fullWidth
@@ -164,7 +163,6 @@ export function CustomersPage() {
         </Typography>
       </Box>
 
-      {/* App-like List Rendering */}
       <Card sx={{ borderRadius: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.04)', border: '1px solid', borderColor: 'divider' }}>
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 6 }}>
@@ -241,7 +239,6 @@ export function CustomersPage() {
         )}
       </Card>
 
-      {/* Modern Pagination */}
       {!isLoading && totalPages > 1 && (
         <Stack direction="row" justifyContent="center" spacing={1} sx={{ mt: 4 }}>
           <button 

@@ -16,7 +16,7 @@ export const WorkflowBuilderPage: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<WorkflowTemplateVersion | null>(null);
 
-  // Initialize selection when data arrives
+  // Select the first template once they load
   React.useEffect(() => {
     if (templates && templates.length > 0 && !selectedTemplate) {
       setSelectedTemplate(templates[0]);
@@ -29,13 +29,12 @@ export const WorkflowBuilderPage: React.FC = () => {
   const canEdit = selectedVersion ? (selectedVersion.activeGarments || 0) === 0 : true;
 
   const handleCreateDraft = () => {
-    // Logic to clone version and increment version number would go here
+    // Not built yet: should copy the version and bump its number
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="flex justify-between items-end border-b border-slate-800 pb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">

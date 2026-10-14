@@ -27,8 +27,7 @@ function makeGarment(overrides: Partial<FabricGarment> = {}): FabricGarment {
     garmentName: 'Agbada',
     fabricType: 'Silk',
     colorSwatch: 'Royal Blue',
-    // US-3.3: the tailor-logged quantity, present by default so most tests
-    // exercise the normal "ready to confirm" path.
+    // The quantity recorded by the tailor, so most tests cover the normal path
     quantity: 5,
     quantityUnit: 'yards',
     conditionNotes: null,
@@ -137,7 +136,7 @@ describe('PortalFabricConfirm', () => {
     fireEvent.click(button)
 
     await waitFor(() => expect(button).toBeDisabled())
-    fireEvent.click(button) // no-op — already disabled
+    fireEvent.click(button) // does nothing: already disabled
 
     expect(portalFabricEvidenceApi.confirm).toHaveBeenCalledTimes(1)
     resolveConfirm!({ id: 'garment-1', confirmedAt: '2026-09-06', confirmationChannel: 'portal' })
@@ -149,10 +148,7 @@ describe('PortalFabricConfirm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /confirm fabric/i }))
 
-    // The parent page re-fetches the projection on success (queryClient
-    // invalidation) and re-renders with confirmedAt set — simulated here by
-    // asserting the mutation resolved without error and the confirm button
-    // is no longer stuck disabled-with-no-feedback.
+    // The page refetches on success; here we check the confirm call went through
     await waitFor(() => {
       expect(portalFabricEvidenceApi.confirm).toHaveBeenCalled()
     })

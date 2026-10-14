@@ -2,8 +2,6 @@ import { Box, Typography, Button, CircularProgress, Stack, alpha } from '@mui/ma
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 
-// ─── Loading ───────────────────────────────────────────────────────────────────
-
 interface LoadingProps {
   label?: string;
   size?: 'sm' | 'md';
@@ -23,8 +21,6 @@ export function QueryLoading({ label, size = 'md' }: LoadingProps) {
     </Box>
   );
 }
-
-// ─── Error ────────────────────────────────────────────────────────────────────
 
 interface ErrorProps {
   message?: string;
@@ -67,8 +63,6 @@ export function QueryError({ message = 'Something went wrong. Please try again.'
     </Box>
   );
 }
-
-// ─── Empty ────────────────────────────────────────────────────────────────────
 
 interface EmptyProps {
   message?: string;

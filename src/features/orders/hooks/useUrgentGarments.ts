@@ -5,8 +5,8 @@ export function useUrgentGarments() {
   return useQuery({
     queryKey: ['orders', 'urgent-garments'],
     queryFn: () => ordersApi.getUrgentGarments(),
-    staleTime: 1000 * 30, // 30 seconds
-    refetchInterval: 1000 * 60, // 60 seconds - auto sync production queue
+    staleTime: 1000 * 30,
+    refetchInterval: 1000 * 60, // keep the production queue current
     refetchOnWindowFocus: true,
   });
 }
