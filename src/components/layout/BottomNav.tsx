@@ -16,6 +16,7 @@ import {
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MoreDrawer } from './MoreDrawer';
+import { useAuthStore } from '../../features/auth/auth.store';
 
 export const BottomNav: React.FC = () => {
   const { pathname } = useLocation();
@@ -23,25 +24,27 @@ export const BottomNav: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const role = useAuthStore((state) => state.user?.role);
 
   if (!isMobile) return null;
 
-  const getActiveTab = () => {
-    if (pathname.startsWith('/orders')) return 1;
-    if (pathname.startsWith('/production')) return 2;
-    if (pathname.startsWith('/customers')) return 3;
-    if (pathname === '/dashboard') return 0;
-    return -1; // other pages highlight "More" through the drawer
-  };
+  // Same role rules as the sidebar: order and client pages need MANAGE_ORDERS, which tailors lack
+  const tabs = [
+    { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
+    { path: '/orders', label: 'Orders', icon: <OrdersIcon />, roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
+    { path: '/production', label: 'Production', icon: <ProductionIcon /> },
+    { path: '/customers', label: 'Clients', icon: <CustomersIcon />, roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
+  ].filter(tab => !tab.roles || (role && tab.roles.includes(role)));
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    if (newValue === 4) {
+  // Other pages highlight "More" through the drawer
+  const activeTab = tabs.find(tab => tab.path === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(tab.path))?.path ?? false;
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
+    if (newValue === 'more') {
       setDrawerOpen(true);
       return;
     }
-
-    const paths = ['/dashboard', '/orders', '/production', '/customers'];
-    navigate(paths[newValue]);
+    navigate(newValue);
   };
 
   return (
@@ -60,7 +63,7 @@ export const BottomNav: React.FC = () => {
       >
         <BottomNavigation
           showLabels
-          value={getActiveTab()}
+          value={activeTab}
           onChange={handleTabChange}
           sx={{
             height: 64,
@@ -78,11 +81,10 @@ export const BottomNav: React.FC = () => {
             }
           }}
         >
-          <BottomNavigationAction label="Dashboard" icon={<DashboardIcon />} />
-          <BottomNavigationAction label="Orders" icon={<OrdersIcon />} />
-          <BottomNavigationAction label="Production" icon={<ProductionIcon />} />
-          <BottomNavigationAction label="Clients" icon={<CustomersIcon />} />
-          <BottomNavigationAction label="More" icon={<MoreIcon />} />
+          {tabs.map(tab => (
+            <BottomNavigationAction key={tab.path} value={tab.path} label={tab.label} icon={tab.icon} />
+          ))}
+          <BottomNavigationAction value="more" label="More" icon={<MoreIcon />} />
         </BottomNavigation>
       </Paper>
 

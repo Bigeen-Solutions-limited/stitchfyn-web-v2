@@ -169,7 +169,7 @@ export function ClientProfilePage() {
             variant="contained" 
             color="primary"
             startIcon={<OrderIcon />}
-            onClick={() => navigate(`/orders/new?customerId={customer.id}`)}
+            onClick={() => navigate(`/orders/new?customerId=${customer.id}`)}
             sx={{ borderRadius: '12px', px: 3, py: 1.5, fontWeight: 700 }}
           >
             Create New Order
@@ -430,6 +430,8 @@ export function ClientProfilePage() {
                   placeholder="e.g. Wrist, Bicep..." 
                   value={newFieldName}
                   onChange={(e) => setNewFieldName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomField(); } }}
+                  inputProps={{ 'aria-label': 'New measurement label' }}
                   sx={{ flex: 1 }}
                 />
                 <Button 

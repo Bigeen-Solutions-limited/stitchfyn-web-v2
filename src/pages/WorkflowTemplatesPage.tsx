@@ -167,10 +167,10 @@ const StagePanel: React.FC<StagePanelProps> = ({ template }) => {
               <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
                 {stage.name}
               </Typography>
-              {stage.estimated_duration_hours != null && (
+              {stage.estimatedDurationHours != null && (
                 <Tooltip title="Estimated duration">
                   <Chip
-                    label={`${stage.estimated_duration_hours}h`}
+                    label={`${stage.estimatedDurationHours}h`}
                     size="small"
                     sx={{ height: 18, fontSize: '9px', fontWeight: 800, bgcolor: alpha('#2563eb', 0.07), color: '#2563eb', borderRadius: '4px' }}
                   />

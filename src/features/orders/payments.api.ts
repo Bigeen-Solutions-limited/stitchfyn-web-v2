@@ -9,7 +9,7 @@ export interface PaymentRecord {
   paymentMethod: PaymentMethod;
   paymentIntent: PaymentIntent;
   notes: string | null;
-  createdAt: string;
+  recordedAt: string;
 }
 
 export interface PaymentSummary {

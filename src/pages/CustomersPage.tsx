@@ -173,11 +173,23 @@ export function CustomersPage() {
             <Avatar sx={{ mx: 'auto', mb: 2, bgcolor: alpha('#1e5c3a', 0.1), color: 'primary.main', width: 64, height: 64 }}>
               <SearchIcon sx={{ fontSize: 32 }} />
             </Avatar>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>No clients found</Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-              We couldn't find any clients matching "{debouncedSearch}"
-            </Typography>
-            <button className="btn btn-secondary" onClick={() => setSearchTerm('')}>Clear Search</button>
+            {debouncedSearch ? (
+              <>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>No clients found</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                  We couldn't find any clients matching "{debouncedSearch}"
+                </Typography>
+                <button className="btn btn-secondary" onClick={() => setSearchTerm('')}>Clear Search</button>
+              </>
+            ) : (
+              <>
+                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>No clients yet</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                  Add your first client to start taking orders.
+                </Typography>
+                <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>+ New Client</button>
+              </>
+            )}
           </Box>
         ) : (
           <List sx={{ p: 0 }}>

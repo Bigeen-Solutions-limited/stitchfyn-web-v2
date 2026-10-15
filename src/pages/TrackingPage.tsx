@@ -39,8 +39,8 @@ export const TrackingPage: React.FC = () => {
   return (
     <div className="portal-container">
       <header className="portal-header">
-        <img src="/logo-icon.png" alt="StitchFyn" className="portal-logo-icon" />
-        <div className="portal-logo">STITCH<span>FYN</span></div>
+        <img src="/logo-icon.png" alt="" className="portal-logo-icon" />
+        <div className="portal-logo">StitchFYN</div>
         <p>Independent Transparency Mirror</p>
       </header>
 
@@ -80,7 +80,7 @@ export const TrackingPage: React.FC = () => {
 
       <footer className="portal-footer">
         <p>Last synchronization: {data.lastUpdated}</p>
-        <p>© 2024 Stitchfyn. Secure. Dignified. Transparent.</p>
+        <p>© {new Date().getFullYear()} StitchFYN. Secure. Dignified. Transparent.</p>
       </footer>
     </div>
   );

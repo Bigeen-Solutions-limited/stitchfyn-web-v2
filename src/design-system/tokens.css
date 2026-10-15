@@ -4,6 +4,7 @@
   /* Brand Colors */
   --color-primary: #1e5c3a;
   --color-secondary: #c49a1a;
+  --color-accent: var(--color-secondary);
   
   /* Semantic Colors */
   --color-success: #1e5c3a;

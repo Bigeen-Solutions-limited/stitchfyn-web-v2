@@ -2,20 +2,7 @@ import React from 'react';
 import { Breadcrumbs as MuiBreadcrumbs, Typography, Link, Box, alpha } from '@mui/material';
 import { ChevronRight, Home } from '@mui/icons-material';
 import { useLocation, Link as RouterLink } from 'react-router-dom';
-
-const routeConfig: Record<string, string> = {
-  dashboard: 'Dashboard',
-  orders: 'Orders',
-  production: 'Production',
-  customers: 'Clients',
-  inventory: 'Vault',
-  reports: 'Reports',
-  staff: 'Staff Management',
-  settings: 'Settings',
-  new: 'New',
-  disputes: 'Disputes',
-  audit: 'Audit Log'
-};
+import { labelFor } from './pageTitles';
 
 export const Breadcrumbs: React.FC = () => {
   const location = useLocation();
@@ -48,7 +35,7 @@ export const Breadcrumbs: React.FC = () => {
         {pathnames.map((value, index) => {
           const last = index === pathnames.length - 1;
           const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-          const label = routeConfig[value] || value;
+          const label = labelFor(value);
 
           return last ? (
             <Typography 

@@ -156,9 +156,9 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
                 </Stack>
 
                 <Stack direction="row" spacing={2} sx={{ mt: 0.5 }} flexWrap="wrap">
-                  {nodeInfo?.estimated_duration_hours && (
+                  {nodeInfo?.estimatedDurationHours && (
                     <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '10px' }}>
-                      Est. {nodeInfo.estimated_duration_hours}h
+                      Est. {nodeInfo.estimatedDurationHours}h
                     </Typography>
                   )}
                   {stage.startedAt && (

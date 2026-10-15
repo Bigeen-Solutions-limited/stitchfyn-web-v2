@@ -47,6 +47,7 @@ export function useReportStageCompletion(garmentId: string, orderId?: string) {
         })
       }
       queryClient.invalidateQueries({ queryKey: keys.orders.all })
+      queryClient.invalidateQueries({ queryKey: keys.workflow.activeTasks })
       queryClient.invalidateQueries({ queryKey: keys.analytics.overview })
       queryClient.invalidateQueries({ queryKey: keys.workflow.activeTasks })
 

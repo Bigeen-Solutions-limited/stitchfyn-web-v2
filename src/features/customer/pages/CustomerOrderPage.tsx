@@ -52,10 +52,10 @@ export function CustomerOrderPage() {
           <div className="sf-card">
             <h3 className="text-h3 mb-lg">Production Timeline</h3>
             <Timeline>
-              {order.stages.map((stage) => (
+              {order.stages.map((stage, index) => (
                 <TimelineItem 
                   key={stage.id}
-                  actor="Workshop Engine"
+                  actor={`Stage ${index + 1} of ${order.stages.length}`}
                   action={
                     <div className="flex justify-between items-center w-full">
                       <span className={stage.isComplete ? 'text-muted line-through' : 'font-bold'}>
@@ -70,7 +70,7 @@ export function CustomerOrderPage() {
                       )}
                     </div>
                   }
-                  timestamp={stage.isComplete ? 'Archived' : 'Scheduled'}
+                  timestamp={stage.isComplete ? 'Done' : stage.isActive ? 'Now' : 'Upcoming'}
                 />
               ))}
             </Timeline>

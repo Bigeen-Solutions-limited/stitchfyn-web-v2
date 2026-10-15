@@ -120,9 +120,9 @@ export const StitchScoreCard: React.FC = () => {
         {/* Breakdowns */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            <MetricBar label="On-time delivery" value={(breakdown.onTimeRate || 0) * 100} color="var(--sf-green)" />
-            <MetricBar label="Zero-dispute integrity" value={(breakdown.integrityRate || 0) * 100} color="var(--sf-navy)" />
-            <MetricBar label="Client loyalty" value={(breakdown.loyaltyRate || 0) * 100} color="var(--sf-gold)" />
+            <MetricBar label="On-time delivery" value={(breakdown.onTimeRate || 0) * 100} color="#1e5c3a" />
+            <MetricBar label="Zero-dispute integrity" value={(breakdown.integrityRate || 0) * 100} color="#1a2340" />
+            <MetricBar label="Client loyalty" value={(breakdown.loyaltyRate || 0) * 100} color="#c49a1a" />
             <Button
               size="small"
               endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}

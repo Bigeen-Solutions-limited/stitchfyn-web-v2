@@ -81,8 +81,8 @@ export function ChangePasswordPage() {
   return (
     <Box
       sx={{
-        height: '100vh',
-        width: '100vw',
+        minHeight: '100dvh',
+        width: '100%',
         bgcolor: '#f5f4f0',
         display: 'flex',
         alignItems: 'center',
@@ -104,10 +104,7 @@ export function ChangePasswordPage() {
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 3 }}>
-            <Box component="img" src="/logo-icon.png" alt="" sx={{ height: 32, width: 'auto' }} />
-            <Typography variant="h5" sx={{ color: '#1e5c3a', fontWeight: 700, letterSpacing: -0.5 }}>
-              StitchFyn
-            </Typography>
+            <Box component="img" src="/logo-icon.png" alt="" sx={{ height: 28, width: 'auto' }} />            <Typography              sx={{                fontFamily: 'var(--sf-font-display)',                fontWeight: 600,                fontSize: '1.6rem',                letterSpacing: '0.01em',                color: '#1e5c3a',                lineHeight: 1,              }}            >              StitchFYN            </Typography>
           </Stack>
 
           {isForcedChange && (

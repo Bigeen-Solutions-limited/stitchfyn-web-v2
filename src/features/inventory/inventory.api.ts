@@ -26,7 +26,9 @@ export const inventoryApi = {
   },
 
   registerMaterial: async (data: FormData | { name: string; sku: string | null; canonicalUnit: string }) => {
-    const { data: result } = await apiClient.post('/inventory/materials', data);
+    // The client defaults to JSON, which would serialise the FormData and drop the photo
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined;
+    const { data: result } = await apiClient.post('/inventory/materials', data, config);
     return result;
   },
 

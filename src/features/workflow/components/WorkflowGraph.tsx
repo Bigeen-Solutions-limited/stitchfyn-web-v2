@@ -4,6 +4,7 @@ import { MAX_PROGRESS_PHOTOS_PER_STAGE_UI_HINT } from '../progress-photo.api';
 import { ProgressPhotoCapture } from './ProgressPhotoCapture';
 import { ProgressPhotoThumbnails } from './ProgressPhotoThumbnails';
 import { CheckCircle, Lock } from '@mui/icons-material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 
 interface WorkflowGraphProps {
   garmentId: string;
@@ -19,10 +20,16 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
   // One request for all of the garment's photos, split by stage below
   const { data: progressPhotos } = useProgressPhotos(garmentId);
 
-  if (isLoading) return <div className="p-md text-muted animate-pulse">Syncing Workflow DAG...</div>;
+  if (isLoading) return <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>Syncing Workflow DAG...</Typography>;
   if (!workflow) return null;
 
-  const { stages, graphDefinition } = workflow;
+  const { stages: unorderedStages, graphDefinition } = workflow;
+
+  // Order stages as the template does (the API returns them unordered); stages the template doesn't list go last
+  const nodeOrder = new Map((graphDefinition?.nodes ?? []).map((node, index) => [node.id, index]));
+  const stages = [...unorderedStages].sort(
+    (a, b) => (nodeOrder.get(a.stageId) ?? Number.MAX_SAFE_INTEGER) - (nodeOrder.get(b.stageId) ?? Number.MAX_SAFE_INTEGER),
+  );
   const edges: WorkflowEdge[] = graphDefinition?.edges || [];
 
   // A stage is unlocked once every stage before it is complete; the first stages are always unlocked.
@@ -56,19 +63,19 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
   };
 
   return (
-    <div className="workflow-graph sf-card p-lg">
-      <div className="flex justify-between items-center mb-xl">
-        <h3 className="text-h3">Production Workflow</h3>
-        <div className="text-xs text-muted uppercase tracking-wider font-bold">
+    <Box className="workflow-graph" sx={{ p: { xs: 2, md: 3 } }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3, gap: 1, flexWrap: 'wrap' }}>
+        <Typography variant="h6" sx={{ fontWeight: 800 }}>Production Workflow</Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
           High-Fidelity DAG Execution
-        </div>
-      </div>
+        </Typography>
+      </Stack>
 
-      <div className="flex flex-col gap-lg relative">
+      <Stack spacing={2}>
         {stages.map((stage: StageInstance, index: number) => {
           const isCompleted = stage.status === 'COMPLETED';
           const unlocked = isStageUnlocked(stage);
-          
+
           // In-progress stages can always be worked on; an unlocked stage skipped by an admin override can still be completed.
           const isActionable = stage.status === 'IN_PROGRESS' || (unlocked && !isCompleted);
           const isLocked = !isActionable && !isCompleted && !unlocked;
@@ -78,96 +85,98 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
           const isQcCollectionReviewStage = stage.stageId === QC_COLLECTION_REVIEW_STAGE_ID;
           const missingRequiredQcPhoto = isQcCollectionReviewStage && stagePhotos.length === 0;
 
+          const nodeColor = isCompleted ? 'var(--color-success)' : isActionable ? 'var(--color-primary)' : 'var(--sf-border)';
+
           return (
-            <div key={stage.id} className="relative flex items-start gap-lg">
+            <Box key={stage.id} sx={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 2 }}>
               {/* Connection Line */}
               {index < stages.length - 1 && (
-                <div 
-                  className="absolute left-[15px] top-[30px] w-[2px] h-[calc(100%)] bg-sf-border" 
-                  style={{ 
-                    backgroundColor: isCompleted ? 'var(--sf-success)' : 'var(--sf-border)',
-                    zIndex: 0 
-                  }}
-                />
+                <Box sx={{ position: 'absolute', left: 15, top: 34, bottom: -16, width: 2, bgcolor: isCompleted ? 'var(--color-success)' : 'var(--sf-border)' }} />
               )}
 
               {/* Node Indicator */}
-              <div 
-                className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                  isActionable ? 'border-primary bg-primary text-white animate-pulse' : 
-                  isCompleted ? 'border-success bg-success text-white' : 
-                  isLocked ? 'border-sf-border bg-sf-glass text-muted opacity-40' :
-                  'border-sf-border bg-sf-glass text-muted'
-                }`}
+              <Box
+                sx={{
+                  position: 'relative', zIndex: 1, flexShrink: 0, width: 32, height: 32, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid', borderColor: nodeColor,
+                  bgcolor: isCompleted || isActionable ? nodeColor : 'background.paper',
+                  color: isCompleted || isActionable ? '#fff' : 'text.disabled',
+                  opacity: isLocked ? 0.5 : 1, fontWeight: 700, fontSize: '0.85rem',
+                }}
               >
-                {isCompleted ? <CheckCircle fontSize="small" /> : isLocked ? <Lock fontSize="small" /> : <span style={{ fontWeight: 'bold' }}>{index + 1}</span>}
-              </div>
+                {isCompleted ? <CheckCircle fontSize="small" /> : isLocked ? <Lock fontSize="small" /> : index + 1}
+              </Box>
 
               {/* Node Content */}
-              <div className={`flex-1 p-md rounded-lg border sf-glass transition-all duration-300 ${
-                isActionable ? 'border-primary shadow-sm' : 
-                isLocked ? 'border-sf-border opacity-40 pointer-events-none' :
-                'border-sf-border opacity-80'
-              }`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="font-bold text-sm">{stage.stageId.replace('_', ' ').toUpperCase()}</h4>
-                    <p className="text-xs text-muted" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Box sx={{
+                flex: 1, minWidth: 0, p: 2, borderRadius: 2, border: '1px solid',
+                borderColor: isActionable ? 'var(--color-primary)' : 'var(--sf-border)',
+                bgcolor: 'background.paper',
+                opacity: isLocked ? 0.5 : isCompleted ? 0.85 : 1,
+                pointerEvents: isLocked ? 'none' : undefined,
+              }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ gap: 2, flexWrap: 'wrap' }}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{stage.stageId.replace('_', ' ').toUpperCase()}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       {isLocked && <Lock fontSize="inherit" />}
-                      {isCompleted ? `Completed at ${new Date(stage.completedAt!).toLocaleTimeString()}` : 
+                      {isCompleted ? `Completed at ${new Date(stage.completedAt!).toLocaleTimeString()}` :
                        isActionable ? 'Active — Ready for specialized work' :
                        isLocked ? 'Locked — Waiting on upstream stages' :
                        'Pending upstream stages'}
-                    </p>
-                  </div>
-                  
+                    </Typography>
+                  </Box>
+
                   {isActionable && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                      <button
+                    <Stack alignItems="flex-end" spacing={0.5}>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        size="small"
                         onClick={() => reportCompletion.mutate({ stageId: stage.stageId })}
                         disabled={reportCompletion.isPending || missingRequiredQcPhoto}
-                        className="btn btn-accent btn-sm py-1"
                         title={missingRequiredQcPhoto ? 'Add at least one progress photo before completing this stage.' : undefined}
+                        sx={{ borderRadius: '10px', fontWeight: 700, boxShadow: 'none', whiteSpace: 'nowrap' }}
                       >
                         {reportCompletion.isPending ? 'Syncing...' : 'Mark Complete'}
-                      </button>
+                      </Button>
                       {missingRequiredQcPhoto && (
-                        <p className="text-xs text-muted" style={{ maxWidth: 200, textAlign: 'right', margin: 0 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', maxWidth: 200, textAlign: 'right' }}>
                           Add at least one progress photo before completing this stage.
-                        </p>
+                        </Typography>
                       )}
-                    </div>
+                    </Stack>
                   )}
 
                   {isCompleted && (
-                    <span className="text-success text-xs font-bold uppercase flex items-center gap-1">
+                    <Typography variant="caption" sx={{ color: 'var(--color-success)', fontWeight: 800, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <CheckCircle fontSize="inherit" /> Ready
-                    </span>
+                    </Typography>
                   )}
 
                   {isLocked && (
-                    <span className="text-xs font-bold uppercase flex items-center gap-1" style={{ color: 'var(--sf-border)', letterSpacing: '0.05em' }}>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <Lock fontSize="inherit" /> LOCKED
-                    </span>
+                    </Typography>
                   )}
-                </div>
+                </Stack>
 
                 {/* Photos: none for locked stages, capture for active ones (up to the limit), read-only once complete. */}
                 {!isLocked && (() => {
                   const canCapturePhoto = isActionable && stagePhotos.length < MAX_PROGRESS_PHOTOS_PER_STAGE_UI_HINT;
                   if (stagePhotos.length === 0 && !canCapturePhoto) return null;
                   return (
-                    <div>
+                    <Box sx={{ mt: 1.5 }}>
                       <ProgressPhotoThumbnails photos={stagePhotos} />
                       {canCapturePhoto && <ProgressPhotoCapture garmentId={garmentId} stageId={stage.stageId} />}
-                    </div>
+                    </Box>
                   );
                 })()}
-              </div>
-            </div>
+              </Box>
+            </Box>
           );
         })}
-      </div>
-    </div>
+      </Stack>
+    </Box>
   );
 }

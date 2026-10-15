@@ -40,7 +40,7 @@ export interface WorkflowInstance {
 export interface WorkflowNode {
   id: string;
   name: string;
-  estimated_duration_hours?: number;
+  estimatedDurationHours?: number;
 }
 
 export type WorkflowEdge = [string, string]; // [from stage, to stage]
@@ -64,6 +64,7 @@ export interface ActiveFloorTask {
   garmentName: string;
   assignedTailorId?: string | null;
   tailorEmail?: string | null;
+  tailorName?: string | null;
   orderId: string;
   orderNumber: number;
   customerName: string;

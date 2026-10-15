@@ -107,7 +107,7 @@ export function SealVerificationPage() {
             Fabric Protected
           </Typography>
           <Typography variant="body2" sx={{ color: alpha('#ffffff', 0.8) }}>
-            This fabric has been documented and verified by StitchPledge
+            This fabric has been documented and verified by StitchFYN
           </Typography>
         </Box>
 
@@ -177,7 +177,7 @@ export function SealVerificationPage() {
           <Typography variant="caption" sx={{ color: '#6b6b6b' }}>
             Protected by{' '}
             <Typography component="span" variant="caption" sx={{ fontWeight: 800, color: '#1e5c3a' }}>
-              StitchPledge
+              StitchFYN
             </Typography>
           </Typography>
         </Box>

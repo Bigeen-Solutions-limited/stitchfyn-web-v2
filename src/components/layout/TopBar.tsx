@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
   IconButton,
   Typography,
   Box,
-  Button,
   Avatar,
   Chip,
   Menu,
@@ -13,21 +13,17 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  alpha,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   CalendarMonth as Calendar,
-  HelpOutline as HelpCircle,
-  Download,
   Logout as LogOut,
-  Person as User,
-  Search,
+  LockReset,
 } from '@mui/icons-material';
 import { useAuthStore } from '../../features/auth/auth.store';
 import { useLogout } from '../../features/auth/hooks/useAuth';
 import { Breadcrumbs } from '../navigation/Breadcrumbs';
-import { InputAdornment, TextField } from '@mui/material';
+import { usePageTitle } from '../navigation/pageTitles';
 import { NotificationBell } from '../../features/notifications/components/NotificationBell';
 
 interface TopBarProps {
@@ -38,6 +34,8 @@ interface TopBarProps {
 export const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, isSidebarOpen }) => {
   const { user } = useAuthStore();
   const logout = useLogout();
+  const navigate = useNavigate();
+  const pageTitle = usePageTitle();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleProfileClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -48,6 +46,11 @@ export const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, isSidebarOpen }) 
     setAnchorEl(null);
   };
 
+  const handleChangePassword = () => {
+    handleProfileClose();
+    navigate('/change-password');
+  };
+
   const handleLogout = () => {
     handleProfileClose();
     logout.mutate();
@@ -55,65 +58,34 @@ export const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, isSidebarOpen }) 
 
   const isAdmin = user?.role === 'OWNER';
 
+  // Sits in the main column's flow, which already starts beside the sidebar
   return (
     <AppBar
       position="sticky"
       elevation={0}
       className="top-bar"
-      sx={{
-        zIndex: (theme) => theme.zIndex.drawer + 1,
-        width: {
-          xs: '100%',
-          sm: isSidebarOpen ? 'calc(100% - var(--sidebar-width))' : '100%'
-        },
-        ml: {
-          xs: 0,
-          sm: isSidebarOpen ? 'var(--sidebar-width)' : 0
-        },
-      }}
+      sx={{ zIndex: (theme) => theme.zIndex.appBar }}
     >
       <Toolbar className="top-bar-toolbar">
         {!isSidebarOpen && (
           <IconButton
             onClick={toggleSidebar}
             edge="start"
+            aria-label="Open navigation"
             sx={{ mr: 2, color: 'var(--color-text-primary)' }}
           >
             <MenuIcon sx={{ fontSize: 24 }} />
           </IconButton>
         )}
 
-        <Box sx={{ flexGrow: 1 }}>
+        <Box sx={{ flexGrow: 1, minWidth: 0, py: 1 }}>
           <Breadcrumbs />
-          <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--color-text-primary)' }}>
-            Dashboard
+          <Typography variant="h6" noWrap sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--color-text-primary)' }}>
+            {pageTitle}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 2 } }}>
-          <TextField
-            placeholder="Search anything..."
-            size="small"
-            sx={{
-              display: { xs: 'none', md: 'flex' },
-              width: 240,
-              '& .MuiOutlinedInput-root': {
-                height: 36,
-                borderRadius: '8px',
-                bgcolor: alpha('#000', 0.03),
-                '& fieldset': { border: 'none' },
-                '&:hover fieldset': { border: 'none' },
-                '&.Mui-focused fieldset': { border: 'none' },
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search sx={{ fontSize: 18, color: 'text.disabled' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
           {isAdmin && (
             <Chip
               icon={<Calendar sx={{ fontSize: 16, color: 'var(--color-warning) !important' }} />}
@@ -137,32 +109,7 @@ export const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, isSidebarOpen }) 
 
           <NotificationBell />
 
-          <IconButton size="small" sx={{ color: 'var(--color-text-secondary)', display: { xs: 'none', sm: 'flex' } }}>
-            <HelpCircle sx={{ fontSize: 20 }} />
-          </IconButton>
-
-          {isAdmin && (
-            <Button
-              variant="contained"
-              className="btn btn-primary responsive-btn"
-              onClick={() => { /* Export logic */ }}
-              sx={{
-                height: 36,
-                textTransform: 'none',
-                boxShadow: 'none',
-                '&:hover': { boxShadow: 'none' },
-              }}
-            >
-              <span className="btn-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Download sx={{ fontSize: 18 }} /> Export Report
-              </span>
-              <span className="btn-icon">
-                <Download sx={{ fontSize: 22 }} />
-              </span>
-            </Button>
-          )}
-
-          <IconButton onClick={handleProfileClick} sx={{ p: 0.5 }}>
+          <IconButton onClick={handleProfileClick} aria-label="Account menu" sx={{ p: 0.5 }}>
             <Avatar
               src={user?.avatarUrl}
               sx={{ width: 36, height: 36, bgcolor: 'var(--color-primary)' }}
@@ -189,11 +136,11 @@ export const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, isSidebarOpen }) 
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
-          <MenuItem onClick={handleProfileClose}>
+          <MenuItem onClick={handleChangePassword}>
             <ListItemIcon>
-              <User sx={{ fontSize: 18 }} />
+              <LockReset sx={{ fontSize: 18 }} />
             </ListItemIcon>
-            <ListItemText primary="Profile" />
+            <ListItemText primary="Change password" />
           </MenuItem>
           <Divider sx={{ my: 1 }} />
           <MenuItem onClick={handleLogout} sx={{ color: '#d32f2f' }}>

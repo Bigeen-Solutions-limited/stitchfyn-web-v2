@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box, 
   Card, 
@@ -7,35 +7,27 @@ import {
   Stack, 
   TextField, 
   Button, 
-  Select, 
-  MenuItem, 
-  Divider, 
-  IconButton, 
   Link, 
-  Chip,
   Grow,
   CircularProgress,
   Alert,
   Collapse
 } from '@mui/material';
-import {
-  Phone as PhoneIcon,
-  Mail as MailIcon, 
-  Google as GoogleIcon, 
-  Apple as AppleIcon, 
-  Facebook as FacebookIcon,
-  ArrowForward as ArrowRightIcon,
-  DarkMode as DarkModeIcon
-} from '@mui/icons-material';
 import { loginApi } from '../features/auth/auth.api';
 import { useAuthStore } from '../features/auth/auth.store';
 import { mapErrorCode } from '../utils/errorMapper';
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setAuth } = useAuthStore();
+  const arrivedFrom = location.state as { emailVerified?: boolean; passwordReset?: boolean } | null;
+  const notice = arrivedFrom?.emailVerified
+    ? 'Email verified. Sign in with the password you just set.'
+    : arrivedFrom?.passwordReset
+      ? 'Password updated. Sign in with your new password.'
+      : null;
   
-  const [loginMethod, setLoginMethod] = useState<'phone' | 'email'>('email');
   const [loading, setLoading] = useState(false);
   const [showCard, setShowCard] = useState(false);
   
@@ -46,17 +38,6 @@ export function LoginPage() {
   useEffect(() => {
     setShowCard(true);
   }, []);
-
-  const handlePhoneSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    // Phone login isn't built on the server yet, so this only simulates it
-    setTimeout(() => {
-      setLoading(false);
-      setError('Phone authentication is currently unavailable. Please use Email login.');
-    }, 1500);
-  };
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,8 +70,8 @@ export function LoginPage() {
   return (
     <Box
       sx={{
-        height: '100vh',
-        width: '100vw',
+        minHeight: '100dvh',
+        width: '100%',
         bgcolor: '#f5f4f0',
         display: 'flex',
         flexDirection: 'column',
@@ -137,6 +118,12 @@ export function LoginPage() {
             Sign in to your workshop.
           </Typography>
 
+          {notice && !error && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: '10px', textAlign: 'left' }}>
+              {notice}
+            </Alert>
+          )}
+
           <Collapse in={!!error}>
             <Box sx={{ mb: 3 }}>
               {error && (
@@ -156,71 +143,14 @@ export function LoginPage() {
             </Box>
           </Collapse>
 
-          {loginMethod === 'phone' ? (
-            <Box component="form" onSubmit={handlePhoneSubmit}>
-              <Stack spacing={3}>
-                <Stack direction="row" spacing={2}>
-                  <Select
-                    defaultValue="+1"
-                    sx={{
-                      width: '110px',
-                      height: '52px',
-                      borderRadius: '10px',
-                      bgcolor: 'white',
-                      textAlign: 'left',
-                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e5e4e0' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1e5c3a', borderWidth: '1px' },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#1e5c3a' }
-                    }}
-                  >
-                    <MenuItem value="+1">🇺🇸 +1</MenuItem>
-                    <MenuItem value="+44">🇬🇧 +44</MenuItem>
-                    <MenuItem value="+91">🇮🇳 +91</MenuItem>
-                  </Select>
-                  <TextField
-                    fullWidth
-                    placeholder="000 000 0000"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        height: '52px',
-                        borderRadius: '10px',
-                        bgcolor: 'white',
-                        '& fieldset': { borderColor: '#e5e4e0' },
-                        '&:hover fieldset': { borderColor: '#1e5c3a' },
-                        '&.Mui-focused fieldset': { borderColor: '#1e5c3a', borderWidth: '1px' }
-                      }
-                    }}
-                  />
-                </Stack>
-
-                <Button
-                  variant="contained"
-                  fullWidth
-                  type="submit"
-                  disabled={loading}
-                  endIcon={!loading && <ArrowRightIcon />}
-                  sx={{
-                    height: '52px',
-                    borderRadius: '10px',
-                    bgcolor: '#1e5c3a',
-                    textTransform: 'none',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    boxShadow: 'none',
-                    '&:hover': { bgcolor: '#256b45', boxShadow: 'none' }
-                  }}
-                >
-                  {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Send OTP'}
-                </Button>
-              </Stack>
-            </Box>
-          ) : (
             <Box component="form" onSubmit={handleEmailSubmit}>
               <Stack spacing={2.5}>
                 <TextField
                   fullWidth
                   placeholder="Email address"
                   type="email"
+                  autoComplete="email"
+                  inputProps={{ 'aria-label': 'Email address' }}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -242,7 +172,8 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  inputProps={{ minLength: 6 }}
+                  autoComplete="current-password"
+                  inputProps={{ minLength: 6, 'aria-label': 'Password' }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       height: '52px',
@@ -283,93 +214,8 @@ export function LoginPage() {
                 </Button>
               </Stack>
             </Box>
-          )}
-
-          <Divider sx={{ my: 4, '&::before, &::after': { borderColor: '#e5e4e0' } }}>
-            <Typography variant="caption" sx={{ color: '#6b7280', px: 1, fontWeight: 500 }}>
-              or continue with
-            </Typography>
-          </Divider>
-
-          <Button
-            variant="outlined"
-            fullWidth
-            startIcon={loginMethod === 'phone' ? <MailIcon /> : <PhoneIcon />}
-            onClick={() => {
-              setLoginMethod(loginMethod === 'phone' ? 'email' : 'phone');
-              setError(null);
-            }}
-            sx={{
-              height: '52px',
-              borderRadius: '10px',
-              borderColor: '#e5e4e0',
-              color: '#1a2340',
-              textTransform: 'none',
-              fontSize: '15px',
-              fontWeight: 600,
-              mb: 3,
-              '&:hover': { borderColor: '#1e5c3a', bgcolor: 'rgba(30, 92, 58, 0.04)' }
-            }}
-          >
-            Continue with {loginMethod === 'phone' ? 'Email' : 'Phone'}
-          </Button>
-
-          <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 4 }}>
-            {[
-              { icon: <GoogleIcon />, label: 'Google' },
-              { icon: <AppleIcon />, label: 'Apple' },
-              { icon: <FacebookIcon />, label: 'Facebook' }
-            ].map((social, index) => (
-              <IconButton
-                key={index}
-                sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '12px',
-                  border: '1px solid #e5e4e0',
-                  bgcolor: '#fafaf8',
-                  color: '#1a2340',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    borderColor: '#1e5c3a',
-                    color: '#1e5c3a',
-                    bgcolor: 'white'
-                  }
-                }}
-              >
-                {social.icon}
-              </IconButton>
-            ))}
-          </Stack>
-
-          <Typography variant="caption" sx={{ color: '#6b7280', fontSize: '12px', display: 'block', maxWidth: 320, mx: 'auto', lineHeight: 1.5 }}>
-            By continuing, you agree to our{' '}
-            <Link href="#" underline="hover" sx={{ color: '#1e5c3a', fontWeight: 600 }}>Terms of Service</Link>
-            {' '}and{' '}
-            <Link href="#" underline="hover" sx={{ color: '#1e5c3a', fontWeight: 600 }}>Privacy Policy</Link>
-          </Typography>
         </Card>
       </Grow>
-
-      {/* Theme Toggle Pill */}
-      <Box sx={{ position: 'fixed', bottom: 32 }}>
-        <Chip
-          icon={<DarkModeIcon sx={{ fontSize: '18px !important', color: '#6b7280 !important' }} />}
-          label="Switch Theme"
-          sx={{
-            bgcolor: 'white',
-            border: '1px solid #e5e4e0',
-            borderRadius: '999px',
-            px: 1,
-            height: '40px',
-            cursor: 'pointer',
-            fontWeight: 500,
-            color: '#6b7280',
-            transition: 'all 0.2s ease',
-            '&:hover': { bgcolor: '#fafaf8', borderColor: '#d1d0cb' }
-          }}
-        />
-      </Box>
     </Box>
   );
 }
