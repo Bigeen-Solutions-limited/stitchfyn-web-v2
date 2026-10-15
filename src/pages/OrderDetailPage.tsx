@@ -8,7 +8,6 @@ import { useToastStore } from '../components/feedback/Toast.tsx';
 import { WorkflowGraph } from '../features/workflow/components/WorkflowGraph.tsx';
 import { WorkflowStageTimeline } from '../features/workflow/components/WorkflowStageTimeline.tsx';
 import { MeasurementHistory } from '../features/measurements/components/MeasurementHistory.tsx';
-import { RecordMeasurementForm } from '../features/measurements/components/RecordMeasurementForm.tsx';
 import {
   FormControl,
   InputLabel,
@@ -165,10 +164,12 @@ export function OrderDetailPage() {
           borderRadius: 3, 
           border: '1px solid', 
           borderColor: 'divider',
-          display: { xs: 'none', md: 'block' }
+          display: { xs: 'none', md: 'block' },
+          '& .MuiButton-root': { whiteSpace: 'nowrap' },
         }}
       >
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        {/* Wraps onto a second row on narrower desktops instead of squeezing the buttons */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" useFlexGap sx={{ gap: 2 }}>
           <Stack direction="row" spacing={3} alignItems="center">
             <Button
               variant="outlined"
@@ -341,7 +342,10 @@ export function OrderDetailPage() {
                       </Typography>
                       {garment.assignedTailorId && (
                         <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, display: 'block', mt: 0.5 }}>
-                          Tailor: {staff?.find(s => s.id === garment.assignedTailorId)?.email.split('@')[0] || 'Assigned'}
+                          Tailor: {(() => {
+                            const tailor = staff?.find(s => s.id === garment.assignedTailorId);
+                            return tailor?.fullName || tailor?.email.split('@')[0] || 'Assigned';
+                          })()}
                         </Typography>
                       )}
                     </Box>
@@ -359,7 +363,8 @@ export function OrderDetailPage() {
                     <InputLabel id="assign-tailor-label">Assign Tailor</InputLabel>
                     <Select
                       labelId="assign-tailor-label"
-                      value={selectedGarment.assignedTailorId || ''}
+                      // Empty until the staff list loads, so the select never holds a value it has no option for
+                      value={tailors.some(t => t.id === selectedGarment.assignedTailorId) ? selectedGarment.assignedTailorId : ''}
                       label="Assign Tailor"
                       onChange={(e) => handleAssignTailor(e.target.value as string)}
                       sx={{ borderRadius: 2 }}
@@ -367,7 +372,7 @@ export function OrderDetailPage() {
                       <MenuItem value=""><em>Unassigned</em></MenuItem>
                       {tailors.map(t => (
                         <MenuItem key={t.id} value={t.id}>
-                          {t.email}
+                          {t.fullName || t.email}
                         </MenuItem>
                       ))}
                     </Select>
@@ -483,7 +488,13 @@ export function OrderDetailPage() {
             <Card className="sf-card" sx={{ p: 3, borderRadius: 3 }}>
               <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>Quick Actions</Typography>
               <Stack spacing={2}>
-                <RecordMeasurementForm customerId={order.customerId} />
+                {/* Measurement versions are recorded on the client profile, which keeps every measurement point */}
+                <Typography variant="body2" color="text.secondary">
+                  Need to change measurements? Record a new version on the client's profile.
+                </Typography>
+                <Button variant="outlined" onClick={() => navigate(`/customers/${order.customerId}`)} sx={{ borderRadius: '12px', fontWeight: 700 }}>
+                  Open client profile
+                </Button>
               </Stack>
             </Card>
           </Stack>
@@ -711,7 +722,7 @@ export function OrderDetailPage() {
 
               <Grid size = {{xs: 12}}>
                 <Card className="sf-card" sx={{ height: '100%', borderRadius: 3, p: 3 }}>
-                  <MeasurementHistory orderId={order.id} />
+                  <MeasurementHistory customerId={order.customerId} />
                 </Card>
               </Grid>
           </Stack>

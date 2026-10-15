@@ -199,10 +199,11 @@ export function StaffManagementPage() {
                 <Box sx={{ 
                   display: 'flex', 
                   flexDirection: { xs: 'row', md: 'row' },
+                  flexWrap: 'wrap',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
+                  justifyContent: { xs: 'flex-start', md: 'space-between' },
                   width: { xs: '100%', md: 'auto' },
-                  gap: 2
+                  gap: { xs: 1, md: 2 }
                 }}>
                   {isOwner && member.status !== "REMOVED" && member.role !== "OWNER" && member.id !== currentUser.id ? (
                     <TextField

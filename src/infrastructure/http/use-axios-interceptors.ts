@@ -7,6 +7,13 @@ import { useAuthStore } from '../../features/auth/auth.store';
 import { parseApiError } from '../../lib/errors/parse-api-error';
 import type { ErrorMessage } from '../../lib/errors/error-messages';
 
+const PUBLIC_PATHS = ['/', '/login', '/forgot-password', '/reset-password', '/verify-email'];
+const PUBLIC_PREFIXES = ['/track/', '/public/', '/portal/'];
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.includes(pathname) || PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 // Shared across requests so only one token refresh runs at a time
 let isRefreshing = false;
 
@@ -45,7 +52,10 @@ export function useAxiosInterceptors() {
           _retry?: boolean;
         };
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // A failed refresh is final; retrying it would only refresh again
+        const isRefreshCall = originalRequest?.url?.includes('/auth/refresh');
+
+        if (error.response?.status === 401 && !originalRequest._retry && !isRefreshCall) {
           if (isRefreshing) {
             return new Promise<string>((resolve, reject) => {
               failedQueue.push({ resolve, reject });
@@ -80,12 +90,8 @@ export function useAxiosInterceptors() {
             isRefreshing = false;
             useAuthStore.getState().clearAuth();
 
-            // /verify-email is a public link, so its expected 401 must not bounce people to login
-            if (
-              window.location.pathname !== "/login" &&
-              window.location.pathname !== "/" &&
-              window.location.pathname !== "/verify-email"
-            ) {
+            // Public pages (customer links, seal checks, password emails) expect a 401 when nobody is signed in
+            if (!isPublicPath(window.location.pathname)) {
                navigate('/login');
             }
 

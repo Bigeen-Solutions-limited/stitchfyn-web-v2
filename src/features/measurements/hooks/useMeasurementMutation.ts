@@ -5,11 +5,11 @@ import { queryClient } from '../../../query/queryClient';
 import { useToastStore } from '../../../components/feedback/Toast';
 import { useDomainError } from '../../../lib/errors';
 
-export function useMeasurements(orderId: string) {
+export function useMeasurements(customerId: string) {
   return useQuery({
-    queryKey: keys.measurements.list(orderId),
-    queryFn: () => measurementApi.getMeasurements(orderId),
-    enabled: !!orderId,
+    queryKey: keys.measurements.list(customerId),
+    queryFn: () => measurementApi.getMeasurements(customerId),
+    enabled: !!customerId,
   });
 }
 

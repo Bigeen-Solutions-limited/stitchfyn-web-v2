@@ -30,7 +30,7 @@ const PUBLIC_BASE_URL = import.meta.env.VITE_PUBLIC_BASE_URL ?? window.location.
 
 function handleShare(verificationCode: string) {
   const url = `${PUBLIC_BASE_URL}/public/seals/${verificationCode}`;
-  const text = `My fabric is protected by StitchPledge. Verify at: ${url}`;
+  const text = `My fabric is protected by StitchFYN. Verify at: ${url}`;
 
   if (navigator.share) {
     navigator.share({ text }).catch(() => {/* user cancelled */});

@@ -291,7 +291,7 @@ export function WorkshopConfiguration() {
                           secondary={
                             <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
                               <TimerIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                              <Typography variant="caption" color="text.secondary">Est. Duration: {stage.estimated_duration_hours || 0} hours</Typography>
+                              <Typography variant="caption" color="text.secondary">Est. Duration: {stage.estimatedDurationHours || 0} hours</Typography>
                             </Stack>
                           }
                         />

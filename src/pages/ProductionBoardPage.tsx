@@ -34,7 +34,6 @@ import {
 } from '@mui/material';
 import FactoryIcon from '@mui/icons-material/Factory';
 import SearchIcon from '@mui/icons-material/Search';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
@@ -45,7 +44,8 @@ import BlockIcon from '@mui/icons-material/Block';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { format } from 'date-fns';
 
-import { useActiveTasks, useMarkStageComplete } from '../features/workflow/hooks/useProductionBoard';
+import { useActiveTasks } from '../features/workflow/hooks/useProductionBoard';
+import { usePermissions } from '../features/auth/use-permissions';
 import type { ActiveFloorTask } from '../features/workflow/workflow.api';
 import { WorkflowGraph } from '../features/workflow/components/WorkflowGraph';
 import { QueryLoading, QueryError, QueryEmpty } from '../components/feedback/QueryState';
@@ -56,20 +56,24 @@ const STATUS_CONFIG: Record<string, { color: string; bgColor: string }> = {
   'Cutting':   { color: '#1a2340',          bgColor: 'rgba(26,35,64,0.07)'   },
   'Sewing':    { color: '#2d6a8f',          bgColor: 'rgba(45,106,143,0.08)' },
   'Fitting':   { color: '#8b6914',          bgColor: 'rgba(196,154,26,0.10)' },
-  'Finishing': { color: 'var(--sf-green)',  bgColor: 'rgba(30,92,58,0.08)'   },
+  'Finishing': { color: '#1e5c3a',         bgColor: 'rgba(30,92,58,0.08)'   },
   'Default':   { color: '#666',             bgColor: '#f0f0f0'               },
 };
 
 const getStatusStyles = (status: string) =>
   STATUS_CONFIG[status] ?? STATUS_CONFIG['Default'];
 
+// A stable brand colour per garment name, so cards stay on-palette
+const AVATAR_COLORS = ['#1e5c3a', '#c49a1a', '#1a2340', '#24714a', '#8a6d12', '#3f4a6b'];
 const stringToColor = (str: string) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  let color = '#';
-  for (let i = 0; i < 3; i++) color += `00${((hash >> (i * 8)) & 0xff).toString(16)}`.slice(-2);
-  return color;
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 };
+
+// Prefer the tailor's name; older API responses only carry the email
+const tailorLabel = (task: { tailorName?: string | null; tailorEmail?: string | null }) =>
+  task.tailorName || task.tailorEmail?.split('@')[0] || '';
 
 const isAtRisk = (task: ActiveFloorTask) =>
   task.riskLevel === 'OVERDUE' || task.riskLevel === 'AT_RISK';
@@ -244,14 +248,9 @@ interface ExecutionDialogProps {
   onClose: () => void;
 }
 
+// Stage work for whoever is on the floor: complete stages and add progress photos (tailors cannot open the order page)
 function ExecutionDialog({ task, onClose }: ExecutionDialogProps) {
-  const markComplete = useMarkStageComplete();
   if (!task) return null;
-
-  const handleComplete = async () => {
-    await markComplete.mutateAsync({ garmentId: task.garmentId, stageId: task.stageId });
-    onClose();
-  };
 
   return (
     <Dialog
@@ -265,7 +264,7 @@ function ExecutionDialog({ task, onClose }: ExecutionDialogProps) {
         <Stack direction="row" spacing={1.5} alignItems="center">
           <FactoryIcon color="primary" />
           <Box>
-            <Typography variant="h6" fontWeight={700}>{task.stageName}</Typography>
+            <Typography variant="h6" fontWeight={700}>Production stages</Typography>
             <Typography variant="body2" color="text.secondary">
               {task.garmentName} — {task.customerName}
             </Typography>
@@ -276,16 +275,7 @@ function ExecutionDialog({ task, onClose }: ExecutionDialogProps) {
         <WorkflowGraph garmentId={task.garmentId} orderId={task.orderId} />
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-        <Button onClick={onClose} disabled={markComplete.isPending}>Close</Button>
-        <Button
-          variant="contained"
-          onClick={handleComplete}
-          disabled={markComplete.isPending}
-          startIcon={markComplete.isPending ? <CircularProgress size={16} /> : <CheckCircleOutlineIcon />}
-          sx={{ minWidth: 160, borderRadius: 3 }}
-        >
-          {markComplete.isPending ? 'Saving…' : 'Mark complete'}
-        </Button>
+        <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
   );
@@ -294,10 +284,12 @@ function ExecutionDialog({ task, onClose }: ExecutionDialogProps) {
 interface TaskMobileCardProps {
   task: ActiveFloorTask;
   onQuickUpdate: () => void;
+  onOpenStage: () => void;
+  canViewOrder: boolean;
   navigate: (path: string) => void;
 }
 
-function TaskMobileCard({ task, onQuickUpdate, navigate }: TaskMobileCardProps) {
+function TaskMobileCard({ task, onQuickUpdate, onOpenStage, canViewOrder, navigate }: TaskMobileCardProps) {
   const atRisk = isAtRisk(task);
   const statusStyle = getStatusStyles(task.stageName);
 
@@ -349,7 +341,7 @@ function TaskMobileCard({ task, onQuickUpdate, navigate }: TaskMobileCardProps) 
             {task.tailorEmail?.[0].toUpperCase() ?? '?'}
           </Avatar>
           <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-            {task.tailorEmail ? task.tailorEmail.split('@')[0] : 'Unassigned'}
+            {task.tailorEmail ? tailorLabel(task) : 'Unassigned'}
           </Typography>
         </Stack>
         <Typography
@@ -361,25 +353,36 @@ function TaskMobileCard({ task, onQuickUpdate, navigate }: TaskMobileCardProps) 
         </Typography>
       </Stack>
 
-      <Stack direction="row" spacing={1.5}>
+      <Stack direction="row" spacing={1}>
+        {canViewOrder && (
+          <Button
+            fullWidth
+            variant="outlined"
+            size="small"
+            onClick={() => navigate(`/orders/${task.orderId}`)}
+            sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, borderColor: 'divider' }}
+          >
+            View order
+          </Button>
+        )}
         <Button
           fullWidth
           variant="outlined"
           size="small"
-          onClick={() => navigate(`/orders/${task.orderId}`)}
+          onClick={onQuickUpdate}
           sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, borderColor: 'divider' }}
         >
-          View order
+          Status
         </Button>
         <Button
           fullWidth
           variant="contained"
           color="secondary"
           size="small"
-          onClick={onQuickUpdate}
+          onClick={onOpenStage}
           sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700 }}
         >
-          Advance
+          Work on stage
         </Button>
       </Stack>
     </Card>
@@ -391,6 +394,8 @@ export function ProductionBoardPage() {
   const { data: tasks = [], isLoading, isError, refetch } = useActiveTasks();
   const [selectedTask, setSelectedTask] = useState<ActiveFloorTask | null>(null);
   const [quickUpdateTask, setQuickUpdateTask] = useState<ActiveFloorTask | null>(null);
+  const { hasCapability } = usePermissions();
+  const canViewOrder = hasCapability('MANAGE_ORDERS');
 
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('All');
@@ -431,7 +436,7 @@ export function ProductionBoardPage() {
 
   const uniqueTailors = useMemo(() => {
     const tailorMap = new Map<string, string>();
-    tasks.forEach(t => { if (t.assignedTailorId && t.tailorEmail) tailorMap.set(t.assignedTailorId, t.tailorEmail.split('@')[0]); });
+    tasks.forEach(t => { if (t.assignedTailorId && t.tailorEmail) tailorMap.set(t.assignedTailorId, tailorLabel(t)); });
     return Array.from(tailorMap.entries());
   }, [tasks]);
 
@@ -673,6 +678,8 @@ export function ProductionBoardPage() {
               key={task.stageInstanceId}
               task={task}
               onQuickUpdate={() => setQuickUpdateTask(task)}
+              onOpenStage={() => setSelectedTask(task)}
+              canViewOrder={canViewOrder}
               navigate={navigate}
             />
           ))
@@ -767,7 +774,7 @@ export function ProductionBoardPage() {
                           <Avatar sx={{ width: 22, height: 22, fontSize: 10, bgcolor: 'primary.main', fontWeight: 700 }}>
                             {task.tailorEmail[0].toUpperCase()}
                           </Avatar>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{task.tailorEmail.split('@')[0]}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{tailorLabel(task)}</Typography>
                         </Stack>
                       ) : (
                         <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>Unassigned</Typography>
@@ -775,14 +782,21 @@ export function ProductionBoardPage() {
                     </TableCell>
                     <TableCell align="right">
                       <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                        <Tooltip title="View order">
-                          <IconButton size="small" onClick={() => navigate(`/orders/${task.orderId}`)}>
-                            <VisibilityIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                        {canViewOrder && (
+                          <Tooltip title="View order">
+                            <IconButton size="small" aria-label="View order" onClick={() => navigate(`/orders/${task.orderId}`)}>
+                              <VisibilityIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        <Tooltip title="Change garment status">
+                          <IconButton size="small" aria-label="Change garment status" onClick={() => setQuickUpdateTask(task)} sx={{ color: 'text.secondary' }}>
+                            <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Advance stage">
-                          <IconButton size="small" onClick={() => setQuickUpdateTask(task)} sx={{ color: 'secondary.main' }}>
-                            <EditIcon fontSize="small" />
+                        <Tooltip title="Work on stage">
+                          <IconButton size="small" aria-label="Work on stage" onClick={() => setSelectedTask(task)} sx={{ color: 'secondary.main' }}>
+                            <FactoryIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </Stack>

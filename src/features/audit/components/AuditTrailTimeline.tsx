@@ -117,7 +117,7 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
                 {styles.icon}
               </Avatar>
 
-              <Box sx={{ flex: 1 }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 0.5 }}>
                   <Typography variant="body2" fontWeight={700}>
                     {styles.label}
@@ -143,8 +143,10 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
                         fontSize: '10px', 
                         height: '20px', 
                         borderColor: 'divider',
-                        bgcolor: 'background.paper' 
+                        bgcolor: 'background.paper',
+                        maxWidth: '100%',
                       }} 
+                      title={`${key}: ${value}`}
                     />
                   ))}
                 </Stack>

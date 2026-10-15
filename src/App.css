@@ -1,15 +1,16 @@
 /* Stitchfyn Shell Layout */
 
 #root {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
+/* min-height, so a page taller than the screen (the customer portal) scrolls instead of being cut off at the top */
 .public-layout {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
 }
 
@@ -240,9 +241,9 @@
 
 /* Workflow Pulse */
 @keyframes pulse-active {
-  0% { box-shadow: 0 0 0 0 rgba(0, 102, 255, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(0, 102, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 102, 255, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(196, 154, 26, 0.45); }
+  70% { box-shadow: 0 0 0 10px rgba(196, 154, 26, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(196, 154, 26, 0); }
 }
 
 .animate-pulse {

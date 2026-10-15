@@ -1,16 +1,16 @@
 import { apiClient } from '../../infrastructure/http/axios.client';
 
 export interface CapacityCheckResult {
-  canAccept: boolean;
+  allowed: boolean;
+  reason?: string;
   currentLoad: number;
+  proposedTotal: number;
   maxCapacity: number;
-  utilizationPercent: number;
-  message?: string;
 }
 
 export const storesApi = {
-  checkCapacity: async (storeId: string): Promise<CapacityCheckResult> => {
-    const { data } = await apiClient.post<CapacityCheckResult>(`/stores/${storeId}/capacity-check`);
+  checkCapacity: async (storeId: string, proposedGarmentCount: number): Promise<CapacityCheckResult> => {
+    const { data } = await apiClient.post<CapacityCheckResult>(`/stores/${storeId}/capacity-check`, { proposedGarmentCount });
     return data;
   },
 };

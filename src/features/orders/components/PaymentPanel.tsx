@@ -222,8 +222,9 @@ export function PaymentPanel({ orderId }: PaymentPanelProps) {
             />
 
             <FormControl fullWidth size="small" required>
-              <InputLabel>Payment Method</InputLabel>
+              <InputLabel id="payment-method-label">Payment Method</InputLabel>
               <Select
+                labelId="payment-method-label"
                 value={method}
                 label="Payment Method"
                 onChange={(e) => setMethod(e.target.value as PaymentMethod)}
@@ -236,8 +237,9 @@ export function PaymentPanel({ orderId }: PaymentPanelProps) {
             </FormControl>
 
             <FormControl fullWidth size="small" required>
-              <InputLabel>Payment Intent</InputLabel>
+              <InputLabel id="payment-intent-label">Payment Intent</InputLabel>
               <Select
+                labelId="payment-intent-label"
                 value={intent}
                 label="Payment Intent"
                 onChange={(e) => setIntent(e.target.value as PaymentIntent)}
@@ -325,7 +327,7 @@ export function PaymentPanel({ orderId }: PaymentPanelProps) {
                 }}
               >
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                  {new Date(rec.createdAt).toLocaleDateString('en-NG')}
+                  {new Date(rec.recordedAt).toLocaleDateString('en-NG')}
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                   {METHOD_LABELS[rec.paymentMethod]}

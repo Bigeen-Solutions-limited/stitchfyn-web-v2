@@ -6,8 +6,9 @@ export const CapacityVisualizer: React.FC = () => {
 
   if (isLoading) return <Box sx={{ height: 60, bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 2 }} />;
 
-  const uiHint = data?.uiHint || 'GREEN';
-  const displayStatus = data?.displayStatus || 'Loading...';
+  // No store projection (e.g. an owner not tied to one store) reads as no data, not as still loading
+  const uiHint = data?.uiHint || 'GRAY';
+  const displayStatus = data?.displayStatus || 'No data';
   const utilization = data?.capacity.utilization ?? 0;
 
   const getColor = () => {
@@ -31,7 +32,7 @@ export const CapacityVisualizer: React.FC = () => {
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color }} />
-          <Typography variant="caption" sx={{ fontWeight: 800, color: color }}>
+          <Typography variant="caption" noWrap sx={{ fontWeight: 800, color: color }}>
             {isStale ? 'STATUS UNKNOWN' : displayStatus.toUpperCase()}
           </Typography>
         </Box>

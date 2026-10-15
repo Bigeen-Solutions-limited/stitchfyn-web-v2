@@ -1,10 +1,10 @@
 /* src/pages/styles/TrackingPage.css */
 :root {
-  --portal-bg: #f8fafc;
-  --portal-card: #ffffff;
-  --portal-primary: #1e293b;
-  --portal-accent: #10b981; /* Sage-like green for completed */
-  --portal-progress: #3b82f6; /* Indigo-blue for progress */
+  --portal-bg: #f5f4f0;
+  --portal-card: #fafaf8;
+  --portal-primary: #1a2340;
+  --portal-accent: #1e5c3a; /* brand green for completed */
+  --portal-progress: #c49a1a; /* brand gold for the stage in progress */
   --portal-text: #334155;
   --portal-text-light: #64748b;
   --portal-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
@@ -35,10 +35,11 @@
 }
 
 .portal-logo {
-  font-weight: 800;
-  font-size: 1.5rem;
-  letter-spacing: -0.025em;
-  color: var(--portal-primary);
+  font-family: var(--sf-font-display);
+  font-weight: 600;
+  font-size: 1.8rem;
+  letter-spacing: 0.01em;
+  color: var(--portal-accent);
   margin-bottom: 8px;
   display: block;
 }

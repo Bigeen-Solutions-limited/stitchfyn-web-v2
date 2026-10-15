@@ -178,7 +178,8 @@ export function NewOrderPage() {
             queryKey: ['customers', 'detail', customerId],
             queryFn: () => customersApi.getCustomerProfile(customerId)
           });
-          setSelectedCustomer(profile.customer);
+          // The profile keeps the latest measurements beside the customer, not on it
+          setSelectedCustomer({ ...profile.customer, latestMeasurement: profile.latestMeasurement });
           setStep("GARMENTS_TIMELINE");
         } catch (error) {
           console.error("Failed to pre-load customer profile", error);
@@ -372,11 +373,11 @@ export function NewOrderPage() {
 
       // Warn if the store is over capacity; this never blocks the order
       try {
-        const capacityCheck = await storesApi.checkCapacity(finalStoreId);
-        if (!capacityCheck.canAccept) {
+        const capacityCheck = await storesApi.checkCapacity(finalStoreId, Math.max(orderItems.length, 1));
+        if (!capacityCheck.allowed) {
           showToast(
             "Capacity Warning",
-            `Store at ${capacityCheck.utilizationPercent ?? '?'}% load. ${capacityCheck.message || 'Accepting order above capacity limit.'}`,
+            `This order takes the store to ${capacityCheck.proposedTotal ?? '?'} of ${capacityCheck.maxCapacity ?? '?'} garments. Accepting it above the capacity limit.`,
           );
         }
       } catch {
@@ -388,7 +389,8 @@ export function NewOrderPage() {
         customerId: finalCustomerId,
         customerName: finalCustomerName.trim(),
         storeId: finalStoreId,
-        eventDate: eventDate ? eventDate.toISOString() : new Date().toISOString(),
+        // Midday local time, so the calendar date survives conversion to UTC
+        eventDate: eventDate ? new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), 12).toISOString() : new Date().toISOString(),
         lockedMeasurementVersionId: finalMeasurementVersionId,
         event_occasion: eventOccasion || undefined,
         garment_category: garmentCategory || undefined,
@@ -977,8 +979,9 @@ export function NewOrderPage() {
                         STORE ASSIGNMENT
                       </Typography>
                       <FormControl fullWidth>
-                        <InputLabel>Production Store</InputLabel>
+                        <InputLabel id="order-store-label">Production Store</InputLabel>
                         <Select
+                          labelId="order-store-label"
                           value={selectedStoreId}
                           label="Production Store"
                           onChange={(e) => setSelectedStoreId(e.target.value)}
@@ -994,50 +997,6 @@ export function NewOrderPage() {
                 </Grid>
               </Grid>
 
-              <Divider sx={{ my: 4 }} />
-
-              <Stack
-                direction="row"
-                spacing={2}
-                justifyContent="space-between"
-                sx={{
-                  pt: 8,
-                  position: { xs: 'fixed', md: 'static' },
-                  bottom: { xs: 'calc(64px + env(safe-area-inset-bottom, 0px))', md: 0 },
-                  left: 0,
-                  right: 0,
-                  bgcolor: 'background.paper',
-                  p: { xs: 2.5, md: 0 },
-                  borderTop: { xs: '1px solid', md: 'none' },
-                  borderColor: 'divider',
-                  zIndex: 10,
-                  pb: { xs: 'calc(16px + env(safe-area-inset-bottom, 16px))', md: 0 }
-                }}
-              >
-                <Button
-                  onClick={() => setStep(selectedCustomer ? "CLIENT_SELECTION" : "CLIENT_DETAILS")}
-                  sx={{ color: 'text.secondary', fontWeight: 600 }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  disabled={orderItems.length === 0 || !eventDate || !eventOccasion || !garmentCategory || !paymentIntentType}
-                  onClick={() => setStep("FABRIC_DETAILS")}
-                  sx={{
-                    bgcolor: 'secondary.main',
-                    height: 52,
-                    px: 6,
-                    borderRadius: '12px',
-                    fontWeight: 700,
-                    '&:hover': { bgcolor: '#d4aa2a' },
-                    '&.Mui-disabled': { bgcolor: alpha('#c49a1a', 0.3) }
-                  }}
-                >
-                  Configure Material
-                </Button>
-              </Stack>
-
               {/* ORDER CLASSIFICATION */}
               <Box sx={{ mt: 5 }}>
                 <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 1.5, display: 'block', letterSpacing: 1.5 }}>
@@ -1047,8 +1006,9 @@ export function NewOrderPage() {
                   <Grid container spacing={3}>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth required>
-                        <InputLabel>Occasion</InputLabel>
+                        <InputLabel id="order-occasion-label">Occasion</InputLabel>
                         <Select
+                          labelId="order-occasion-label"
                           value={eventOccasion}
                           label="Occasion"
                           onChange={(e) => setEventOccasion(e.target.value)}
@@ -1075,8 +1035,9 @@ export function NewOrderPage() {
 
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth required>
-                        <InputLabel>Garment Category</InputLabel>
+                        <InputLabel id="order-category-label">Garment Category</InputLabel>
                         <Select
+                          labelId="order-category-label"
                           value={garmentCategory}
                           label="Garment Category"
                           onChange={(e) => setGarmentCategory(e.target.value)}
@@ -1104,8 +1065,9 @@ export function NewOrderPage() {
 
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth required>
-                        <InputLabel>Payment Structure</InputLabel>
+                        <InputLabel id="order-payment-label">Payment Structure</InputLabel>
                         <Select
+                          labelId="order-payment-label"
                           value={paymentIntentType}
                           label="Payment Structure"
                           onChange={(e) => setPaymentIntentType(e.target.value)}
@@ -1182,6 +1144,51 @@ export function NewOrderPage() {
                   </Grid>
                 </Card>
               </Box>
+
+              <Divider sx={{ my: 4 }} />
+
+              <Stack
+                direction="row"
+                spacing={2}
+                justifyContent="space-between"
+                sx={{
+                  pt: 8,
+                  position: { xs: 'fixed', md: 'static' },
+                  bottom: { xs: 'calc(64px + env(safe-area-inset-bottom, 0px))', md: 0 },
+                  left: 0,
+                  right: 0,
+                  bgcolor: 'background.paper',
+                  p: { xs: 2.5, md: 0 },
+                  borderTop: { xs: '1px solid', md: 'none' },
+                  borderColor: 'divider',
+                  zIndex: 10,
+                  pb: { xs: 'calc(16px + env(safe-area-inset-bottom, 16px))', md: 0 }
+                }}
+              >
+                <Button
+                  onClick={() => setStep(selectedCustomer ? "CLIENT_SELECTION" : "CLIENT_DETAILS")}
+                  sx={{ color: 'text.secondary', fontWeight: 600 }}
+                >
+                  Back
+                </Button>
+                <Button
+                  variant="contained"
+                  disabled={orderItems.length === 0 || !eventDate || !eventOccasion || !garmentCategory || !paymentIntentType}
+                  onClick={() => setStep("FABRIC_DETAILS")}
+                  sx={{
+                    bgcolor: 'secondary.main',
+                    height: 52,
+                    px: 6,
+                    borderRadius: '12px',
+                    fontWeight: 700,
+                    '&:hover': { bgcolor: '#d4aa2a' },
+                    '&.Mui-disabled': { bgcolor: alpha('#c49a1a', 0.3) }
+                  }}
+                >
+                  Configure Material
+                </Button>
+              </Stack>
+
 
               {/* MOBILE TAILOR PICKER DRAWER */}
               <SwipeableDrawer
@@ -1351,15 +1358,17 @@ export function NewOrderPage() {
                           gap: 2
                         }}>
                           <Typography variant="body2" sx={{ color: '#92400e', fontWeight: 600 }}>
-                            ⚠️ No materials found in Vault. Please configure in Settings.
+                            ⚠️ No materials found in Vault. Register one under Inventory first.
                           </Typography>
                         </Box>
                       )}
 
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                        <FormControl fullWidth>
-                          <InputLabel>Material Base</InputLabel>
+                      {/* Material takes its own row; quantity and unit share the next, so neither gets squeezed in the half-width column */}
+                      <Stack direction="row" flexWrap="wrap" useFlexGap spacing={2}>
+                        <FormControl fullWidth sx={{ flexBasis: '100%' }}>
+                          <InputLabel id="order-material-label">Material Base</InputLabel>
                           <Select
+                            labelId="order-material-label"
                             value={selectedMaterialId}
                             label="Material Base"
                             onChange={(e) => setSelectedMaterialId(e.target.value)}
@@ -1376,7 +1385,7 @@ export function NewOrderPage() {
                         </FormControl>
 
                         <TextField
-                          sx={{ width: { xs: '100%', sm: 130 }, '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                          sx={{ flex: '1 1 140px', '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                           label="Qty / Yardage"
                           value={materialQuantity}
                           onChange={(e) => {
@@ -1386,9 +1395,10 @@ export function NewOrderPage() {
                           inputProps={{ inputMode: 'decimal', pattern: '[0-9]*\\.?[0-9]*' }}
                           disabled={!selectedMaterialId}
                         />
-                        <FormControl sx={{ width: { xs: '100%', sm: 120 } }} disabled={!selectedMaterialId}>
-                          <InputLabel>Unit</InputLabel>
+                        <FormControl sx={{ flex: '1 1 120px' }} disabled={!selectedMaterialId}>
+                          <InputLabel id="order-unit-label">Unit</InputLabel>
                           <Select
+                            labelId="order-unit-label"
                             value={quantityUnit}
                             label="Unit"
                             onChange={(e) => setQuantityUnit(e.target.value as "yards" | "meters")}

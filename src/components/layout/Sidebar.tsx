@@ -50,11 +50,12 @@ interface SidebarProps {
 const SIDEBAR_WIDTH = 'var(--sidebar-width)';
 
 const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['OWNER', 'MANAGER', 'TAILOR', 'CUSTOMER'] },
-  { label: 'Orders', icon: ClipboardList, path: '/orders', roles: ['OWNER', 'MANAGER', 'TAILOR'] },
-  { label: 'New Order', icon: Plus, path: '/orders/new', roles: ['OWNER', 'MANAGER', 'TAILOR'] },
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['OWNER', 'MANAGER', 'TAILOR', 'FRONT_DESK', 'CUSTOMER'] },
+  // Roles match the route guards (order and client pages need MANAGE_ORDERS); tailors work from Production
+  { label: 'Orders', icon: ClipboardList, path: '/orders', roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
+  { label: 'New Order', icon: Plus, path: '/orders/new', roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
   { label: 'Production', icon: ScissorsIcon, path: '/production', roles: ['OWNER', 'MANAGER', 'TAILOR'] },
-  { label: 'Customers', icon: Users, path: '/customers', roles: ['OWNER', 'MANAGER'] },
+  { label: 'Customers', icon: Users, path: '/customers', roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
   { label: 'Inventory', icon: ClipboardList, path: '/inventory', roles: ['OWNER', 'MANAGER'] },
   { label: 'Disputes', icon: GavelIcon, path: '/disputes', roles: ['OWNER', 'MANAGER'] },
   { label: 'Group Orders', icon: GroupsIcon, path: '/group-orders', roles: ['OWNER', 'MANAGER'] },
@@ -62,7 +63,7 @@ const navItems = [
   { label: 'Workflow Templates', icon: WorkflowIcon, path: '/workflow-templates', roles: ['OWNER'] },
   { label: 'Staff Management', icon: UserCog, path: '/staff', roles: ['OWNER'] },
   { label: 'Reports', icon: BarChart2, path: '/reports', roles: ['OWNER', 'MANAGER'] },
-  { label: 'StitchScore', icon: GradeIcon, path: '/stitch-score', roles: ['OWNER', 'MANAGER'] },
+  { label: 'StitchScore', icon: GradeIcon, path: '/stitch-score', roles: ['OWNER'] },
 ];
 
 const forensicNavItems = [
@@ -310,7 +311,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
             sx={{ width: 40, height: 40, border: `1px solid ${alpha('#ffffff', 0.2)}` }}
           />
           <Box sx={{ overflow: 'hidden' }}>
-            <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+            <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600, color: '#ffffff' }}>
               {user?.fullName}
             </Typography>
             <Typography variant="caption" noWrap sx={{ display: 'block', color: alpha('#ffffff', 0.6) }}>

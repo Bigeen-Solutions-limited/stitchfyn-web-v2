@@ -23,12 +23,12 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     fontSize: '1rem',
     /* Hide the number spinners in Chrome, Safari and Edge */
     '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
-      '-webkit-appearance': 'none',
+      WebkitAppearance: 'none',
       margin: 0,
     },
     /* and in Firefox */
     '&[type=number]': {
-      '-moz-appearance': 'textfield',
+      MozAppearance: 'textfield',
     },
   },
 }));
