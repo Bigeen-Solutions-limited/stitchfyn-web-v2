@@ -3,10 +3,9 @@ import { apiClient } from '../../infrastructure/http/axios.client';
 export type BriefType = 'basic' | 'technical';
 
 export interface SectionVersion {
-  id: string;
   versionNumber: number;
   content: { label: string; notes: string; [key: string]: unknown };
-  appendedAt: string;
+  appendedAt: string | null;
 }
 
 export interface DesignBrief {
@@ -21,7 +20,9 @@ export interface DesignBrief {
   additionalNotes: string | null;
   referenceImageIds: string[];
   confirmedByCustomerAt: string | null; // set when the customer confirms in the portal
+  confirmedChannel: 'portal' | 'sms_reply' | 'in_person' | null;
   sectionVersions: SectionVersion[];
+  createdAt: string | null;
 }
 
 export interface CreateBriefBody {
@@ -58,8 +59,8 @@ export const designBriefApi = {
     orderId: string,
     garmentId: string,
     content: { label: string; notes: string },
-  ): Promise<SectionVersion> => {
-    const { data } = await apiClient.post<SectionVersion>(
+  ): Promise<DesignBrief> => {
+    const { data } = await apiClient.post<DesignBrief>(
       `/orders/${orderId}/garments/${garmentId}/design-brief/sections`,
       { content },
     );

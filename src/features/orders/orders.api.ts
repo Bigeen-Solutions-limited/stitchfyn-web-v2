@@ -117,6 +117,16 @@ export const ordersApi = {
     return data
   },
 
+  // Nulls until the customer's portal page has been created
+  getCustomerLink: async (orderId: string) => {
+    const { data } = await apiClient.get<{
+      trackingSlug: string | null
+      portalUrl: string | null
+      trackingUrl: string | null
+    }>(`/orders/${orderId}/customer-link`)
+    return data
+  },
+
   reassignGarment: async (garmentId: string, targetOrderId: string, reason: string) => {
     const { data } = await apiClient.post<Garment>(`/garments/${garmentId}/reassign`, {
       targetOrderId,

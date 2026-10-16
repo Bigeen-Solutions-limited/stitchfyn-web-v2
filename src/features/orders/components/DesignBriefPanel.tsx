@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -25,7 +25,8 @@ import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOu
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { designBriefApi, type BriefType } from '../design-brief.api';
+import { designBriefApi, type BriefType, type DesignBrief } from '../design-brief.api';
+import { keys } from '../../../query/keys';
 
 interface DesignBriefPanelProps {
   orderId: string;
@@ -96,7 +97,7 @@ function BriefFields({
   );
 }
 
-function BriefReadOnly({ brief }: { brief: ReturnType<typeof designBriefApi.getBrief> extends Promise<infer T> ? T : never }) {
+function BriefReadOnly({ brief }: { brief: DesignBrief }) {
   const isConfirmed = !!brief.confirmedByCustomerAt;
   const isBespoke = brief.briefType === 'technical';
 
@@ -168,7 +169,7 @@ function BriefReadOnly({ brief }: { brief: ReturnType<typeof designBriefApi.getB
             Detail Log
           </Typography>
           {brief.sectionVersions.map((sv) => (
-            <Accordion key={sv.id} disableGutters elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px !important', mb: 0.75, '&:before': { display: 'none' } }}>
+            <Accordion key={sv.versionNumber} disableGutters elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px !important', mb: 0.75, '&:before': { display: 'none' } }}>
               <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />} sx={{ minHeight: 40, py: 0 }}>
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.disabled', fontFamily: 'monospace' }}>
@@ -176,7 +177,7 @@ function BriefReadOnly({ brief }: { brief: ReturnType<typeof designBriefApi.getB
                   </Typography>
                   <Typography variant="caption" sx={{ fontWeight: 700 }}>{sv.content.label}</Typography>
                   <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                    {new Date(sv.appendedAt).toLocaleDateString('en-NG')}
+                    {sv.appendedAt ? new Date(sv.appendedAt).toLocaleDateString('en-NG') : ''}
                   </Typography>
                 </Stack>
               </AccordionSummary>
@@ -201,7 +202,7 @@ function AddSectionForm({ orderId, garmentId, onSuccess }: { orderId: string; ga
     mutationFn: () => designBriefApi.addSection(orderId, garmentId, { label: label.trim(), notes: notes.trim() }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['design-brief', orderId, garmentId] });
-      queryClient.invalidateQueries({ queryKey: ['orders', orderId] });
+      queryClient.invalidateQueries({ queryKey: keys.orders.detail(orderId) });
       setOpen(false);
       setLabel('');
       setNotes('');
@@ -275,7 +276,21 @@ export function DesignBriefPanel({ orderId, garmentId, garmentTier }: DesignBrie
       if (err?.response?.status === 404) return false;
       return failureCount < 2;
     },
+    // The customer confirms on their own phone, so keep checking while we wait for them
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) =>
+      query.state.data && !query.state.data.confirmedByCustomerAt ? 30_000 : false,
   });
+
+  // Confirming clears the order's "Design pending" flag, so refresh the order once we see it
+  const confirmedAt = brief?.confirmedByCustomerAt ?? null;
+  const prevConfirmedAt = useRef(confirmedAt);
+  useEffect(() => {
+    if (confirmedAt && !prevConfirmedAt.current) {
+      queryClient.invalidateQueries({ queryKey: keys.orders.detail(orderId) });
+    }
+    prevConfirmedAt.current = confirmedAt;
+  }, [confirmedAt, orderId, queryClient]);
 
   const is404 = (error as any)?.response?.status === 404;
 
@@ -292,7 +307,7 @@ export function DesignBriefPanel({ orderId, garmentId, garmentTier }: DesignBrie
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['design-brief', orderId, garmentId] });
-      queryClient.invalidateQueries({ queryKey: ['orders', orderId] });
+      queryClient.invalidateQueries({ queryKey: keys.orders.detail(orderId) });
       setDialogOpen(false);
       setForm(EMPTY_FORM);
     },

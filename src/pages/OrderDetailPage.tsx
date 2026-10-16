@@ -56,6 +56,7 @@ import { truncateId } from '../utils/format.ts';
 import { PaymentPanel } from '../features/orders/components/PaymentPanel.tsx';
 import { DesignBriefPanel } from '../features/orders/components/DesignBriefPanel.tsx';
 import { FabricSealPanel } from '../features/orders/components/FabricSealPanel.tsx';
+import { CustomerLinkPanel } from '../features/orders/components/CustomerLinkPanel.tsx';
 import { FabricEvidenceCapturePanel } from '../features/orders/components/FabricEvidenceCapturePanel.tsx';
 import { CollectionChecklistPanel } from '../features/orders/components/CollectionChecklistPanel.tsx';
 import { FittingsPanel } from '../features/orders/components/FittingsPanel.tsx';
@@ -608,6 +609,9 @@ export function OrderDetailPage() {
                     garmentId={selectedGarment.id}
                     garmentTier={order.garmentTier ?? 'STANDARD'}
                   />
+
+                  {/* Where the customer confirms the fabric and design brief */}
+                  <CustomerLinkPanel orderId={order.id} />
 
                   {/* Fittings apply to bespoke orders only */}
                   {order.garmentTier === 'BESPOKE' && garments && (
