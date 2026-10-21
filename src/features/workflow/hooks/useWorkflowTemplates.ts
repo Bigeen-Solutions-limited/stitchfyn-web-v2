@@ -102,7 +102,7 @@ export function useSaveStageOrder() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['workflow', 'template-stages', variables.templateId] });
       queryClient.invalidateQueries({ queryKey: keys.workflow.templates });
-      showToast('Stage Order Saved', 'New orders use the new order; garments already in production keep theirs.', 'success');
+      showToast('Template Saved', 'New orders use these stages and hours; garments already in production keep theirs.', 'success');
     },
     onError: (error: any) => {
       showToast('Error', serverMessage(error, 'Failed to save stage order'), 'error');
