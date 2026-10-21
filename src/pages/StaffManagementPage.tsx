@@ -7,7 +7,9 @@ import {
   useChangeStaffRole,
   useStaffAccessLog,
   useStores,
+  useResendInvite,
 } from "../features/auth/hooks/useStaff"
+import { InviteLinkDialog } from "../features/auth/components/InviteLinkDialog"
 import { ASSIGNABLE_STAFF_ROLES, type Staff, type StaffRole } from "../features/auth/staff.api"
 import { useAuthStore } from "../features/auth/auth.store"
 import { 
@@ -24,7 +26,8 @@ import {
   Person as PersonIcon,
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon,
-  Security as SecurityIcon
+  Security as SecurityIcon,
+  MarkEmailUnread as InvitedIcon,
 } from '@mui/icons-material';
 
 export function StaffManagementPage() {
@@ -36,6 +39,9 @@ export function StaffManagementPage() {
   const updateStatus = useUpdateStaffStatus()
   const removeStaff = useRemoveStaff()
   const changeRole = useChangeStaffRole()
+  const resendInvite = useResendInvite()
+  // The link from the latest invite or resend, shown so it can be shared another way
+  const [shownInvite, setShownInvite] = useState<{ inviteUrl: string; name: string; email: string } | null>(null)
   const isOwner = currentUser?.role === "OWNER"
   const { data: accessLog } = useStaffAccessLog(isOwner)
   // Removing staff takes two steps: the button only opens a confirmation
@@ -59,11 +65,10 @@ export function StaffManagementPage() {
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inviteData.storeId && stores && stores.length > 0) {
-      await inviteStaff.mutateAsync({ ...inviteData, storeId: stores[0].id })
-    } else {
-      await inviteStaff.mutateAsync(inviteData)
-    }
+    const invited = await inviteStaff.mutateAsync(
+      !inviteData.storeId && stores && stores.length > 0 ? { ...inviteData, storeId: stores[0].id } : inviteData,
+    )
+    setShownInvite({ inviteUrl: invited.inviteUrl, name: invited.fullName, email: invited.email })
     setInviteData({
       email: "",
       fullName: "",
@@ -162,13 +167,17 @@ export function StaffManagementPage() {
                         <Chip
                           icon={member.status === "ACTIVE"
                             ? <CheckCircleIcon sx={{ fontSize: '14px !important' }} />
-                            : <BlockIcon sx={{ fontSize: '14px !important' }} />}
+                            : member.status === "INVITED"
+                              ? <InvitedIcon sx={{ fontSize: '14px !important' }} />
+                              : <BlockIcon sx={{ fontSize: '14px !important' }} />}
                           label={member.status}
                           size="small"
                           sx={{
                             height: 20, fontSize: '0.65rem', fontWeight: 800,
-                            bgcolor: member.status === "ACTIVE" ? alpha('#1e5c3a', 0.1) : alpha('#d32f2f', 0.1),
-                            color: member.status === "ACTIVE" ? 'primary.main' : 'error.main',
+                            bgcolor: member.status === "ACTIVE" ? alpha('#1e5c3a', 0.1)
+                              : member.status === "INVITED" ? alpha('#c49a1a', 0.12) : alpha('#d32f2f', 0.1),
+                            color: member.status === "ACTIVE" ? 'primary.main'
+                              : member.status === "INVITED" ? '#8a6a0f' : 'error.main',
                           }}
                         />
                       </Stack>
@@ -224,6 +233,19 @@ export function StaffManagementPage() {
                       variant="outlined"
                       sx={{ fontWeight: 700, borderRadius: '8px', color: 'text.secondary', borderColor: 'divider' }}
                     />
+                  )}
+                  {member.status === "INVITED" && (
+                    <Button
+                      variant="outlined"
+                      onClick={async () => {
+                        const { inviteUrl } = await resendInvite.mutateAsync(member.id)
+                        setShownInvite({ inviteUrl, name: member.fullName, email: member.email })
+                      }}
+                      disabled={resendInvite.isPending}
+                      sx={{ borderRadius: '12px', fontWeight: 700, height: '36px' }}
+                    >
+                      Resend invite
+                    </Button>
                   )}
                   {member.status !== "REMOVED" && member.role !== "OWNER" && member.id !== currentUser.id && (
                     <Button
@@ -352,6 +374,16 @@ export function StaffManagementPage() {
           </DialogActions>
         </form>
       </Dialog>
+
+      {shownInvite && (
+        <InviteLinkDialog
+          open
+          inviteUrl={shownInvite.inviteUrl}
+          name={shownInvite.name}
+          email={shownInvite.email}
+          onClose={() => setShownInvite(null)}
+        />
+      )}
       {/* Removal confirmation */}
       <Dialog open={!!removing} onClose={() => setRemoving(null)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>Remove {removing?.fullName}?</DialogTitle>

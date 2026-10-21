@@ -11,7 +11,7 @@ export interface Staff {
   role: StaffRole;
   storeId: string | null;
   isActive: boolean;
-  status: "ACTIVE" | "SUSPENDED" | "REMOVED";
+  status: "ACTIVE" | "INVITED" | "SUSPENDED" | "REMOVED"; // INVITED: hasn't set a password from their link yet
   lastLoginAt: string | null;
   removedAt: string | null;
   createdAt: string;
@@ -37,8 +37,14 @@ export const staffApi = {
     return response.data;
   },
 
-  inviteStaff: async (data: InviteStaffRequest): Promise<Staff> => {
-    const response = await apiClient.post<Staff>("/staff/invite", data);
+  // Returns the invite link too, so it can be shared if the email doesn't arrive
+  inviteStaff: async (data: InviteStaffRequest): Promise<Staff & { inviteUrl: string }> => {
+    const response = await apiClient.post<Staff & { inviteUrl: string }>("/staff/invite", data);
+    return response.data;
+  },
+
+  resendInvite: async (id: string): Promise<{ inviteUrl: string }> => {
+    const response = await apiClient.post<{ inviteUrl: string }>(`/staff/${id}/resend-invite`);
     return response.data;
   },
 

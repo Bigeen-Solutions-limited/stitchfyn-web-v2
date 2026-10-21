@@ -6,7 +6,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 interface Props {
   companyId: string
   onClose: () => void
-  onSuccess?: (temporaryPassword?: string) => void
+  onSuccess?: (invite?: { inviteUrl: string; name: string; email: string }) => void
 }
 
 export function AssignUserSlideOver({ companyId, onClose, onSuccess }: Props) {
@@ -27,7 +27,7 @@ export function AssignUserSlideOver({ companyId, onClose, onSuccess }: Props) {
 
     assignUser.mutate(dto, {
       onSuccess: (data) => {
-        onSuccess?.(data.temporaryPassword)
+        onSuccess?.(data.inviteUrl ? { inviteUrl: data.inviteUrl, name: dto.fullName ?? dto.email, email: dto.email } : undefined)
         onClose()
       },
       onError: (error: any) => {

@@ -27,6 +27,14 @@ export function useInviteStaff() {
   });
 }
 
+export function useResendInvite() {
+  const { handleError } = useDomainError();
+  return useMutation({
+    mutationFn: (id: string) => staffApi.resendInvite(id),
+    onError: (err: any) => handleError(err),
+  });
+}
+
 export function useUpdateStaffStatus() {
   const queryClient = useQueryClient();
   const { handleError } = useDomainError();

@@ -118,10 +118,10 @@ export function VerifyEmailPage() {
           </Stack>
 
           <Typography variant="h4" sx={{ color: '#1a2340', fontWeight: 700, mb: 1, fontSize: '28px' }}>
-            Verify your email
+            Set your password
           </Typography>
           <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
-            Your {BRAND_NAME} workspace is ready. Set a password to verify your email and activate your account.
+            Choose a password to finish setting up your {BRAND_NAME} account.
           </Typography>
 
           <Collapse in={!!error}>
@@ -225,7 +225,7 @@ export function VerifyEmailPage() {
                   '&:hover': { bgcolor: '#256b45', boxShadow: 'none' },
                 }}
               >
-                {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Verify email & activate account'}
+                {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Set password & continue'}
               </Button>
             </Stack>
           </Box>

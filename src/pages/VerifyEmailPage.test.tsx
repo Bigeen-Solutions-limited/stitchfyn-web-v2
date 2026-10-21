@@ -39,7 +39,7 @@ describe('VerifyEmailPage', () => {
 
   it('reads the token from the URL and renders the password-setup form', () => {
     renderPage('/verify-email?token=abc123')
-    expect(screen.getByRole('heading', { name: /verify your email/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /set your password/i })).toBeInTheDocument()
     expect(document.querySelectorAll('input[type="password"]')).toHaveLength(2)
   })
 
@@ -48,7 +48,7 @@ describe('VerifyEmailPage', () => {
     renderPage('/verify-email?token=abc123')
 
     fillPasswords(VALID_PASSWORD, VALID_PASSWORD)
-    fireEvent.click(screen.getByRole('button', { name: /verify email/i }))
+    fireEvent.click(screen.getByRole('button', { name: /set password/i }))
 
     await waitFor(() => {
       expect(verifyEmailApi).toHaveBeenCalledWith('abc123', VALID_PASSWORD)
@@ -62,7 +62,7 @@ describe('VerifyEmailPage', () => {
     renderPage('/verify-email?token=abc123')
 
     fillPasswords(VALID_PASSWORD, 'SomethingElse1')
-    fireEvent.click(screen.getByRole('button', { name: /verify email/i }))
+    fireEvent.click(screen.getByRole('button', { name: /set password/i }))
 
     expect(verifyEmailApi).not.toHaveBeenCalled()
   })
@@ -74,7 +74,7 @@ describe('VerifyEmailPage', () => {
     renderPage('/verify-email?token=abc123')
 
     fillPasswords(VALID_PASSWORD, VALID_PASSWORD)
-    fireEvent.click(screen.getByRole('button', { name: /verify email/i }))
+    fireEvent.click(screen.getByRole('button', { name: /set password/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/invalid or has expired/i)).toBeInTheDocument()
@@ -91,7 +91,7 @@ describe('VerifyEmailPage', () => {
     renderPage('/verify-email?token=abc123')
 
     fillPasswords(VALID_PASSWORD, VALID_PASSWORD)
-    const button = screen.getByRole('button', { name: /verify email/i })
+    const button = screen.getByRole('button', { name: /set password/i })
     fireEvent.click(button)
 
     await waitFor(() => {

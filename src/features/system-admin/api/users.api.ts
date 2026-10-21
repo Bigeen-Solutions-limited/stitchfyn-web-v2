@@ -31,4 +31,10 @@ export const usersApi = {
   changeRole: async (userId: string, role: string): Promise<void> => {
     await apiClient.patch(`/system-admin/users/${userId}/role`, { role })
   },
+
+  // Only for someone who was added but never joined
+  resendInvite: async (userId: string): Promise<{ inviteUrl: string }> => {
+    const { data } = await apiClient.post<{ inviteUrl: string }>(`/system-admin/users/${userId}/resend-invite`)
+    return data
+  },
 }

@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../hooks/useUsers'
-import { useUpdateUserStatus, useRevokeAccess, useChangeUserRole } from '../hooks/useUsers'
+import { useUpdateUserStatus, useRevokeAccess, useChangeUserRole, useResendInvite } from '../hooks/useUsers'
+import { InviteLinkDialog } from '../../auth/components/InviteLinkDialog'
 import { AdminLoadError } from '../components/AdminLoadError'
 
 const ROLES = ['OWNER', 'MANAGER', 'TAILOR'] as const
@@ -14,6 +15,8 @@ export function UserDetail() {
   const updateStatus = useUpdateUserStatus()
   const revokeAccess = useRevokeAccess()
   const changeRole = useChangeUserRole()
+  const resendInvite = useResendInvite()
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null)
 
   const [revokeOpen, setRevokeOpen] = useState(false)
   const [revokeNotes, setRevokeNotes] = useState('')
@@ -90,7 +93,21 @@ export function UserDetail() {
         >
           Change Role
         </button>
+
+        {user.companyId && user.isActive && (
+          <button
+            onClick={() => resendInvite.mutate(id, { onSuccess: (data) => setInviteUrl(data.inviteUrl) })}
+            disabled={resendInvite.isPending}
+            style={outlineBtnStyle}
+          >
+            {resendInvite.isPending ? 'Sending...' : 'Resend Invite'}
+          </button>
+        )}
       </div>
+
+      {inviteUrl && (
+        <InviteLinkDialog open inviteUrl={inviteUrl} name={user.fullName} email={user.email} onClose={() => setInviteUrl(null)} />
+      )}
 
       {roleOpen && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1300 }}>

@@ -5,7 +5,7 @@ import { useUpdateUserStatus, useRevokeAccess } from '../hooks/useUsers'
 import { ChangeStatusModal } from '../components/ChangeStatusModal'
 import { AssignUserSlideOver } from '../components/AssignUserSlideOver'
 import { AddStoreSlideOver } from '../components/AddStoreSlideOver'
-import { TemporaryPasswordDisclosure } from '../components/TemporaryPasswordDisclosure'
+import { InviteLinkDialog } from '../../auth/components/InviteLinkDialog'
 import type { UserRecord } from '../types'
 import { AdminLoadError } from '../components/AdminLoadError'
 
@@ -33,7 +33,7 @@ export function CompanyDetail() {
   const [showAddStore, setShowAddStore] = useState(false)
   const [revokingUser, setRevokingUser] = useState<UserRecord | null>(null)
   const [revokeNotes, setRevokeNotes] = useState('')
-  const [newUserPassword, setNewUserPassword] = useState<string | undefined>()
+  const [newUserInvite, setNewUserInvite] = useState<{ inviteUrl: string; name: string; email: string } | undefined>()
 
   if (isError) return <AdminLoadError onRetry={() => refetch()} />
   if (isLoading) return <p style={{ color: '#94a3b8' }}>Loading...</p>
@@ -254,16 +254,19 @@ export function CompanyDetail() {
         <AssignUserSlideOver
           companyId={id}
           onClose={() => setShowAssignUser(false)}
-          onSuccess={(pwd) => { if (pwd) setNewUserPassword(pwd) }}
+          onSuccess={(invite) => { if (invite) setNewUserInvite(invite) }}
         />
       )}
 
       {showAddStore && <AddStoreSlideOver companyId={id} onClose={() => setShowAddStore(false)} />}
 
-      {newUserPassword && (
-        <TemporaryPasswordDisclosure
-          password={newUserPassword}
-          onDismiss={() => setNewUserPassword(undefined)}
+      {newUserInvite && (
+        <InviteLinkDialog
+          open
+          inviteUrl={newUserInvite.inviteUrl}
+          name={newUserInvite.name}
+          email={newUserInvite.email}
+          onClose={() => setNewUserInvite(undefined)}
         />
       )}
     </div>
