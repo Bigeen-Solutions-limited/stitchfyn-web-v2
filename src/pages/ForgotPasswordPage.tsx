@@ -3,6 +3,7 @@ import { Box, Card, Typography, Stack, TextField, Button, CircularProgress, Aler
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { forgotPasswordApi } from '../features/auth/auth.api';
+import { BRAND_NAME } from '../config/brand';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -54,7 +55,7 @@ export function ForgotPasswordPage() {
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 4 }}>
-            <Box component="img" src="/logo-icon.png" alt="" sx={{ height: 28, width: 'auto' }} />            <Typography              sx={{                fontFamily: 'var(--sf-font-display)',                fontWeight: 600,                fontSize: '1.6rem',                letterSpacing: '0.01em',                color: '#1e5c3a',                lineHeight: 1,              }}            >              StitchFYN            </Typography>
+            <Box component="img" src="/logo-icon.png" alt="" sx={{ height: 28, width: 'auto' }} />            <Typography              sx={{                fontFamily: 'var(--sf-font-display)',                fontWeight: 600,                fontSize: '1.6rem',                letterSpacing: '0.01em',                color: '#1e5c3a',                lineHeight: 1,              }}            >              {BRAND_NAME}            </Typography>
           </Stack>
 
           {submitted ? (

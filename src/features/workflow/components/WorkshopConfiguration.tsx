@@ -8,10 +8,6 @@ import {
   Stack, 
   alpha,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,16 +20,16 @@ import {
   AccountTree as WorkflowIcon,
   Add as AddIcon,
   Timer as TimerIcon,
-  ArrowForward as ArrowIcon,
   Category as GarmentIcon,
   Straighten as RulerIcon
 } from '@mui/icons-material';
-import { useWorkflowTemplates, useTemplateStages, useAddTemplateStage, useCreateTemplate, useUpdateTemplateMeasurements } from '../hooks/useWorkflowTemplates';
+import { useWorkflowTemplates, useAddTemplateStage, useCreateTemplate, useUpdateTemplateMeasurements } from '../hooks/useWorkflowTemplates';
+import { StageSequenceEditor } from './StageSequenceEditor';
+import { isSystemTemplate } from '../stage-order';
 
 export function WorkshopConfiguration() {
   const { data: templates, isLoading: isLoadingTemplates } = useWorkflowTemplates();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const { data: stages, isLoading: isLoadingStages } = useTemplateStages(selectedTemplateId || undefined);
   const addStageMutation = useAddTemplateStage();
   const createTemplateMutation = useCreateTemplate();
  
@@ -45,6 +41,7 @@ export function WorkshopConfiguration() {
   const updateMeasurementsMutation = useUpdateTemplateMeasurements();
 
   const selectedTemplate = templates?.find(t => t.id === selectedTemplateId);
+  const readOnly = selectedTemplate ? isSystemTemplate(selectedTemplate) : false;
 
   const handleAddStage = async () => {
     if (!selectedTemplateId || !newStage.name) return;
@@ -169,15 +166,17 @@ export function WorkshopConfiguration() {
                   <Typography variant="h6" sx={{ fontWeight: 800 }}>{selectedTemplate?.name}</Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>PRODUCTION SEQUENCE</Typography>
                 </Box>
-                <Button 
-                  variant="outlined" 
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={() => setIsAddStageOpen(true)}
-                  sx={{ borderRadius: '10px', fontWeight: 700, borderColor: 'primary.light' }}
-                >
-                  Add Stage
-                </Button>
+                {!readOnly && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={() => setIsAddStageOpen(true)}
+                    sx={{ borderRadius: '10px', fontWeight: 700, borderColor: 'primary.light' }}
+                  >
+                    Add Stage
+                  </Button>
+                )}
               </Stack>
 
               <Divider sx={{ mb: 3 }} />
@@ -203,7 +202,7 @@ export function WorkshopConfiguration() {
                       <Chip 
                         key={m} 
                         label={m} 
-                        onDelete={() => handleRemoveMeasurement(m)}
+                        onDelete={readOnly ? undefined : () => handleRemoveMeasurement(m)}
                         sx={{ 
                           fontWeight: 700, 
                           borderRadius: '8px',
@@ -220,10 +219,11 @@ export function WorkshopConfiguration() {
                       </Typography>
                     )}
                   </Stack>
+                  {!readOnly && (
                   <Stack direction="row" spacing={1}>
-                    <TextField 
-                      size="small" 
-                      placeholder="Add measurement (e.g. Chest)" 
+                    <TextField
+                      size="small"
+                      placeholder="Add measurement (e.g. Chest)"  
                       value={measurementInput}
                       onChange={(e) => setMeasurementInput(e.target.value)}
                       onKeyPress={(e) => {
@@ -240,6 +240,7 @@ export function WorkshopConfiguration() {
                       Add
                     </Button>
                   </Stack>
+                  )}
                 </Paper>
               </Box>
 
@@ -250,74 +251,7 @@ export function WorkshopConfiguration() {
                 </Typography>
               </Stack>
 
-              {isLoadingStages ? (
-                <Typography variant="body2">Loading stages...</Typography>
-              ) : stages && stages.length > 0 ? (
-                <List sx={{ position: 'relative' }}>
-                  {stages.map((stage, index) => (
-                    <Box key={stage.id}>
-                      <ListItem sx={{ 
-                        p: 2, 
-                        bgcolor: 'background.default', 
-                        borderRadius: '16px',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        mb: index < stages.length - 1 ? 3 : 0,
-                        position: 'relative',
-                        '&:hover': {
-                          borderColor: 'primary.light',
-                          bgcolor: alpha('#1e5c3a', 0.02)
-                        }
-                      }}>
-                        <ListItemIcon sx={{ minWidth: 40 }}>
-                          <Box sx={{ 
-                            width: 28, 
-                            height: 28, 
-                            borderRadius: '50%', 
-                            bgcolor: 'primary.main', 
-                            color: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 800,
-                            fontSize: '0.75rem'
-                          }}>
-                            {index + 1}
-                          </Box>
-                        </ListItemIcon>
-                        <ListItemText 
-                          disableTypography
-                          primary={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{stage.name}</Typography>}
-                          secondary={
-                            <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-                              <TimerIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
-                              <Typography variant="caption" color="text.secondary">Est. Duration: {stage.estimatedDurationHours || 0} hours</Typography>
-                            </Stack>
-                          }
-                        />
-                      </ListItem>
-                      {index < stages.length - 1 && (
-                        <Box sx={{ 
-                          display: 'flex', 
-                          justifyContent: 'center', 
-                          my: -1.5, 
-                          position: 'relative', 
-                          zIndex: 1,
-                          color: 'primary.light' 
-                        }}>
-                          <ArrowIcon sx={{ transform: 'rotate(90deg)', fontSize: 24, opacity: 0.5 }} />
-                        </Box>
-                      )}
-                    </Box>
-                  ))}
-                </List>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 6 }}>
-                  <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-                    No stages defined for this template yet.
-                  </Typography>
-                </Box>
-              )}
+              {selectedTemplate && <StageSequenceEditor template={selectedTemplate} />}
             </Card>
           ) : (
             <Box sx={{ 

@@ -4,9 +4,10 @@ import {
   Box, Card, Typography, Stack, TextField, Button,
   CircularProgress, Alert, Collapse, Grow, LinearProgress,
 } from '@mui/material';
-import { LockReset as LockResetIcon } from '@mui/icons-material';
+import { LockReset as LockResetIcon, CheckCircleRounded as CheckIcon, RadioButtonUnchecked as UncheckedIcon } from '@mui/icons-material';
 import { changePasswordApi } from '../features/auth/auth.api';
 import { useAuthStore } from '../features/auth/auth.store';
+import { BRAND_NAME } from '../config/brand';
 
 function getStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '#e5e4e0' };
@@ -104,7 +105,7 @@ export function ChangePasswordPage() {
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 3 }}>
-            <Box component="img" src="/logo-icon.png" alt="" sx={{ height: 28, width: 'auto' }} />            <Typography              sx={{                fontFamily: 'var(--sf-font-display)',                fontWeight: 600,                fontSize: '1.6rem',                letterSpacing: '0.01em',                color: '#1e5c3a',                lineHeight: 1,              }}            >              StitchFYN            </Typography>
+            <Box component="img" src="/logo-icon.png" alt="" sx={{ height: 28, width: 'auto' }} />            <Typography              sx={{                fontFamily: 'var(--sf-font-display)',                fontWeight: 600,                fontSize: '1.6rem',                letterSpacing: '0.01em',                color: '#1e5c3a',                lineHeight: 1,              }}            >              {BRAND_NAME}            </Typography>
           </Stack>
 
           {isForcedChange && (
@@ -203,7 +204,7 @@ export function ChangePasswordPage() {
                           gap: 0.5,
                         }}
                       >
-                        {req.test(newPassword) ? '✓' : '○'} {req.label}
+                        {req.test(newPassword) ? <CheckIcon sx={{ fontSize: 14, verticalAlign: '-2px' }} /> : <UncheckedIcon sx={{ fontSize: 14, verticalAlign: '-2px' }} />} {req.label}
                       </Typography>
                     ))}
                   </Stack>

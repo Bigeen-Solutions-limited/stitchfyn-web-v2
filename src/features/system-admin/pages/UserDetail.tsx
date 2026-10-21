@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useUser } from '../hooks/useUsers'
 import { useUpdateUserStatus, useRevokeAccess, useChangeUserRole } from '../hooks/useUsers'
+import { AdminLoadError } from '../components/AdminLoadError'
 
 const ROLES = ['OWNER', 'MANAGER', 'TAILOR'] as const
 
@@ -9,7 +10,7 @@ export function UserDetail() {
   const { id = '' } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
-  const { data: user, isLoading } = useUser(id)
+  const { data: user, isLoading, isError, refetch } = useUser(id)
   const updateStatus = useUpdateUserStatus()
   const revokeAccess = useRevokeAccess()
   const changeRole = useChangeUserRole()
@@ -19,6 +20,7 @@ export function UserDetail() {
   const [roleOpen, setRoleOpen] = useState(false)
   const [selectedRole, setSelectedRole] = useState('')
 
+  if (isError) return <AdminLoadError onRetry={() => refetch()} />
   if (isLoading) return <p style={{ color: '#94a3b8' }}>Loading...</p>
   if (!user) return <p style={{ color: '#94a3b8' }}>User not found.</p>
 

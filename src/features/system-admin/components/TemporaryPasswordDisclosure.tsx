@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { WarningAmberRounded as WarningIcon } from '@mui/icons-material';
 
 interface Props {
   password: string
@@ -56,7 +57,7 @@ export function TemporaryPasswordDisclosure({ password, onDismiss }: Props) {
           padding: '8px 12px', backgroundColor: '#fef2f2', borderRadius: '6px',
           border: '1px solid #fecaca',
         }}>
-          ⚠ This password will not be shown again.
+          <WarningIcon sx={{ fontSize: 16, verticalAlign: '-3px', mr: 0.5 }} aria-hidden />This password will not be shown again.
         </p>
 
         <button

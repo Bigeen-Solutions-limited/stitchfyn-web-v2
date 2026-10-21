@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { BRAND_NAME } from '../../../config/brand'
 
 const NAV_LINKS = [
   { to: '/system-admin', label: 'Overview', exact: true },
@@ -24,8 +25,8 @@ export function SystemAdminLayout() {
         boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.01em', opacity: 0.9 }}>
-          <img src="/logo-icon.png" alt="" style={{ height: 22, width: 'auto' }} />
-          StitchFyn Admin
+          <img src="/logo-full.png" alt={BRAND_NAME} style={{ height: 24, width: 'auto' }} />
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7 }}>Admin</span>
         </span>
         <nav style={{ display: 'flex', gap: '4px' }}>
           {NAV_LINKS.map(({ to, label, exact }) => {

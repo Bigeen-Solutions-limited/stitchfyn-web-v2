@@ -1,12 +1,15 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAllUsers } from '../hooks/useUsers'
+import { AdminLoadError } from '../components/AdminLoadError'
 
 export function UserList() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
 
-  const { data: users, isLoading } = useAllUsers({ search: search || undefined })
+  const { data: users, isLoading, isError, refetch } = useAllUsers({ search: search || undefined })
+
+  if (isError) return <AdminLoadError onRetry={() => refetch()} />
 
   return (
     <div>

@@ -5,6 +5,8 @@ import {
   CircularProgress, Alert, Collapse, Grow, LinearProgress,
 } from '@mui/material';
 import { verifyEmailApi } from '../features/auth/auth.api';
+import { BRAND_NAME } from '../config/brand';
+import { CheckCircleRounded as CheckIcon, RadioButtonUnchecked as UncheckedIcon } from '@mui/icons-material';
 
 function getStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '#e5e4e0' };
@@ -112,14 +114,14 @@ export function VerifyEmailPage() {
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="center" sx={{ mb: 4 }}>
-            <Box component="img" src="/logo-icon.png" alt="" sx={{ height: 28, width: 'auto' }} />            <Typography              sx={{                fontFamily: 'var(--sf-font-display)',                fontWeight: 600,                fontSize: '1.6rem',                letterSpacing: '0.01em',                color: '#1e5c3a',                lineHeight: 1,              }}            >              StitchFYN            </Typography>
+            <Box component="img" src="/logo-icon.png" alt="" sx={{ height: 28, width: 'auto' }} />            <Typography              sx={{                fontFamily: 'var(--sf-font-display)',                fontWeight: 600,                fontSize: '1.6rem',                letterSpacing: '0.01em',                color: '#1e5c3a',                lineHeight: 1,              }}            >              {BRAND_NAME}            </Typography>
           </Stack>
 
           <Typography variant="h4" sx={{ color: '#1a2340', fontWeight: 700, mb: 1, fontSize: '28px' }}>
             Verify your email
           </Typography>
           <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
-            Your StitchFYN workspace is ready. Set a password to verify your email and activate your account.
+            Your {BRAND_NAME} workspace is ready. Set a password to verify your email and activate your account.
           </Typography>
 
           <Collapse in={!!error}>
@@ -179,7 +181,7 @@ export function VerifyEmailPage() {
                           gap: 0.5,
                         }}
                       >
-                        {req.test(newPassword) ? '✓' : '○'} {req.label}
+                        {req.test(newPassword) ? <CheckIcon sx={{ fontSize: 14, verticalAlign: '-2px' }} /> : <UncheckedIcon sx={{ fontSize: 14, verticalAlign: '-2px' }} />} {req.label}
                       </Typography>
                     ))}
                   </Stack>

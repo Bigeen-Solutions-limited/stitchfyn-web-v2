@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAddStore } from '../hooks/useCompanies'
+import { Close as CloseIcon } from '@mui/icons-material';
 
 interface Props {
   companyId: string
@@ -38,7 +39,7 @@ export function AddStoreSlideOver({ companyId, onClose }: Props) {
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>
             Add Store
           </h2>
-          <button type="button" onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }}>✕</button>
+          <button type="button" onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }} aria-label="Close"><CloseIcon sx={{ fontSize: 20 }} /></button>
         </div>
 
         <div>

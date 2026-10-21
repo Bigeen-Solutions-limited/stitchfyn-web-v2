@@ -4,6 +4,7 @@ import axios from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { apiClient } from './axios.client';
 import { useAuthStore } from '../../features/auth/auth.store';
+import { mapAuthUser } from '../../features/auth/auth.api';
 import { parseApiError } from '../../lib/errors/parse-api-error';
 import type { ErrorMessage } from '../../lib/errors/error-messages';
 
@@ -77,8 +78,8 @@ export function useAxiosInterceptors() {
               { withCredentials: true }
             );
 
-            const { accessToken, user } = response.data;
-            useAuthStore.getState().setAuth(accessToken, user);
+            const { accessToken } = response.data;
+            useAuthStore.getState().setAuth(accessToken, mapAuthUser(response.data.user));
 
             processQueue(null, accessToken);
             isRefreshing = false;
@@ -88,11 +89,11 @@ export function useAxiosInterceptors() {
           } catch (refreshError) {
             processQueue(refreshError, null);
             isRefreshing = false;
-            useAuthStore.getState().clearAuth();
+            useAuthStore.getState().clearAuth({ expired: useAuthStore.getState().isAuthenticated });
 
             // Public pages (customer links, seal checks, password emails) expect a 401 when nobody is signed in
             if (!isPublicPath(window.location.pathname)) {
-               navigate('/login');
+              navigate('/login');
             }
 
             return Promise.reject(refreshError);

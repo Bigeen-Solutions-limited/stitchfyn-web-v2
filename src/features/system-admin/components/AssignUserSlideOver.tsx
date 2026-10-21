@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAssignUser } from '../hooks/useCompanies'
-import type { AssignUserDTO } from '../types'
+import type { AssignUserDTO, AssignableRole } from '../types'
+import { Close as CloseIcon } from '@mui/icons-material';
 
 interface Props {
   companyId: string
@@ -11,15 +12,15 @@ interface Props {
 export function AssignUserSlideOver({ companyId, onClose, onSuccess }: Props) {
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<'OWNER' | 'MANAGER' | 'TAILOR'>('MANAGER')
+  const [role, setRole] = useState<AssignableRole>('MANAGER')
   const [ownerConflict, setOwnerConflict] = useState<string | null>(null)
 
   const assignUser = useAssignUser(companyId)
 
   const submit = (acknowledgeOwnerDowngrade = false) => {
     const dto: AssignUserDTO = {
-      email,
-      fullName: fullName || undefined,
+      email: email.trim(),
+      fullName: fullName.trim() || undefined,
       role,
       acknowledgeOwnerDowngrade,
     }
@@ -52,7 +53,7 @@ export function AssignUserSlideOver({ companyId, onClose, onSuccess }: Props) {
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>
             Assign User
           </h2>
-          <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }}>✕</button>
+          <button onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', color: '#64748b' }} aria-label="Close"><CloseIcon sx={{ fontSize: 20 }} /></button>
         </div>
 
         {ownerConflict && (
@@ -102,10 +103,11 @@ export function AssignUserSlideOver({ companyId, onClose, onSuccess }: Props) {
 
         <div>
           <label style={labelStyle}>Role *</label>
-          <select value={role} onChange={(e) => setRole(e.target.value as any)} style={inputStyle}>
+          <select value={role} onChange={(e) => setRole(e.target.value as AssignableRole)} style={inputStyle}>
             <option value="OWNER">Owner</option>
             <option value="MANAGER">Manager</option>
             <option value="TAILOR">Tailor</option>
+            <option value="FRONT_DESK">Front Desk</option>
           </select>
         </div>
 

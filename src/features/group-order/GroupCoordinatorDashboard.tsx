@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getGroupProjection, type GroupHealthProjection } from './group-order.api';
 import './GroupDashboard.css';
+import { CheckCircleRounded as CheckIcon } from '@mui/icons-material';
 
 export const GroupCoordinatorDashboard: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -100,7 +101,7 @@ export const GroupCoordinatorDashboard: React.FC = () => {
                     <td>
                       <div className="verification-stack">
                         {member.pendingVerifications.length === 0 ? (
-                          <span className="verified-check">✓ Fully Verified</span>
+                          <span className="verified-check"><CheckIcon sx={{ fontSize: 14, verticalAlign: '-2px', mr: 0.5 }} />Fully Verified</span>
                         ) : (
                           member.pendingVerifications.map(flag => (
                             <span key={flag} className="pending-flag">Pending {flag}</span>

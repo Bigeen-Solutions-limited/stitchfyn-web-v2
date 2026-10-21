@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCapacity } from '../hooks/use-capacity';
 import './CapacityBar.css';
+import { WarningAmberRounded as WarningIcon } from '@mui/icons-material';
 
 export const CapacityBar: React.FC = () => {
   const { snapshot, isLoading } = useCapacity();
@@ -36,11 +37,13 @@ export const CapacityBar: React.FC = () => {
       </div>
       {isMax && (
         <div className="capacity-bar-warning">
+          <WarningIcon sx={{ fontSize: 16, mr: 0.5 }} aria-hidden />
           Maximum capacity reached. Owner override required for new orders.
         </div>
       )}
       {!isMax && isHigh && (
         <div className="capacity-bar-warning">
+          <WarningIcon sx={{ fontSize: 16, mr: 0.5 }} aria-hidden />
           Workshop is approaching capacity limits.
         </div>
       )}

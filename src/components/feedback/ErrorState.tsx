@@ -1,4 +1,5 @@
 import { mapErrorCode } from '../../utils/errorMapper';
+import { WarningAmberRounded as WarningIcon } from '@mui/icons-material';
 
 interface ErrorStateProps {
   error: any;
@@ -25,7 +26,7 @@ export function ErrorState({ error, onRetry, title = "Synchronization Error" }: 
         marginBottom: 'var(--space-md)',
         color: 'var(--color-danger)' 
       }}>
-        ⚠️
+        <WarningIcon sx={{ fontSize: 'inherit' }} />
       </div>
       <h3 className="text-h3" style={{ marginBottom: 'var(--space-sm)' }}>{title}</h3>
       <p className="text-secondary" style={{ marginBottom: 'var(--space-lg)', maxWidth: '400px', marginInline: 'auto' }}>

@@ -3,7 +3,7 @@ import type { AuthState, AuthUser } from './auth.types';
 
 interface AuthActions {
   setAuth: (token: string, user: AuthUser) => void;
-  clearAuth: () => void;
+  clearAuth: (options?: { expired?: boolean }) => void;
   setLoading: (isLoading: boolean) => void;
 }
 
@@ -12,6 +12,7 @@ const initialState: AuthState = {
   accessToken: null,
   isAuthenticated: false,
   isLoading: true, // true until the startup session check finishes
+  sessionExpired: false,
 };
 
 export const useAuthStore = create<AuthState & AuthActions>((set) => ({
@@ -23,12 +24,14 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
       user,
       isAuthenticated: true,
       isLoading: false,
+      sessionExpired: false,
     }),
 
-  clearAuth: () =>
+  clearAuth: (options) =>
     set({
       ...initialState,
       isLoading: false,
+      sessionExpired: options?.expired ?? false,
     }),
 
   setLoading: (isLoading) => set({ isLoading }),

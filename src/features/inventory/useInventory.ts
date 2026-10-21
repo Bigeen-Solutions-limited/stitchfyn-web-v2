@@ -3,6 +3,11 @@ import { inventoryApi } from './inventory.api';
 import { keys } from '../../query/keys';
 import { useToastStore } from '../../components/feedback/Toast';
 
+// The server's own message says what went wrong (e.g. an unreadable photo); axios's message is just the status code
+type ApiError = { response?: { data?: { message?: string } }; message?: string } | null | undefined;
+const serverMessage = (error: ApiError, fallback: string): string =>
+  error?.response?.data?.message || error?.message || fallback;
+
 export const useInventory = () => {
   return useQuery({
     queryKey: keys.inventory.overview,
@@ -23,7 +28,7 @@ export const useReceiveShipment = () => {
       showToast('Shipment Recorded', 'Physical stock has been updated in the ledger.', 'success');
     },
     onError: (error: any) => {
-      showToast('Error', error.message || 'Failed to record shipment', 'error');
+      showToast('Error', serverMessage(error, 'Failed to record shipment'), 'error');
     }
   });
 };
@@ -40,7 +45,7 @@ export const useUpdateMaterialImage = () => {
       showToast('Photo Updated', 'Material fabric reference has been replaced.', 'success');
     },
     onError: (error: any) => {
-      showToast('Error', error.message || 'Failed to update material image', 'error');
+      showToast('Error', serverMessage(error, 'Failed to update material image'), 'error');
     }
   });
 };
@@ -57,7 +62,7 @@ export const useRegisterMaterial = () => {
       showToast('Material Registered', 'New material master record has been created.', 'success');
     },
     onError: (error: any) => {
-      showToast('Error', error.message || 'Failed to register material', 'error');
+      showToast('Error', serverMessage(error, 'Failed to register material'), 'error');
     }
   });
 };

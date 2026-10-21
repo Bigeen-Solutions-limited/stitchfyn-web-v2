@@ -12,6 +12,7 @@ import {
   ArrowBack as BackIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { BRAND_NAME } from '../../config/brand';
 
 interface BetaFeatureGuardProps {
   featureName: string;
@@ -69,7 +70,7 @@ export function BetaFeatureGuard({ featureName }: BetaFeatureGuardProps) {
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-            The <strong>{featureName}</strong> module is currently in active development for the Stitchfyn v1.1 release. 
+            The <strong>{featureName}</strong> module is currently in active development for the {BRAND_NAME} v1.1 release. 
             We're building sophisticated physical-to-digital processing to ensure professional accuracy.
           </Typography>
 

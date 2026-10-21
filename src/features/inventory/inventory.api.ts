@@ -11,6 +11,22 @@ export interface StockPosition {
   quantityAvailable: number;
 }
 
+// Matches the server's upload limit
+export const MAX_MATERIAL_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+// Listing exact types (not image/*) makes iPhones convert HEIC photos to JPEG, which the server can read
+export const MATERIAL_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp';
+
+// Returns a reason the photo can't be uploaded, or null when it's fine
+export function materialImageProblem(file: File): string | null {
+  if (file.size > MAX_MATERIAL_IMAGE_SIZE_BYTES) {
+    return `This photo is ${(file.size / 1024 / 1024).toFixed(1)} MB. Please use one under 5 MB.`;
+  }
+  if (file.type && !MATERIAL_IMAGE_ACCEPT.split(',').includes(file.type)) {
+    return 'Please use a JPEG, PNG or WebP photo.';
+  }
+  return null;
+}
+
 export const inventoryApi = {
   getInventoryOverview: async () => {
     const { data } = await apiClient.get<StockPosition[]>('/inventory');

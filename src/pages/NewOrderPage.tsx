@@ -32,6 +32,7 @@ import {
   Radio,
   FormControlLabel,
   FormLabel,
+  Tooltip,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -47,7 +48,12 @@ import {
   ChevronRight as ChevronRightIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
-  AccessTimeFilled as TimeIcon
+  AccessTimeFilled as TimeIcon,
+  Edit as EditIcon,
+  Close as CloseIcon,
+  Backspace as ClearFieldIcon,
+  WarningAmberRounded as WarningIcon,
+  CheckCircleRounded as CheckIcon,
 } from "@mui/icons-material";
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -157,6 +163,9 @@ export function NewOrderPage() {
 
   const activeMeasurementField = measurementEntries.find(e => e.id === activeEntryId)?.label || "";
   const entryRefs = useRef<Record<string, any>>({});
+  // Profile measurements the tailor removed or renamed, so re-syncing the list doesn't bring them back
+  const dismissedLabels = useRef(new Set<string>());
+  const [editingLabel, setEditingLabel] = useState<{ id: string; draft: string } | null>(null);
 
   const handleEntryAutoAdvance = (currentId: string) => {
     const currentIndex = measurementEntries.findIndex(e => e.id === currentId);
@@ -259,6 +268,7 @@ export function NewOrderPage() {
       const customerMeasurements = selectedCustomer?.latestMeasurement?.measurements || {};
 
       Object.entries(customerMeasurements).forEach(([label, value]) => {
+        if (dismissedLabels.current.has(label)) return;
         if (!existingLabels.has(label)) {
           next.push({
             id: Math.random().toString(36).substr(2, 9),
@@ -312,6 +322,37 @@ export function NewOrderPage() {
         showToast("Already Exists", "This measurement field is already in the ledger.", "error");
       }
     }
+  };
+
+  // Nothing is saved until the order is created, so any row can be corrected freely until then
+  const handleClearEntry = (id: string) => {
+    setMeasurementEntries(prev => prev.map(p => (p.id === id ? { ...p, value: "" } : p)));
+  };
+
+  // Template rows are the guided form and can only be cleared; extra rows can be removed outright
+  const handleRemoveEntry = (id: string) => {
+    const entry = measurementEntries.find(e => e.id === id);
+    if (!entry || entry.isTemplateField) return;
+    dismissedLabels.current.add(entry.label);
+    setMeasurementEntries(prev => prev.filter(p => p.id !== id));
+    if (activeEntryId === id) setActiveEntryId(null);
+  };
+
+  const handleSaveLabel = () => {
+    if (!editingLabel) return;
+    const label = editingLabel.draft.trim();
+    const entry = measurementEntries.find(e => e.id === editingLabel.id);
+    if (!entry || !label) {
+      setEditingLabel(null);
+      return;
+    }
+    if (measurementEntries.some(e => e.id !== entry.id && e.label.toLowerCase() === label.toLowerCase())) {
+      showToast("Already Exists", "Another measurement already uses this name.", "error");
+      return;
+    }
+    dismissedLabels.current.add(entry.label);
+    setMeasurementEntries(prev => prev.map(p => (p.id === entry.id ? { ...p, label } : p)));
+    setEditingLabel(null);
   };
 
   const handleCreateOrder = async () => {
@@ -1358,7 +1399,7 @@ export function NewOrderPage() {
                           gap: 2
                         }}>
                           <Typography variant="body2" sx={{ color: '#92400e', fontWeight: 600 }}>
-                            ⚠️ No materials found in Vault. Register one under Inventory first.
+                            <WarningIcon sx={{ fontSize: 16, verticalAlign: '-3px', mr: 0.5 }} aria-hidden />No materials found in Vault. Register one under Inventory first.
                           </Typography>
                         </Box>
                       )}
@@ -1576,10 +1617,40 @@ export function NewOrderPage() {
                             cursor: 'pointer'
                           }}
                         >
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: activeEntryId === entry.id ? 'secondary.main' : 'text.primary' }}>
-                              {entry.label}
-                            </Typography>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            {editingLabel?.id === entry.id ? (
+                              <TextField
+                                size="small"
+                                autoFocus
+                                value={editingLabel.draft}
+                                onChange={(e) => setEditingLabel({ id: entry.id, draft: e.target.value })}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveLabel();
+                                  if (e.key === 'Escape') setEditingLabel(null);
+                                }}
+                                onBlur={handleSaveLabel}
+                                onClick={(e) => e.stopPropagation()}
+                                inputProps={{ 'aria-label': `Rename ${entry.label}` }}
+                                sx={{ maxWidth: 180 }}
+                              />
+                            ) : (
+                              <Stack direction="row" alignItems="center" spacing={0.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: activeEntryId === entry.id ? 'secondary.main' : 'text.primary' }}>
+                                  {entry.label}
+                                </Typography>
+                                {!entry.isTemplateField && (
+                                  <Tooltip title="Rename">
+                                    <IconButton
+                                      size="small"
+                                      aria-label={`Rename ${entry.label}`}
+                                      onClick={(e) => { e.stopPropagation(); setEditingLabel({ id: entry.id, draft: entry.label }); }}
+                                    >
+                                      <EditIcon sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+                              </Stack>
+                            )}
                             {entry.isTemplateField && (
                               <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>TEMPLATE METRIC</Typography>
                             )}
@@ -1607,6 +1678,30 @@ export function NewOrderPage() {
                               }}
                             />
                           </Box>
+                          <Stack direction="row" sx={{ ml: 0.5, width: 72, justifyContent: 'flex-end' }}>
+                            {entry.value !== "" && (
+                              <Tooltip title="Clear value">
+                                <IconButton
+                                  size="small"
+                                  aria-label={`Clear ${entry.label}`}
+                                  onClick={(e) => { e.stopPropagation(); handleClearEntry(entry.id); }}
+                                >
+                                  <ClearFieldIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {!entry.isTemplateField && (
+                              <Tooltip title="Remove measurement">
+                                <IconButton
+                                  size="small"
+                                  aria-label={`Remove ${entry.label}`}
+                                  onClick={(e) => { e.stopPropagation(); handleRemoveEntry(entry.id); }}
+                                >
+                                  <CloseIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Stack>
                         </Box>
                       ))}
                       {measurementEntries.length === 0 && (
@@ -1701,6 +1796,18 @@ export function NewOrderPage() {
                         </Grid>
                       ))}
                     </Grid>
+                    <Button
+                      fullWidth
+                      variant="text"
+                      disabled={!activeEntryId}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        if (activeEntryId) handleClearEntry(activeEntryId);
+                      }}
+                      sx={{ mt: 1.5, fontWeight: 800, color: 'text.secondary' }}
+                    >
+                      Clear field
+                    </Button>
                   </Card>
                 </Grid>
               </Grid>
@@ -1907,7 +2014,7 @@ export function NewOrderPage() {
             mx: 'auto',
             mb: 3
           }}>
-            <Box component="span" sx={{ fontSize: 48, color: 'primary.main' }}>✓</Box>
+            <CheckIcon sx={{ fontSize: 48, color: 'primary.main' }} />
           </Box>
           <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: 'text.primary' }}>
             Order Created Successfully

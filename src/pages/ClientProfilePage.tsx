@@ -14,6 +14,8 @@ import {
   TextField,
   Divider,
   CircularProgress,
+  IconButton,
+  Tooltip,
   alpha
 } from '@mui/material';
 import {
@@ -26,6 +28,7 @@ import {
   ArrowBack as ArrowBackIcon,
   ShoppingBag as OrderIcon,
   Lock as LockIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { Chip } from '@mui/material';
 import { useCustomerProfile, useUpdateMeasurements } from '../features/customers/hooks/useCustomerProfile';
@@ -106,14 +109,15 @@ export function ClientProfilePage() {
 
   const handleUpdateSubmit = async () => {
     // At least one measurement must be entered
-    const hasMeasurements = Object.values(formValues).some(v => v > 0);
-    if (!hasMeasurements) {
+    // Empty boxes are left out rather than saved as 0
+    const entered = Object.fromEntries(Object.entries(formValues).filter(([, v]) => v > 0));
+    if (Object.keys(entered).length === 0) {
       showToast("Validation Error", "Please enter at least one measurement before committing.", "error");
       return;
     }
 
     try {
-      await updateMutation.mutateAsync(formValues);
+      await updateMutation.mutateAsync(entered);
       setIsModalOpen(false);
       showToast("Success", "Measurements updated successfully.", "success");
     } catch (error) {
@@ -413,7 +417,26 @@ export function ClientProfilePage() {
                   onEnter={() => handleAutoAdvance(key)}
                   inputRef={(el: any) => inputRefs.current[key] = el}
                   InputProps={{
-                    endAdornment: <Typography variant="caption" sx={{ opacity: 0.5 }}>cm</Typography>
+                    endAdornment: (
+                      <>
+                        <Typography variant="caption" sx={{ opacity: 0.5 }}>cm</Typography>
+                        {/* Nothing is saved until Commit, so a wrong or unwanted line can simply be dropped */}
+                        <Tooltip title="Remove measurement">
+                          <IconButton
+                            size="small"
+                            edge="end"
+                            aria-label={`Remove ${key}`}
+                            onClick={() => {
+                              const next = { ...formValues };
+                              delete next[key];
+                              setFormValues(next);
+                            }}
+                          >
+                            <CloseIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </>
+                    )
                   }}
                   variant="outlined"
                   size="small"

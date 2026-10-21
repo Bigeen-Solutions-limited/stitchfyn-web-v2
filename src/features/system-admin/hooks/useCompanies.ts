@@ -68,10 +68,16 @@ export function useAssignUser(companyId: string) {
 
   return useMutation({
     mutationFn: (dto: AssignUserDTO) => companiesApi.assignUser(companyId, dto),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: keys.systemAdmin.companies.users(companyId) })
       queryClient.invalidateQueries({ queryKey: keys.systemAdmin.users.all })
-      showToast('User Assigned', 'User has been assigned to the company.', 'success')
+      showToast(
+        'User Assigned',
+        data.existingUser
+          ? 'Existing account re-assigned and re-activated. No email is sent; they sign in with their current password.'
+          : 'New account created. A welcome email with their temporary password is on its way.',
+        'success',
+      )
     },
     onError: (error: any) => {
       if (error.response?.status === 409) return // the form shows this one itself

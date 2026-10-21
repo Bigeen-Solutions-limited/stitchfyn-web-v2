@@ -1,5 +1,33 @@
 import { apiClient } from "../../infrastructure/http/axios.client"
-import type { LoginDTO, AuthResponse } from "./auth.types"
+import type { LoginDTO, AuthResponse, AuthUser } from "./auth.types"
+
+// The one place the server's user shape becomes the app's; every auth response goes through here
+// What the server sends; older responses used id/capabilities, current ones userId/permissions
+interface RawAuthUser {
+  id?: string
+  userId?: string
+  companyId?: string | null
+  storeId?: string | null
+  email: string
+  fullName: string
+  role: AuthUser["role"]
+  capabilities?: AuthUser["capabilities"]
+  permissions?: AuthUser["capabilities"]
+  mustChangePassword?: boolean
+}
+
+export function mapAuthUser(raw: RawAuthUser): AuthUser {
+  return {
+    id: (raw.id ?? raw.userId) as string,
+    companyId: raw.companyId ?? null,
+    storeId: raw.storeId ?? undefined,
+    email: raw.email,
+    fullName: raw.fullName,
+    role: raw.role,
+    capabilities: raw.capabilities ?? raw.permissions ?? [],
+    mustChangePassword: raw.mustChangePassword ?? false,
+  }
+}
 
 // The server also sets the refresh cookie
 export async function loginApi(dto: LoginDTO): Promise<AuthResponse> {
@@ -8,15 +36,7 @@ export async function loginApi(dto: LoginDTO): Promise<AuthResponse> {
 
   return {
     accessToken: raw.accessToken,
-    user: {
-      id: raw.user.id ?? raw.user.userId,
-      companyId: raw.user.companyId,
-      email: raw.user.email,
-      fullName: raw.user.fullName,
-      role: raw.user.role,
-      capabilities: raw.user.capabilities ?? raw.user.permissions ?? [],
-      mustChangePassword: raw.user.mustChangePassword ?? false,
-    },
+    user: mapAuthUser(raw.user),
   }
 }
 
@@ -27,14 +47,7 @@ export async function refreshApi(): Promise<AuthResponse> {
 
   return {
     accessToken: raw.accessToken,
-    user: {
-      id: raw.user.id ?? raw.user.userId,
-      companyId: raw.user.companyId,
-      email: raw.user.email,
-      fullName: raw.user.fullName,
-      role: raw.user.role,
-      capabilities: raw.user.capabilities ?? raw.user.permissions ?? [],
-    },
+    user: mapAuthUser(raw.user),
   }
 }
 
@@ -71,19 +84,12 @@ export async function getTenantsApi(): Promise<TenantDTO[]> {
   return response.data
 }
 
-// Switches store and returns new tokens
-export async function switchTenantApi(storeId: string): Promise<AuthResponse> {
+// Switches store and returns new tokens; null takes an owner back to all stores
+export async function switchTenantApi(storeId: string | null): Promise<AuthResponse> {
   const response = await apiClient.post("/auth/switch-tenant", { storeId })
   const raw = response.data
   return {
     accessToken: raw.accessToken,
-    user: {
-      id: raw.user.id ?? raw.user.userId,
-      companyId: raw.user.companyId,
-      email: raw.user.email,
-      fullName: raw.user.fullName,
-      role: raw.user.role,
-      capabilities: raw.user.capabilities ?? raw.user.permissions ?? [],
-    },
+    user: mapAuthUser(raw.user),
   }
 }

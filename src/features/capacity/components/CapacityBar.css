@@ -80,11 +80,6 @@
   align-items: center;
 }
 
-.capacity-bar-warning::before {
-  content: '⚠️';
-  margin-right: var(--space-xs);
-}
-
 .capacity-bar-skeleton {
   height: 80px;
   background: var(--color-bg);

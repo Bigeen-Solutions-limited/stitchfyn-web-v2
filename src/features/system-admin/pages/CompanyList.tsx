@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCompanies } from '../hooks/useCompanies'
 import type { CompanyStatus, SubscriptionTier } from '../types'
+import { AdminLoadError } from '../components/AdminLoadError'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   TRIAL:       { bg: '#eff6ff', color: '#1d4ed8' },
@@ -16,11 +17,13 @@ export function CompanyList() {
   const [tier, setTier] = useState<SubscriptionTier | ''>('')
   const [search, setSearch] = useState('')
 
-  const { data: companies, isLoading } = useCompanies({
+  const { data: companies, isLoading, isError, refetch } = useCompanies({
     status: status || undefined,
     tier: tier || undefined,
     search: search || undefined,
   })
+
+  if (isError) return <AdminLoadError onRetry={() => refetch()} />
 
   return (
     <div>

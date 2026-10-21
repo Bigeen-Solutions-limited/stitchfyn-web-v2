@@ -14,6 +14,8 @@ import { ClientProfilePage } from '../../pages/ClientProfilePage.tsx';
 import { InventoryPage } from '../../pages/InventoryPage.tsx';
 import { SettingsPage } from '../../pages/SettingsPage.tsx';
 import AuditLogPage from '../../pages/AuditLogPage.tsx';
+import { RevenueReportPage } from '../../pages/reports/RevenueReportPage.tsx';
+import { TurnaroundReportPage } from '../../pages/reports/TurnaroundReportPage.tsx';
 import { ForbiddenPage } from '../../pages/error/ForbiddenPage.tsx';
 import ReportsPage from '../../pages/ReportsPage.tsx';
 import { TrackingPage } from '../../pages/TrackingPage.tsx';
@@ -158,6 +160,22 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute allowedRoles={['OWNER', 'MANAGER']}>
                 <ReportsPage />
+              </ProtectedRoute>
+            )
+          },
+          {
+            path: '/reports/revenue',
+            element: (
+              <ProtectedRoute allowedRoles={['OWNER', 'MANAGER']}>
+                <RevenueReportPage />
+              </ProtectedRoute>
+            )
+          },
+          {
+            path: '/reports/turnaround',
+            element: (
+              <ProtectedRoute allowedRoles={['OWNER', 'MANAGER']}>
+                <TurnaroundReportPage />
               </ProtectedRoute>
             )
           },

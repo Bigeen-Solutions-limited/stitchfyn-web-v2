@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getTrackingInfo } from '../features/portal/portal.api';
 import './styles/TrackingPage.css';
+import { BRAND_NAME } from '../config/brand';
+import { LockOutlined as LockIcon, Check as CheckIcon } from '@mui/icons-material';
 
 export const TrackingPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -28,7 +30,7 @@ export const TrackingPage: React.FC = () => {
     return (
       <div className="portal-container">
         <div className="portal-error">
-          <div className="portal-error-icon">🔒</div>
+          <div className="portal-error-icon"><LockIcon sx={{ fontSize: 'inherit' }} /></div>
           <h2>Tracking Code Not Found</h2>
           <p>Please verify your code or contact the workshop for assistance.</p>
         </div>
@@ -40,7 +42,7 @@ export const TrackingPage: React.FC = () => {
     <div className="portal-container">
       <header className="portal-header">
         <img src="/logo-icon.png" alt="" className="portal-logo-icon" />
-        <div className="portal-logo">StitchFYN</div>
+        <div className="portal-logo">{BRAND_NAME}</div>
         <p>Independent Transparency Mirror</p>
       </header>
 
@@ -62,7 +64,7 @@ export const TrackingPage: React.FC = () => {
               className={`portal-timeline-item ${milestone.status.toLowerCase()}`}
             >
               <div className="portal-timeline-marker">
-                {milestone.status === 'COMPLETED' && '✓'}
+                {milestone.status === 'COMPLETED' && <CheckIcon sx={{ fontSize: 'inherit' }} />}
               </div>
               <div className="portal-timeline-content">
                 <span className="portal-timeline-name">{milestone.name}</span>
@@ -80,7 +82,7 @@ export const TrackingPage: React.FC = () => {
 
       <footer className="portal-footer">
         <p>Last synchronization: {data.lastUpdated}</p>
-        <p>© {new Date().getFullYear()} StitchFYN. Secure. Dignified. Transparent.</p>
+        <p>© {new Date().getFullYear()} {BRAND_NAME}. Secure. Dignified. Transparent.</p>
       </footer>
     </div>
   );

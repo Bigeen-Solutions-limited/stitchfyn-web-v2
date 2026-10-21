@@ -27,12 +27,15 @@ import {
 } from '@mui/icons-material';
 import { useInventory, useReceiveShipment, useRegisterMaterial, useUpdateMaterialImage } from '../features/inventory/useInventory';
 import { ErrorState } from '../components/feedback/ErrorState';
+import { useToastStore } from '../components/feedback/Toast';
+import { MATERIAL_IMAGE_ACCEPT, materialImageProblem } from '../features/inventory/inventory.api';
 
 export function InventoryPage() {
   const { data: inventory, isLoading, isError, error, refetch } = useInventory();
   const receiveMutation = useReceiveShipment();
   const registerMutation = useRegisterMaterial();
   const updateImageMutation = useUpdateMaterialImage();
+  const showToast = useToastStore((state) => state.showToast);
 
   const [selectedMaterial, setSelectedMaterial] = useState<{ id: string, name: string } | null>(null);
   const [receiveData, setReceiveData] = useState({ quantity: '', notes: '' });
@@ -44,10 +47,16 @@ export function InventoryPage() {
   const handleUpdatePhoto = (materialId: string) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = MATERIAL_IMAGE_ACCEPT;
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) updateImageMutation.mutate({ materialId, file });
+      if (!file) return;
+      const problem = materialImageProblem(file);
+      if (problem) {
+        showToast('Photo not accepted', problem, 'error');
+        return;
+      }
+      updateImageMutation.mutate({ materialId, file });
     };
     input.click();
   };
@@ -94,6 +103,12 @@ export function InventoryPage() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    const problem = file ? materialImageProblem(file) : null;
+    if (problem) {
+      showToast('Photo not accepted', problem, 'error');
+      e.target.value = '';
+      return;
+    }
     if (file) {
       setSelectedImage(file);
       const url = URL.createObjectURL(file);
@@ -387,7 +402,7 @@ export function InventoryPage() {
                     <input
                       type="file"
                       hidden
-                      accept="image/*"
+                      accept={MATERIAL_IMAGE_ACCEPT}
                       capture="environment"
                       onChange={handleImageChange}
                     />
