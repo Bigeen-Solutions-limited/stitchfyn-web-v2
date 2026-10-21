@@ -62,14 +62,15 @@ export function useChangeUserRole() {
   const showToast = useToastStore((s) => s.showToast)
 
   return useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      usersApi.changeRole(userId, role),
+    mutationFn: ({ userId, role, acknowledgeOwnerDowngrade }: { userId: string; role: string; acknowledgeOwnerDowngrade?: boolean }) =>
+      usersApi.changeRole(userId, role, acknowledgeOwnerDowngrade),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: keys.systemAdmin.users.detail(variables.userId) })
       queryClient.invalidateQueries({ queryKey: keys.systemAdmin.users.all })
       showToast('Role Updated', `Role changed to ${variables.role}.`, 'success')
     },
     onError: (error: any) => {
+      if (error.response?.data?.code === 'OWNER_CONFLICT') return // the dialog asks to confirm instead
       showToast('Error', error.response?.data?.message || 'Failed to change role', 'error')
     },
   })

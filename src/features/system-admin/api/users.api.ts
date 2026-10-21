@@ -28,8 +28,9 @@ export const usersApi = {
     await apiClient.patch(`/system-admin/users/${userId}/status`, { status })
   },
 
-  changeRole: async (userId: string, role: string): Promise<void> => {
-    await apiClient.patch(`/system-admin/users/${userId}/role`, { role })
+  // acknowledgeOwnerDowngrade: confirms the current owner becomes a manager when someone else is made owner
+  changeRole: async (userId: string, role: string, acknowledgeOwnerDowngrade = false): Promise<void> => {
+    await apiClient.patch(`/system-admin/users/${userId}/role`, { role, acknowledgeOwnerDowngrade })
   },
 
   // Only for someone who was added but never joined

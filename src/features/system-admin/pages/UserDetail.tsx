@@ -5,7 +5,7 @@ import { useUpdateUserStatus, useRevokeAccess, useChangeUserRole, useResendInvit
 import { InviteLinkDialog } from '../../auth/components/InviteLinkDialog'
 import { AdminLoadError } from '../components/AdminLoadError'
 
-const ROLES = ['OWNER', 'MANAGER', 'TAILOR'] as const
+const ROLES = ['OWNER', 'MANAGER', 'TAILOR', 'FRONT_DESK'] as const
 
 export function UserDetail() {
   const { id = '' } = useParams<{ id: string }>()
@@ -17,6 +17,8 @@ export function UserDetail() {
   const changeRole = useChangeUserRole()
   const resendInvite = useResendInvite()
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
+  // Set when the company already has an owner, so the admin confirms that owner becomes a manager
+  const [ownerConflict, setOwnerConflict] = useState<string | null>(null)
 
   const [revokeOpen, setRevokeOpen] = useState(false)
   const [revokeNotes, setRevokeNotes] = useState('')
@@ -123,18 +125,26 @@ export function UserDetail() {
             >
               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
+            {ownerConflict && (
+              <p style={{ margin: '0 0 16px', padding: '10px 12px', borderRadius: '8px', backgroundColor: '#fffbeb', border: '1px solid #fcd34d', fontSize: '0.8rem', color: '#92400e' }}>
+                {ownerConflict}. Continuing makes {user.fullName} the owner and the current owner a manager.
+              </p>
+            )}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setRoleOpen(false)} style={outlineBtnStyle}>Cancel</button>
+              <button onClick={() => { setRoleOpen(false); setOwnerConflict(null) }} style={outlineBtnStyle}>Cancel</button>
               <button
                 onClick={() => {
-                  changeRole.mutate({ userId: id, role: selectedRole }, {
-                    onSuccess: () => setRoleOpen(false),
+                  changeRole.mutate({ userId: id, role: selectedRole, acknowledgeOwnerDowngrade: ownerConflict !== null }, {
+                    onSuccess: () => { setRoleOpen(false); setOwnerConflict(null) },
+                    onError: (error: any) => {
+                      if (error.response?.data?.code === 'OWNER_CONFLICT') setOwnerConflict(error.response.data.message)
+                    },
                   })
                 }}
                 disabled={selectedRole === user.role || changeRole.isPending}
                 style={primaryBtnStyle}
               >
-                {changeRole.isPending ? 'Saving...' : 'Confirm'}
+                {changeRole.isPending ? 'Saving...' : ownerConflict ? 'Make owner' : 'Confirm'}
               </button>
             </div>
           </div>
