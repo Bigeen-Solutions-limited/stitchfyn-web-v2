@@ -74,3 +74,15 @@ export function useChangeUserRole() {
     },
   })
 }
+
+// Only works for someone who was added but never joined; the server says so otherwise
+export function useResendInvite() {
+  const showToast = useToastStore((s) => s.showToast)
+
+  return useMutation({
+    mutationFn: (userId: string) => usersApi.resendInvite(userId),
+    onError: (error: any) => {
+      showToast('Error', error.response?.data?.message || 'Failed to resend the invite', 'error')
+    },
+  })
+}

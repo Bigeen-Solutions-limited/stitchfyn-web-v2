@@ -82,7 +82,7 @@ export interface ChangeCompanyStatusDTO {
 export type AssignableRole = 'OWNER' | 'MANAGER' | 'TAILOR' | 'FRONT_DESK'
 
 export interface AssignUserResult {
-  temporaryPassword?: string
+  inviteUrl?: string // set for a newly created account; also emailed to them
   existingUser: boolean
 }
 
