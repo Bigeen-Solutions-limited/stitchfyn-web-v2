@@ -16,11 +16,13 @@ import {
 import { loginApi } from '../features/auth/auth.api';
 import { useAuthStore } from '../features/auth/auth.store';
 import { mapErrorCode } from '../utils/errorMapper';
+import { errorMessages } from '../lib/errors/error-messages';
+import { BRAND_NAME } from '../config/brand';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setAuth } = useAuthStore();
+  const { setAuth, sessionExpired } = useAuthStore();
   const arrivedFrom = location.state as { emailVerified?: boolean; passwordReset?: boolean } | null;
   const notice = arrivedFrom?.emailVerified
     ? 'Email verified. Sign in with the password you just set.'
@@ -107,7 +109,7 @@ export function LoginPage() {
                 lineHeight: 1,
               }}
             >
-              StitchFYN
+              {BRAND_NAME}
             </Typography>
           </Stack>
 
@@ -117,6 +119,12 @@ export function LoginPage() {
           <Typography variant="body2" sx={{ color: '#6b7280', mb: 3 }}>
             Sign in to your workshop.
           </Typography>
+
+          {sessionExpired && !error && (
+            <Alert severity="warning" sx={{ mb: 3, borderRadius: '10px', textAlign: 'left' }}>
+              <strong>{errorMessages.AUTH_SESSION_EXPIRED.title}.</strong> {errorMessages.AUTH_SESSION_EXPIRED.detail}
+            </Alert>
+          )}
 
           {notice && !error && (
             <Alert severity="success" sx={{ mb: 3, borderRadius: '10px', textAlign: 'left' }}>

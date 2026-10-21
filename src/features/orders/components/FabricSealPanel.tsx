@@ -17,6 +17,7 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { sealApi } from '../seal.api';
+import { BRAND_NAME } from '../../../config/brand';
 
 interface FabricSealPanelProps {
   orderId: string;
@@ -30,7 +31,7 @@ const PUBLIC_BASE_URL = import.meta.env.VITE_PUBLIC_BASE_URL ?? window.location.
 
 function handleShare(verificationCode: string) {
   const url = `${PUBLIC_BASE_URL}/public/seals/${verificationCode}`;
-  const text = `My fabric is protected by StitchFYN. Verify at: ${url}`;
+  const text = `My fabric is protected by ${BRAND_NAME}. Verify at: ${url}`;
 
   if (navigator.share) {
     navigator.share({ text }).catch(() => {/* user cancelled */});

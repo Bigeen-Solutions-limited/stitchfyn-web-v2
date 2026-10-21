@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './auth.store';
 import { usePermissions } from './use-permissions';
 import type { Capability, StitchFynRole } from './auth.types';
+import { BRAND_NAME } from '../../config/brand';
 
 interface ProtectedRouteProps {
   requiredPermission?: Capability;
@@ -23,7 +24,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (isLoading) {
     return (
       <div className="full-screen-skeleton">
-        <div className="loading-spinner">Loading Stitchfyn...</div>
+        <div className="loading-spinner">Loading {BRAND_NAME}...</div>
       </div>
     );
   }

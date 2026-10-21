@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TextField, type TextFieldProps, alpha } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
@@ -40,8 +40,30 @@ interface NumberFieldProps extends Omit<TextFieldProps, 'onChange'> {
   min?: number;
 }
 
+// What the box shows for a value from the parent: 0, empty and NaN all show as an empty box
+function toText(value: unknown): string {
+  if (value === undefined || value === null || value === '' || value === 0) return '';
+  const text = String(value);
+  return text === 'NaN' ? '' : text;
+}
+
+// The number a piece of text stands for; "", "." and other partial input count as empty
+function toNumber(text: string): number | '' {
+  const n = parseFloat(text);
+  return Number.isFinite(n) ? n : '';
+}
+
+// Keeps what the user typed (so "12." and "." stay on screen) and tells the parent only the number it adds up to
 export const NumberField = React.forwardRef<HTMLDivElement, NumberFieldProps>((props, ref) => {
   const { onChange, onEnter, value, ...rest } = props;
+  const [text, setText] = useState(() => toText(value));
+  const [lastValue, setLastValue] = useState(value);
+
+  // Follow changes made outside the box (the on-screen keypad, a clear button), but not echoes of our own typing
+  if (value !== lastValue) {
+    setLastValue(value);
+    if (toNumber(toText(value)) !== toNumber(text)) setText(toText(value));
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && onEnter) {
@@ -51,23 +73,17 @@ export const NumberField = React.forwardRef<HTMLDivElement, NumberFieldProps>((p
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    if (val === "") {
-        onChange?.("");
-        return;
-    }
-
-    // Digits and at most one decimal point
-    const match = val.match(/^[0-9]*\.?[0-9]*$/);
-    if (match) {
-        onChange?.(parseFloat(val));
-    }
+    // Digits and at most one decimal point; anything else is ignored
+    if (!/^[0-9]*\.?[0-9]*$/.test(val)) return;
+    setText(val);
+    onChange?.(toNumber(val));
   };
 
   return (
     <StyledTextField
       {...rest}
       ref={ref}
-      value={value === 0 ? "" : value} // show an empty box rather than 0
+      value={text}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
       autoComplete="off"

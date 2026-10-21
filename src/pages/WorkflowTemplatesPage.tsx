@@ -15,7 +15,6 @@ import {
   alpha,
   Divider,
   IconButton,
-  Tooltip,
   Collapse,
 } from '@mui/material';
 import {
@@ -30,18 +29,20 @@ import {
 import {
   useWorkflowTemplates,
   useCreateTemplate,
-  useTemplateStages,
   useAddTemplateStage,
   useUpdateTemplateMeasurements,
 } from '../features/workflow/hooks/useWorkflowTemplates';
 import type { WorkflowTemplate } from '../features/workflow/workflow.api';
+import { StageSequenceEditor } from '../features/workflow/components/StageSequenceEditor';
+import { isSystemTemplate, latestGraph } from '../features/workflow/stage-order';
 
 interface StagePanelProps {
   template: WorkflowTemplate;
 }
 
 const StagePanel: React.FC<StagePanelProps> = ({ template }) => {
-  const { data: stages = [], isLoading } = useTemplateStages(template.id);
+  const stageCount = latestGraph(template)?.nodes.length ?? 0;
+  const readOnly = isSystemTemplate(template);
   const addStage = useAddTemplateStage();
   const updateMeasurements = useUpdateTemplateMeasurements();
 
@@ -77,9 +78,11 @@ const StagePanel: React.FC<StagePanelProps> = ({ template }) => {
         <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', color: 'text.secondary' }}>
           Required Measurements
         </Typography>
-        <IconButton size="small" onClick={() => setShowMeasEdit(!showMeasEdit)} sx={{ ml: 'auto' }}>
-          <EditIcon sx={{ fontSize: 14 }} />
-        </IconButton>
+        {!readOnly && (
+          <IconButton size="small" aria-label="Edit required measurements" onClick={() => setShowMeasEdit(!showMeasEdit)} sx={{ ml: 'auto' }}>
+            <EditIcon sx={{ fontSize: 14 }} />
+          </IconButton>
+        )}
       </Stack>
 
       {showMeasEdit ? (
@@ -119,69 +122,14 @@ const StagePanel: React.FC<StagePanelProps> = ({ template }) => {
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
         <DurationIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
         <Typography variant="caption" sx={{ fontWeight: 800, textTransform: 'uppercase', color: 'text.secondary' }}>
-          Production Stages ({stages.length})
+          Production Stages ({stageCount})
         </Typography>
       </Stack>
 
-      {isLoading ? (
-        <Stack spacing={1}>
-          {[1, 2, 3].map((i) => <Skeleton key={i} height={32} sx={{ borderRadius: '8px' }} />)}
-        </Stack>
-      ) : stages.length === 0 ? (
-        <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', display: 'block', mb: 2 }}>
-          No stages yet. Add the first production stage below.
-        </Typography>
-      ) : (
-        <Stack spacing={0.5} sx={{ mb: 2 }}>
-          {stages.map((stage, idx) => (
-            <Box
-              key={stage.id}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                p: 1.5,
-                bgcolor: alpha('#1e5c3a', 0.03),
-                borderRadius: '10px',
-                border: '1px solid',
-                borderColor: alpha('#1e5c3a', 0.1),
-              }}
-            >
-              <Box
-                sx={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: '50%',
-                  bgcolor: alpha('#1e5c3a', 0.12),
-                  color: '#1e5c3a',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '10px',
-                  fontWeight: 800,
-                  flexShrink: 0,
-                }}
-              >
-                {idx + 1}
-              </Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, flex: 1 }}>
-                {stage.name}
-              </Typography>
-              {stage.estimatedDurationHours != null && (
-                <Tooltip title="Estimated duration">
-                  <Chip
-                    label={`${stage.estimatedDurationHours}h`}
-                    size="small"
-                    sx={{ height: 18, fontSize: '9px', fontWeight: 800, bgcolor: alpha('#2563eb', 0.07), color: '#2563eb', borderRadius: '4px' }}
-                  />
-                </Tooltip>
-              )}
-            </Box>
-          ))}
-        </Stack>
-      )}
+      <StageSequenceEditor template={template} />
 
-      {/* Add stage form */}
+      {/* Add stage form; new stages go in just before 'Ready for Collection' */}
+      {!readOnly && (
       <form onSubmit={handleAddStage}>
         <Stack direction="row" spacing={1}>
           <TextField
@@ -213,6 +161,7 @@ const StagePanel: React.FC<StagePanelProps> = ({ template }) => {
           </Button>
         </Stack>
       </form>
+      )}
     </Box>
   );
 };
@@ -244,6 +193,9 @@ const TemplateCard: React.FC<{ template: WorkflowTemplate }> = ({ template }) =>
           )}
         </Box>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, ml: 2 }}>
+          {isSystemTemplate(template) && (
+            <Chip label="System" size="small" sx={{ height: 20, fontSize: '9px', fontWeight: 700, borderRadius: '4px' }} />
+          )}
           <Chip
             label={`${template.requiredMeasurements.length} measurements`}
             size="small"
@@ -251,6 +203,8 @@ const TemplateCard: React.FC<{ template: WorkflowTemplate }> = ({ template }) =>
           />
           <IconButton
             size="small"
+            aria-label={expanded ? `Hide stages for ${template.name}` : `Show stages for ${template.name}`}
+            aria-expanded={expanded}
             onClick={() => setExpanded(!expanded)}
             sx={{ color: 'text.secondary' }}
           >

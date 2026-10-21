@@ -61,6 +61,7 @@ import { FabricEvidenceCapturePanel } from '../features/orders/components/Fabric
 import { CollectionChecklistPanel } from '../features/orders/components/CollectionChecklistPanel.tsx';
 import { FittingsPanel } from '../features/orders/components/FittingsPanel.tsx';
 import { MobileHeader } from '../components/layout/MobileHeader.tsx';
+import { downloadBlob } from '../utils/download';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -126,12 +127,7 @@ export function OrderDetailPage() {
     setPdfExporting(true);
     try {
       const blob = await ordersApi.exportEvidencePdf(order.id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `evidence-${order.id}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `evidence-${order.id}.pdf`);
     } catch (err: any) {
       if (err?.response?.status === 409) {
         const text = await err.response.data?.text?.() ?? 'Confirm fabric intake before exporting evidence';

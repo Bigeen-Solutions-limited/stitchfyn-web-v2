@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAdminAuditLog } from '../hooks/useAuditLog'
+import { AdminLoadError } from '../components/AdminLoadError'
 
 const ACTION_COLORS: Record<string, { bg: string; color: string }> = {
   COMPANY_CREATED: { bg: '#f0fdf4', color: '#15803d' },
@@ -36,7 +37,9 @@ function StateCell({ value }: { value: Record<string, unknown> | null }) {
 
 export function AdminAuditLog() {
   const [page, setPage] = useState(1)
-  const { data: entries, isLoading } = useAdminAuditLog(page, 50)
+  const { data: entries, isLoading, isError, refetch } = useAdminAuditLog(page, 50)
+
+  if (isError) return <AdminLoadError onRetry={() => refetch()} />
 
   return (
     <div>

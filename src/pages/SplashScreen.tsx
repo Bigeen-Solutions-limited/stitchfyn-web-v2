@@ -15,6 +15,7 @@ import {
   Groups as UsersIcon
 } from '@mui/icons-material';
 import splashImage from '../assets/images/splash-image.jpg';
+import { BRAND_NAME } from '../config/brand';
 
 export function SplashScreen() {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ export function SplashScreen() {
             <Box
               component="img"
               src="/logo-full.png"
-              alt="StitchFyn"
+              alt={BRAND_NAME}
               sx={{ height: { xs: 36, md: 44 }, width: 'auto' }}
             />
           </Box>

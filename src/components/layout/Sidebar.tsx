@@ -37,9 +37,10 @@ import {
   Article as ArticleIcon,
   Grade as GradeIcon,
 } from '@mui/icons-material';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../features/auth/auth.store';
 import { getTenantsApi, switchTenantApi } from '../../features/auth/auth.api';
+import { BRAND_NAME } from '../../config/brand';
 
 interface SidebarProps {
   open: boolean;
@@ -48,6 +49,7 @@ interface SidebarProps {
 }
 
 const SIDEBAR_WIDTH = 'var(--sidebar-width)';
+const ALL_STORES = '__all__';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['OWNER', 'MANAGER', 'TAILOR', 'FRONT_DESK', 'CUSTOMER'] },
@@ -76,21 +78,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width:768px)');
   const { user, setAuth } = useAuthStore();
+  const queryClient = useQueryClient();
   const [isSwitching, setIsSwitching] = useState(false);
 
   const { data: tenants = [] } = useQuery({
     queryKey: ['auth', 'tenants'],
     queryFn: getTenantsApi,
-    enabled: !!user && (user.role === 'OWNER' || user.role === 'MANAGER'),
+    enabled: user?.role === 'OWNER', // only owners work across stores
     staleTime: 5 * 60 * 1000,
   });
 
-  const handleSwitchTenant = async (storeId: string) => {
-    if (storeId === user?.storeId) return;
+  // The server scopes every list to the store in the new token, so drop what was loaded for the old one
+  const handleSwitchTenant = async (value: string) => {
+    const storeId = value === ALL_STORES ? null : value;
+    if (storeId === (user?.storeId ?? null)) return;
     setIsSwitching(true);
     try {
       const result = await switchTenantApi(storeId);
       setAuth(result.accessToken, result.user);
+      await queryClient.resetQueries();
       navigate('/dashboard');
     } finally {
       setIsSwitching(false);
@@ -112,21 +118,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
         <IconButton onClick={toggleSidebar} sx={{ color: 'white' }}>
           <MenuIcon sx={{ fontSize: 24 }} />
         </IconButton>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <ScissorsIcon sx={{ color: '#c49a1a', fontSize: 22 }} />
-          <Typography
-            sx={{
-              fontFamily: 'var(--sf-font-display)',
-              fontWeight: 600,
-              fontSize: '1.35rem',
-              letterSpacing: '0.01em',
-              color: 'white',
-              lineHeight: 1,
-            }}
-          >
-            StitchFYN
-          </Typography>
-        </Stack>
+        {/* Gold seal with a white wordmark, made for this dark header */}
+        <Box component="img" src="/logo-full.png" alt={BRAND_NAME} sx={{ height: 30, width: 'auto', maxWidth: '100%', display: 'block' }} />
       </Box>
 
       <List sx={{ px: 0 }}>
@@ -279,7 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
               {isSwitching && <CircularProgress size={10} sx={{ color: 'white' }} />}
             </Stack>
             <Select
-              value={user?.storeId ?? ''}
+              value={user?.storeId ?? ALL_STORES}
               onChange={(e) => handleSwitchTenant(e.target.value as string)}
               size="small"
               fullWidth
@@ -295,6 +288,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
                 borderRadius: '8px',
               }}
             >
+              <MenuItem value={ALL_STORES} sx={{ fontSize: '12px' }}>All stores</MenuItem>
               {tenants.map((t, idx) => (
                 <MenuItem key={`${t.storeId}-${idx}`} value={t.storeId} sx={{ fontSize: '12px' }}>
                   {t.storeName}

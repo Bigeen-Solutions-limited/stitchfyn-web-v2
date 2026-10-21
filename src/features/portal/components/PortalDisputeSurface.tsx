@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { portalDisputeApi, type DisputeCategory } from '../../dispute/dispute.api';
+import { CheckCircleRounded as CheckIcon, WarningAmberRounded as WarningIcon } from '@mui/icons-material';
 
 interface Props {
   portalToken: string;
@@ -159,7 +160,7 @@ export function PortalDisputeSurface({ portalToken }: Props) {
   return (
     <div className="sf-card" style={{ borderTop: `2px solid ${isResolved ? '#1e5c3a' : '#c0392b'}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <span style={{ fontSize: 20 }}>{isResolved ? '✓' : '⚠'}</span>
+        {isResolved ? <CheckIcon sx={{ fontSize: 20 }} aria-hidden /> : <WarningIcon sx={{ fontSize: 20 }} aria-hidden />}
         <h3 className="text-h3" style={{ margin: 0 }}>
           {isResolved ? 'Dispute resolved' : `Dispute: ${dispute.category}`}
         </h3>

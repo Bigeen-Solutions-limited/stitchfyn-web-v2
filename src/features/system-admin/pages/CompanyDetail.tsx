@@ -7,6 +7,7 @@ import { AssignUserSlideOver } from '../components/AssignUserSlideOver'
 import { AddStoreSlideOver } from '../components/AddStoreSlideOver'
 import { TemporaryPasswordDisclosure } from '../components/TemporaryPasswordDisclosure'
 import type { UserRecord } from '../types'
+import { AdminLoadError } from '../components/AdminLoadError'
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
   TRIAL:       { bg: '#eff6ff', color: '#1d4ed8' },
@@ -19,7 +20,7 @@ export function CompanyDetail() {
   const { id = '' } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
-  const { data: company, isLoading } = useCompany(id)
+  const { data: company, isLoading, isError, refetch } = useCompany(id)
   const { data: users = [] } = useCompanyUsers(id)
   const { data: stores = [] } = useCompanyStores(id)
 
@@ -34,6 +35,7 @@ export function CompanyDetail() {
   const [revokeNotes, setRevokeNotes] = useState('')
   const [newUserPassword, setNewUserPassword] = useState<string | undefined>()
 
+  if (isError) return <AdminLoadError onRetry={() => refetch()} />
   if (isLoading) return <p style={{ color: '#94a3b8' }}>Loading...</p>
   if (!company) return <p style={{ color: '#94a3b8' }}>Company not found.</p>
 

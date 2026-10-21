@@ -36,6 +36,8 @@ export const keys = {
   analytics: {
     overview: ['analytics', 'overview'] as const,
     admin: ['analytics', 'admin'] as const,
+    revenueReport: (query: object) => ['analytics', 'reports', 'revenue', query] as const,
+    turnaroundReport: (query: object) => ['analytics', 'reports', 'turnaround', query] as const,
   },
   inventory: {
     overview: ['inventory', 'overview'] as const,

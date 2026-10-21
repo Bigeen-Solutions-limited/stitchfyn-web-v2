@@ -1,5 +1,7 @@
 import React from 'react';
 import './CapacityBlockingModal.css';
+import { BRAND_NAME } from '../../../config/brand';
+import { Block as BlockIcon } from '@mui/icons-material';
 
 interface CapacityBlockingModalProps {
   isOpen: boolean;
@@ -30,14 +32,14 @@ export const CapacityBlockingModal: React.FC<CapacityBlockingModalProps> = ({
     <div className="capacity-modal-overlay">
       <div className="capacity-modal-content">
         <div className="capacity-modal-header">
-          <div className="capacity-modal-icon">🚫</div>
+          <div className="capacity-modal-icon"><BlockIcon sx={{ fontSize: 'inherit', color: 'inherit' }} /></div>
           <h2>Workshop at Capacity</h2>
         </div>
         
         <div className="capacity-modal-body">
           <p>
             You have reached your limit of <strong>{metrics?.totalLimit} slots</strong>. 
-            To maintain the Stitchfyn quality standard, new orders are currently blocked.
+            To maintain the {BRAND_NAME} quality standard, new orders are currently blocked.
           </p>
           
           <div className="decline-message-box">

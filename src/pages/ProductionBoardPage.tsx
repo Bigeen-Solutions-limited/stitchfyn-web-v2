@@ -50,6 +50,7 @@ import type { ActiveFloorTask } from '../features/workflow/workflow.api';
 import { WorkflowGraph } from '../features/workflow/components/WorkflowGraph';
 import { QueryLoading, QueryError, QueryEmpty } from '../components/feedback/QueryState';
 import { useAvailableTransitions, useAttemptTransition } from '../features/production/hooks/useProductionMutation';
+import { downloadCsv, datedFilename, type CsvColumn } from '../utils/download';
 import '../design-system/layout.css';
 
 const STATUS_CONFIG: Record<string, { color: string; bgColor: string }> = {
@@ -389,6 +390,20 @@ function TaskMobileCard({ task, onQuickUpdate, onOpenStage, canViewOrder, naviga
   );
 }
 
+// Every visible column except the fabric photo, which is too large for a spreadsheet
+const EXPORT_COLUMNS: CsvColumn<ActiveFloorTask>[] = [
+  { header: 'Order #', value: (t) => t.orderNumber },
+  { header: 'Customer', value: (t) => t.customerName },
+  { header: 'Garment', value: (t) => t.garmentName },
+  { header: 'Stage', value: (t) => t.stageName },
+  { header: 'Status', value: (t) => t.status },
+  { header: 'Risk', value: (t) => t.riskLevel.replace('_', ' ') },
+  { header: 'Deadline', value: (t) => (t.deadline ? format(new Date(t.deadline), 'yyyy-MM-dd') : '') },
+  { header: 'Tailor', value: (t) => t.tailorName ?? t.tailorEmail ?? 'Unassigned' },
+  { header: 'Fabric', value: (t) => t.fabricName ?? '' },
+  { header: 'Started', value: (t) => (t.startedAt ? format(new Date(t.startedAt), 'yyyy-MM-dd HH:mm') : '') },
+];
+
 export function ProductionBoardPage() {
   const navigate = useNavigate();
   const { data: tasks = [], isLoading, isError, refetch } = useActiveTasks();
@@ -648,6 +663,9 @@ export function ProductionBoardPage() {
         <Button
           variant="outlined"
           startIcon={<FileDownloadIcon />}
+          disabled={filteredTasks.length === 0}
+          // Exports exactly the rows the filters show, across all pages
+          onClick={() => downloadCsv(filteredTasks, EXPORT_COLUMNS, datedFilename('production', 'csv'))}
           sx={{
             borderRadius: '10px',
             px: 2.5,

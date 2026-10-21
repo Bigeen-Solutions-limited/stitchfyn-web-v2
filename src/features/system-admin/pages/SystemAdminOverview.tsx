@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useSystemAdminStats } from '../hooks/useStats'
 import { ChangeStatusModal } from '../components/ChangeStatusModal'
 import { useCompany } from '../hooks/useCompanies'
+import { AdminLoadError } from '../components/AdminLoadError'
 
 function StatCard({ label, value }: { label: string; value: number | undefined }) {
   return (
@@ -49,11 +50,13 @@ function SuspendButton({ companyId }: { companyId: string }) {
 }
 
 export function SystemAdminOverview() {
-  const { data: stats, isLoading } = useSystemAdminStats()
+  const { data: stats, isLoading, isError, refetch } = useSystemAdminStats()
 
   const activeTrials = stats
     ? (stats.byStatus?.['TRIAL'] ?? 0)
     : 0
+
+  if (isError) return <AdminLoadError onRetry={() => refetch()} />
 
   return (
     <div>

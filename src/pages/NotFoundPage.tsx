@@ -3,6 +3,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import EmailIcon from '@mui/icons-material/Email';
 import error404Image from '../assets/error_404.png';
 import '../design-system/pages/error.css';
+import { BRAND_NAME } from '../config/brand';
 
 export function NotFoundPage() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export function NotFoundPage() {
         </h1>
         <p className="error-description">
           The page you are looking for might have been moved or doesn't exist. 
-          In the Stitchfyn architecture, every thread counts, yet this one 
+          In the {BRAND_NAME} architecture, every thread counts, yet this one 
           seems to have frayed.
         </p>
 

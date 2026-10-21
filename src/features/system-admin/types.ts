@@ -79,10 +79,17 @@ export interface ChangeCompanyStatusDTO {
   notes?: string
 }
 
+export type AssignableRole = 'OWNER' | 'MANAGER' | 'TAILOR' | 'FRONT_DESK'
+
+export interface AssignUserResult {
+  temporaryPassword?: string
+  existingUser: boolean
+}
+
 export interface AssignUserDTO {
   email: string
   fullName?: string
-  role: 'OWNER' | 'MANAGER' | 'TAILOR'
+  role: AssignableRole
   acknowledgeOwnerDowngrade?: boolean
 }
 

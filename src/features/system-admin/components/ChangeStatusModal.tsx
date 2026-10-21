@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import type { CompanyRecord, CompanyStatus, ChangeCompanyStatusDTO } from '../types'
 import { useChangeCompanyStatus } from '../hooks/useCompanies'
+import { WarningAmberRounded as WarningIcon } from '@mui/icons-material';
 
 interface Props {
   company: CompanyRecord
@@ -107,7 +108,7 @@ export function ChangeStatusModal({ company, initialStatus, onClose }: Props) {
                 padding: '10px 14px', borderRadius: '8px', backgroundColor: '#fef2f2',
                 border: '1px solid #fecaca', marginBottom: '20px', fontSize: '0.8rem', color: '#991b1b',
               }}>
-                ⚠ Deactivating will immediately block all users in this company. You will need to confirm.
+                <WarningIcon sx={{ fontSize: 16, verticalAlign: '-3px', mr: 0.5 }} aria-hidden />Deactivating will immediately block all users in this company. You will need to confirm.
               </div>
             )}
           </>

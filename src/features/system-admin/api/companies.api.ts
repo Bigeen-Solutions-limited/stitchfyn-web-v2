@@ -8,6 +8,7 @@ import type {
   CreateCompanyDTO,
   ChangeCompanyStatusDTO,
   AssignUserDTO,
+  AssignUserResult,
   AddStoreDTO,
   CompanyStatus,
   SubscriptionTier,
@@ -49,8 +50,8 @@ export const companiesApi = {
   assignUser: async (
     companyId: string,
     dto: AssignUserDTO,
-  ): Promise<{ temporaryPassword?: string }> => {
-    const { data } = await apiClient.post<{ temporaryPassword?: string }>(
+  ): Promise<AssignUserResult> => {
+    const { data } = await apiClient.post<AssignUserResult>(
       `/system-admin/companies/${companyId}/users`,
       dto,
     )

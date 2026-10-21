@@ -2,7 +2,7 @@ import { apiClient } from '../../infrastructure/http/axios.client';
 
 export interface WorkflowTemplate {
   id: string;
-  companyId: string;
+  companyId: string | null; // null for a system template shared by every business
   name: string;
   description?: string;
   requiredMeasurements: string[];
@@ -50,6 +50,37 @@ export interface WorkflowGraph {
   edges: WorkflowEdge[];
 }
 
+// The server stores durations as estimated_duration_hours; the app uses camelCase, converted only here
+interface ServerNode {
+  id: string;
+  name: string;
+  estimated_duration_hours?: number;
+  estimatedDurationHours?: number;
+}
+
+const fromServerNode = (n: ServerNode): WorkflowNode => ({
+  id: n.id,
+  name: n.name,
+  estimatedDurationHours: n.estimated_duration_hours ?? n.estimatedDurationHours,
+});
+
+const toServerNode = (n: WorkflowNode): ServerNode => ({
+  id: n.id,
+  name: n.name,
+  ...(n.estimatedDurationHours != null ? { estimated_duration_hours: n.estimatedDurationHours } : {}),
+});
+
+const fromServerTemplate = (t: WorkflowTemplate): WorkflowTemplate => ({
+  ...t,
+  versions: t.versions?.map((v) => ({
+    ...v,
+    graphDefinition: {
+      nodes: (v.graphDefinition?.nodes ?? []).map((n) => fromServerNode(n as ServerNode)),
+      edges: v.graphDefinition?.edges ?? [],
+    },
+  })),
+});
+
 export interface GarmentWorkflowResponse {
   instance: WorkflowInstance;
   stages: StageInstance[];
@@ -91,7 +122,7 @@ export const workflowApi = {
 
   getTemplates: async () => {
     const { data } = await apiClient.get<WorkflowTemplate[]>('/workflows/templates');
-    return data;
+    return data.map(fromServerTemplate);
   },
 
   createTemplate: async (name: string, description?: string) => {
@@ -100,7 +131,21 @@ export const workflowApi = {
   },
 
   getTemplateStages: async (templateId: string) => {
-    const { data } = await apiClient.get<WorkflowNode[]>(`/workflows/templates/${templateId}/stages`);
+    const { data } = await apiClient.get<ServerNode[]>(`/workflows/templates/${templateId}/stages`);
+    return data.map(fromServerNode);
+  },
+
+  // Makes an editable company copy of a template (the only way to change a system template)
+  duplicateTemplate: async (templateId: string, name?: string) => {
+    const { data } = await apiClient.post<WorkflowTemplate>(`/workflows/templates/${templateId}/duplicate`, { name });
+    return data;
+  },
+
+  // Publishes a new version with these stages; garments already in production keep the version they started on
+  saveTemplateGraph: async (templateId: string, graph: WorkflowGraph) => {
+    const { data } = await apiClient.post(`/workflows/templates/${templateId}/versions`, {
+      graphDefinition: { nodes: graph.nodes.map(toServerNode), edges: graph.edges },
+    });
     return data;
   },
 

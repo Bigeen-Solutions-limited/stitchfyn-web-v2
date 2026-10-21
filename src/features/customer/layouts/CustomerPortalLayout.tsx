@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
+import { BRAND_NAME } from '../../../config/brand';
 
 export function CustomerPortalLayout() {
   return (
@@ -26,7 +27,7 @@ export function CustomerPortalLayout() {
             noWrap
             sx={{ fontFamily: 'var(--sf-font-display)', fontWeight: 600, fontSize: '1.4rem', color: '#1e5c3a', lineHeight: 1 }}
           >
-            StitchFYN
+            {BRAND_NAME}
           </Typography>
         </Box>
         <Typography variant="caption" noWrap sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
@@ -40,7 +41,7 @@ export function CustomerPortalLayout() {
 
       <Box component="footer" sx={{ py: 3, px: 2, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
         <Typography variant="caption" color="text.secondary">
-          © {new Date().getFullYear()} StitchFYN. Secure read-only view of your order.
+          © {new Date().getFullYear()} {BRAND_NAME}. Secure read-only view of your order.
         </Typography>
       </Box>
     </Box>

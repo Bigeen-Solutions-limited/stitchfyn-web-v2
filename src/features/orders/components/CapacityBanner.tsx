@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOrders } from '../hooks/useOrders.ts';
+import { WarningAmberRounded as WarningIcon } from '@mui/icons-material';
 
 export function CapacityBanner() {
   const { data: orders } = useOrders();
@@ -34,7 +35,7 @@ export function CapacityBanner() {
       borderBottom: '1px solid rgba(0,0,0,0.1)',
       animation: 'slideDown 0.3s ease-out'
     }}>
-      <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+      <WarningIcon sx={{ fontSize: '1.25rem' }} aria-hidden />
       <span>Workshop capacity exceeded. Consider delaying intake.</span>
       
       <style>{`

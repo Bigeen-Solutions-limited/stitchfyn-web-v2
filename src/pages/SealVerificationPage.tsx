@@ -11,6 +11,7 @@ import {
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { publicSealApi } from '../features/orders/seal.api';
+import { BRAND_NAME } from '../config/brand';
 
 export function SealVerificationPage() {
   const { code } = useParams<{ code: string }>();
@@ -75,7 +76,7 @@ export function SealVerificationPage() {
           mb: 4,
         }}
       >
-        StitchFYN
+        {BRAND_NAME}
       </Typography>
 
       {/* Main card */}
@@ -107,7 +108,7 @@ export function SealVerificationPage() {
             Fabric Protected
           </Typography>
           <Typography variant="body2" sx={{ color: alpha('#ffffff', 0.8) }}>
-            This fabric has been documented and verified by StitchFYN
+            This fabric has been documented and verified by {BRAND_NAME}
           </Typography>
         </Box>
 
@@ -177,7 +178,7 @@ export function SealVerificationPage() {
           <Typography variant="caption" sx={{ color: '#6b6b6b' }}>
             Protected by{' '}
             <Typography component="span" variant="caption" sx={{ fontWeight: 800, color: '#1e5c3a' }}>
-              StitchFYN
+              {BRAND_NAME}
             </Typography>
           </Typography>
         </Box>
