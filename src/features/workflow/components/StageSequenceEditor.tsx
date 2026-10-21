@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, Box, Button, Chip, IconButton, Stack, Tooltip, Typography, alpha } from '@mui/material';
+import { Alert, Box, Button, Chip, IconButton, Stack, TextField, Tooltip, Typography, alpha } from '@mui/material';
 import {
   ArrowUpward as UpIcon,
   ArrowDownward as DownIcon,
@@ -14,12 +14,14 @@ interface Props {
   template: WorkflowTemplate;
 }
 
-// A template's stages in running order. Owners can move stages up and down on their own straight-line templates;
-// a system template is read-only and offers a copy instead.
+// A template's stages in running order. On their own templates owners set each stage's hours, and on straight-line
+// ones move stages up and down; a system template is read-only and offers a copy instead.
 export function StageSequenceEditor({ template }: Props) {
   const duplicate = useDuplicateTemplate();
   const saveOrder = useSaveStageOrder();
   const [draft, setDraft] = useState<WorkflowNode[] | null>(null);
+  // Hours as typed, per stage id; turned into numbers on save
+  const [hoursDraft, setHoursDraft] = useState<Record<string, string>>({});
 
   const graph = latestGraph(template);
   const linear = useMemo(() => linearOrder(graph), [graph]);
@@ -27,13 +29,33 @@ export function StageSequenceEditor({ template }: Props) {
   const stages = draft ?? saved;
   const readOnly = isSystemTemplate(template);
   const canReorder = !readOnly && linear !== null && stages.length > 1;
-  const problem = draft ? orderProblem(draft) : null;
-  const changed = draft !== null && draft.some((n, i) => n.id !== saved[i]?.id);
+  const problem = (draft ? orderProblem(draft) : null) ?? hoursProblem(hoursDraft);
+  const orderChanged = draft !== null && draft.some((n, i) => n.id !== saved[i]?.id);
+  const hoursChanged = Object.entries(hoursDraft).some(
+    ([id, text]) => parseHours(text) !== (saved.find((n) => n.id === id)?.estimatedDurationHours ?? 0),
+  );
+  const changed = orderChanged || hoursChanged;
+  // Deadline warnings add up stage hours, so a template with none can never warn that an order is at risk
+  const missingHours = !readOnly && saved.length > 0 && saved.every((n) => !n.estimatedDurationHours);
+
+  const hoursOf = (node: WorkflowNode) =>
+    hoursDraft[node.id] ?? (node.estimatedDurationHours != null ? String(node.estimatedDurationHours) : '');
 
   const handleSave = async () => {
-    if (!draft || problem) return;
-    await saveOrder.mutateAsync({ templateId: template.id, graph: chainGraph(draft) });
+    if (problem || !graph) return;
+    const nodes = stages.map((n) =>
+      n.id in hoursDraft ? { ...n, estimatedDurationHours: parseHours(hoursDraft[n.id]) } : n,
+    );
+    // A straight line is rebuilt in the new order; a template with parallel stages keeps its own links
+    const next = linear ? chainGraph(nodes) : { nodes, edges: graph.edges };
+    await saveOrder.mutateAsync({ templateId: template.id, graph: next });
     setDraft(null);
+    setHoursDraft({});
+  };
+
+  const handleCancel = () => {
+    setDraft(null);
+    setHoursDraft({});
   };
 
   return (
@@ -56,6 +78,12 @@ export function StageSequenceEditor({ template }: Props) {
           }
         >
           System template, shared by every business, so it can't be edited. Make your own copy to add or move stages.
+        </Alert>
+      )}
+
+      {missingHours && (
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: '12px' }}>
+          Add hours to each stage so orders on this template can warn you when they're at risk of missing their date.
         </Alert>
       )}
 
@@ -99,14 +127,30 @@ export function StageSequenceEditor({ template }: Props) {
               <Typography variant="body2" sx={{ fontWeight: 600, flex: 1, minWidth: 0 }}>
                 {stage.name}
               </Typography>
-              {stage.estimatedDurationHours != null && (
-                <Tooltip title="Estimated duration">
-                  <Chip
-                    label={`${stage.estimatedDurationHours}h`}
-                    size="small"
-                    sx={{ height: 18, fontSize: '9px', fontWeight: 800, bgcolor: alpha('#2563eb', 0.07), color: '#2563eb', borderRadius: '4px' }}
-                  />
-                </Tooltip>
+              {readOnly ? (
+                stage.estimatedDurationHours != null && (
+                  <Tooltip title="Estimated duration">
+                    <Chip
+                      label={`${stage.estimatedDurationHours}h`}
+                      size="small"
+                      sx={{ height: 18, fontSize: '9px', fontWeight: 800, bgcolor: alpha('#2563eb', 0.07), color: '#2563eb', borderRadius: '4px' }}
+                    />
+                  </Tooltip>
+                )
+              ) : (
+                <TextField
+                  size="small"
+                  value={hoursOf(stage)}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    if (/^\d*\.?\d*$/.test(text)) setHoursDraft((prev) => ({ ...prev, [stage.id]: text }));
+                  }}
+                  placeholder="0"
+                  disabled={saveOrder.isPending}
+                  inputProps={{ inputMode: 'decimal', 'aria-label': `Hours for ${stage.name}`, style: { textAlign: 'right', padding: '4px 6px' } }}
+                  InputProps={{ endAdornment: <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>h</Typography> }}
+                  sx={{ width: 76, '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '12px', bgcolor: 'background.paper' } }}
+                />
               )}
               {canReorder && (
                 <Stack direction="row">
@@ -145,7 +189,7 @@ export function StageSequenceEditor({ template }: Props) {
             <Alert severity="warning" sx={{ mb: 1, borderRadius: '10px' }}>{problem}</Alert>
           )}
           <Stack direction="row" spacing={1} justifyContent="flex-end">
-            <Button size="small" onClick={() => setDraft(null)} disabled={saveOrder.isPending} sx={{ color: 'text.secondary' }}>
+            <Button size="small" onClick={handleCancel} disabled={saveOrder.isPending} sx={{ color: 'text.secondary' }}>
               Cancel
             </Button>
             <Button
@@ -155,11 +199,24 @@ export function StageSequenceEditor({ template }: Props) {
               disabled={!!problem || saveOrder.isPending}
               sx={{ borderRadius: '10px', fontWeight: 700 }}
             >
-              {saveOrder.isPending ? 'Saving...' : 'Save order'}
+              {saveOrder.isPending ? 'Saving...' : 'Save changes'}
             </Button>
           </Stack>
         </Box>
       )}
     </Box>
   );
+}
+
+const MAX_STAGE_HOURS = 240; // the server's limit too
+
+function parseHours(text: string): number {
+  const n = parseFloat(text);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function hoursProblem(hours: Record<string, string>): string | null {
+  return Object.values(hours).some((text) => parseHours(text) > MAX_STAGE_HOURS)
+    ? `A stage can take at most ${MAX_STAGE_HOURS} hours.`
+    : null;
 }
