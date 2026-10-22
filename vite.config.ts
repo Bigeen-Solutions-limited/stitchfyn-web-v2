@@ -11,11 +11,12 @@ const config = {
     // connection. API responses are never cached (no offline reads); writes
     // made offline go through the IndexedDB queues instead.
     VitePWA({
-      registerType: "autoUpdate",
+      // Ask before switching to a newly deployed version (see UpdatePrompt), rather than switching silently
+      registerType: "prompt",
       includeAssets: ["favicon-16.png", "favicon-32.png", "favicon-48.png", "apple-touch-icon.png"],
       manifest: {
-        name: "StitchFYN",
-        short_name: "StitchFYN",
+        name: "StitchFyn", // matches BRAND_NAME in src/config/brand.ts
+        short_name: "StitchFyn",
         description: "Production tracking for tailoring workshops",
         theme_color: "#1e5c3a",
         background_color: "#ffffff",
