@@ -21,6 +21,7 @@ import { getDeviceId } from '../../../lib/device-id';
 import { enqueuePendingEvidence, OversizedFabricEvidenceError } from '../offline/fabric-evidence-offline-db';
 import { retryFabricEvidenceItem } from '../offline/fabric-evidence-sync-manager';
 import { useFabricEvidenceOfflineQueue } from '../offline/useFabricEvidenceOfflineQueue';
+import { PHOTO_ACCEPT } from '../../../utils/photo';
 
 interface FabricEvidenceCapturePanelProps {
   garmentId: string;
@@ -279,7 +280,7 @@ export function FabricEvidenceCapturePanel({ garmentId }: FabricEvidenceCaptureP
             ref={inputRef}
             type="file"
             hidden
-            accept="image/*"
+            accept={PHOTO_ACCEPT}
             capture="environment"
             onChange={handleFileChange}
           />

@@ -89,7 +89,8 @@ describe('FabricEvidenceCapturePanel', () => {
     renderPanel()
     const input = getFileInput()
     expect(input).toBeTruthy()
-    expect(input.getAttribute('accept')).toBe('image/*')
+    // Exact types, so iPhones send a JPEG rather than HEIC
+    expect(input.getAttribute('accept')).toBe('image/jpeg,image/png,image/webp')
     expect(input.getAttribute('capture')).toBe('environment')
   })
 

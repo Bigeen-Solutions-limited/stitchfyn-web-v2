@@ -1,3 +1,4 @@
+import { PHOTO_ACCEPT } from '../../utils/photo';
 import { apiClient } from '../../infrastructure/http/axios.client';
 
 export interface StockPosition {
@@ -13,8 +14,7 @@ export interface StockPosition {
 
 // Matches the server's upload limit
 export const MAX_MATERIAL_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
-// Listing exact types (not image/*) makes iPhones convert HEIC photos to JPEG, which the server can read
-export const MATERIAL_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp';
+export const MATERIAL_IMAGE_ACCEPT = PHOTO_ACCEPT;
 
 // Returns a reason the photo can't be uploaded, or null when it's fine
 export function materialImageProblem(file: File): string | null {
