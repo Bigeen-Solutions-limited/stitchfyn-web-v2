@@ -9,3 +9,12 @@ export function useCustomerOrder(orderId: string) {
     retry: false,
   });
 }
+
+export function usePortalStageTimeline(portalToken: string) {
+  return useQuery({
+    queryKey: ['customer', 'order', portalToken, 'stage-timeline'],
+    queryFn: () => customerApi.getStageTimeline(portalToken),
+    enabled: !!portalToken,
+    retry: false,
+  });
+}

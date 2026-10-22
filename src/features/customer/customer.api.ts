@@ -43,9 +43,29 @@ export interface CustomerOrderProjection {
   }[];
 }
 
+// GET /portal/orders/:token/stage-timeline: each garment's stages with its progress photos
+export interface PortalStageTimeline {
+  garmentId: string;
+  garmentName: string;
+  stages: {
+    stageId: string;
+    name: string;
+    status: 'PENDING' | 'IN_PROGRESS' | 'INHIBITED' | 'COMPLETED' | 'BLOCKED';
+    estimatedDurationHours: number | null;
+    startedAt: string | null;
+    completedAt: string | null;
+  }[];
+  photos: { id: string; stageId: string; secureUrl: string; note: string | null; uploadedAt: string }[];
+}
+
 export const customerApi = {
   getCustomerOrder: async (orderId: string) => {
     const { data } = await apiClient.get<CustomerOrderProjection>(`/portal/orders/${orderId}`);
     return data;
-  }
+  },
+
+  getStageTimeline: async (portalToken: string) => {
+    const { data } = await apiClient.get<PortalStageTimeline[]>(`/portal/orders/${portalToken}/stage-timeline`);
+    return data;
+  },
 };

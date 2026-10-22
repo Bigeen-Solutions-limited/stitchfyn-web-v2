@@ -3,13 +3,16 @@ import { Box, Stack, Dialog, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import type { ProgressPhoto } from '../progress-photo.api';
 
+// Only what is shown, so the customer portal's slimmer photos fit too
+type ThumbnailPhoto = Pick<ProgressPhoto, 'id' | 'secureUrl' | 'note'>;
+
 interface ProgressPhotoThumbnailsProps {
-  photos: ProgressPhoto[];
+  photos: ThumbnailPhoto[];
 }
 
 // Read-only stage photos, tap to enlarge; there is no delete because photos are evidence.
 export function ProgressPhotoThumbnails({ photos }: ProgressPhotoThumbnailsProps) {
-  const [openPhoto, setOpenPhoto] = useState<ProgressPhoto | null>(null);
+  const [openPhoto, setOpenPhoto] = useState<ThumbnailPhoto | null>(null);
 
   if (photos.length === 0) return null;
 

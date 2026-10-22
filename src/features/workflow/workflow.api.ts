@@ -25,6 +25,8 @@ export interface StageInstance {
   stageId: string;
   status: 'PENDING' | 'IN_PROGRESS' | 'INHIBITED' | 'COMPLETED' | 'BLOCKED';
   completedBy: string | null;
+  // The completing staff member's name, from the server
+  completedByName?: string | null;
   completedAt: string | null;
   startedAt: string | null;
   reasonCode?: string | null;
