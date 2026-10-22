@@ -72,8 +72,28 @@ describe('AuditTrailTimeline', () => {
     renderTimeline({ contextId: 'garment-1' })
 
     expect(await screen.findByText(/fabric intake recorded/i)).toBeInTheDocument()
-    expect(screen.getByText(/quantity: 5\.5/i)).toBeInTheDocument()
-    expect(screen.getByText(/quantityUnit: yards/i)).toBeInTheDocument()
+    expect(screen.getByText(/^quantity: 5\.5$/i)).toBeInTheDocument()
+    expect(screen.getByText(/quantity unit: yards/i)).toBeInTheDocument()
+  })
+
+  it('3b. shows stored photo URLs as links, hides internal ids, and names the actor', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: [
+        makeRecord({
+          action: 'PROGRESS_PHOTO_RECORDED',
+          actorId: 'user-1',
+          actorName: 'Tunde Tailor',
+          metadata: { progressPhotoId: 'p-1', secureUrl: 'https://res.cloudinary.com/demo/image/upload/v1/x.jpg' },
+        }),
+      ],
+    })
+    renderTimeline({ contextId: 'garment-1' })
+
+    const link = await screen.findByRole('link', { name: /view photo/i })
+    expect(link).toHaveAttribute('href', 'https://res.cloudinary.com/demo/image/upload/v1/x.jpg')
+    expect(screen.queryByText(/res\.cloudinary\.com/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/p-1/)).not.toBeInTheDocument()
+    expect(screen.getByText(/actor: tunde tailor/i)).toBeInTheDocument()
   })
 
   it('4. displays FABRIC_CONFIRMED when present, alongside the intake entry', async () => {
