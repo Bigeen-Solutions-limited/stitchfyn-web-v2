@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Box, Button, Card, Chip, Stack, Tab, Tabs, Typography } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -17,16 +17,14 @@ export function OrderWorkPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: order, isLoading, isError } = useOrderWork(id!);
-  const [selectedGarmentId, setSelectedGarmentId] = useState<string | null>(null);
+  const [chosenGarmentId, setSelectedGarmentId] = useState<string | null>(null);
   const [tab, setTab] = useState<'graph' | 'timeline'>('timeline');
 
   const garments = order?.garments ?? [];
-
-  useEffect(() => {
-    if (garments.length === 0 || garments.some((g) => g.id === selectedGarmentId)) return;
-    const targetId = (location.state as { targetGarmentId?: string } | null)?.targetGarmentId;
-    setSelectedGarmentId(targetId && garments.some((g) => g.id === targetId) ? targetId : garments[0].id);
-  }, [garments, selectedGarmentId, location.state]);
+  // The garment picked here, else the one the link pointed at, else the first
+  const targetId = (location.state as { targetGarmentId?: string } | null)?.targetGarmentId;
+  const selectedGarmentId =
+    [chosenGarmentId, targetId].find((id) => id && garments.some((g) => g.id === id)) ?? garments[0]?.id ?? null;
 
   if (isLoading) return <div className="sf-loading-overlay sf-glass">Loading order...</div>;
   if (isError || !order) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -36,7 +36,7 @@ import {
   LinkOff as UnlinkIcon,
   PhotoCamera as CameraIcon,
 } from '@mui/icons-material';
-import { groupOrderApi, groupShareUrl, type GroupOrderInput, type StaffGroupGarmentStatus } from '../features/group-order/group-order.api';
+import { groupOrderApi, groupShareUrl, type GroupOrderDetail, type GroupOrderInput, type StaffGroupGarmentStatus } from '../features/group-order/group-order.api';
 import { GroupSettingsFields } from '../features/group-order/GroupSettingsFields';
 import { useOrders } from '../features/orders/hooks/useOrders';
 import { FabricEvidenceCapturePanel } from '../features/orders/components/FabricEvidenceCapturePanel';
@@ -145,6 +145,44 @@ function BulkFabricIntakeDialog({ garments, open, onClose }: { garments: StaffGr
   );
 }
 
+// Starts from the saved group; keyed by group id, so opening another group starts afresh
+function GroupSettingsCard({ group }: { group: GroupOrderDetail }) {
+  const queryClient = useQueryClient();
+  const [settings, setSettings] = useState<GroupOrderInput>(() => ({
+    name: group.name,
+    eventDate: group.eventDate,
+    storeId: group.storeId,
+    leadTailorId: group.leadTailorId,
+    coordinatorCustomerId: group.coordinatorCustomerId,
+  }));
+
+  const save = useMutation({
+    mutationFn: () => groupOrderApi.update(group.id, settings),
+    onSuccess: (detail) => {
+      queryClient.setQueryData(keys.groupOrders.detail(group.id), detail);
+      queryClient.invalidateQueries({ queryKey: ['groupOrders', 'list'] });
+      showToast('Group saved', 'Unassigned garments now go to the lead tailor.', 'success');
+    },
+    onError: (err) => showToast('Could not save the group', parseApiError(err).detail, 'error'),
+  });
+
+  return (
+    <Card className="sf-card" sx={{ p: 3, borderRadius: 3, width: { xs: '100%', md: 340 }, flexShrink: 0 }}>
+      <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>Group settings</Typography>
+      <GroupSettingsFields value={settings} onChange={setSettings} coordinatorName={group.coordinatorName} />
+      <Button
+        fullWidth
+        variant="contained"
+        sx={{ mt: 2 }}
+        disabled={save.isPending || !settings.name?.trim() || !settings.eventDate}
+        onClick={() => save.mutate()}
+      >
+        {save.isPending ? 'Saving...' : 'Save'}
+      </Button>
+    </Card>
+  );
+}
+
 export function GroupOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -154,30 +192,8 @@ export function GroupOrderDetailPage() {
     queryFn: () => groupOrderApi.get(id!),
     enabled: !!id,
   });
-  const [settings, setSettings] = useState<GroupOrderInput>({});
   const [addOpen, setAddOpen] = useState(false);
   const [intakeOpen, setIntakeOpen] = useState(false);
-
-  useEffect(() => {
-    if (!group) return;
-    setSettings({
-      name: group.name,
-      eventDate: group.eventDate,
-      storeId: group.storeId,
-      leadTailorId: group.leadTailorId,
-      coordinatorCustomerId: group.coordinatorCustomerId,
-    });
-  }, [group]);
-
-  const save = useMutation({
-    mutationFn: () => groupOrderApi.update(id!, settings),
-    onSuccess: (detail) => {
-      queryClient.setQueryData(keys.groupOrders.detail(id!), detail);
-      queryClient.invalidateQueries({ queryKey: ['groupOrders', 'list'] });
-      showToast('Group saved', 'Unassigned garments now go to the lead tailor.', 'success');
-    },
-    onError: (err) => showToast('Could not save the group', parseApiError(err).detail, 'error'),
-  });
 
   const unlink = useMutation({
     mutationFn: (orderId: string) => groupOrderApi.unlinkOrder(id!, orderId),
@@ -226,19 +242,7 @@ export function GroupOrderDetailPage() {
       </Stack>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="flex-start">
-        <Card className="sf-card" sx={{ p: 3, borderRadius: 3, width: { xs: '100%', md: 340 }, flexShrink: 0 }}>
-          <Typography variant="h6" fontWeight={800} sx={{ mb: 2 }}>Group settings</Typography>
-          <GroupSettingsFields value={settings} onChange={setSettings} coordinatorName={group.coordinatorName} />
-          <Button
-            fullWidth
-            variant="contained"
-            sx={{ mt: 2 }}
-            disabled={save.isPending || !settings.name?.trim() || !settings.eventDate}
-            onClick={() => save.mutate()}
-          >
-            {save.isPending ? 'Saving...' : 'Save'}
-          </Button>
-        </Card>
+        <GroupSettingsCard key={group.id} group={group} />
 
         <Card className="sf-card" sx={{ borderRadius: 3, flex: 1, width: '100%', overflow: 'hidden' }}>
           <Box sx={{ p: 3, pb: 1 }}>

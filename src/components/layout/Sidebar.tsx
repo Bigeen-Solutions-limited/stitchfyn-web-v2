@@ -24,7 +24,6 @@ import {
   Dashboard as LayoutDashboard,
   Assignment as ClipboardList,
   People as Users,
-  Payment as CreditCard,
   ManageAccounts as UserCog,
   BarChart as BarChart2,
   Settings,
@@ -33,7 +32,6 @@ import {
   AccountTree as WorkflowIcon,
   Groups as GroupsIcon,
   Store as StoreIcon,
-  Security as SecurityShieldIcon,
   Article as ArticleIcon,
   Grade as GradeIcon,
 } from '@mui/icons-material';
@@ -62,7 +60,6 @@ const navItems = [
   { label: 'Inventory', icon: ClipboardList, path: '/inventory', roles: ['OWNER', 'MANAGER'] },
   { label: 'Disputes', icon: GavelIcon, path: '/disputes', roles: ['OWNER', 'MANAGER'] },
   { label: 'Group Orders', icon: GroupsIcon, path: '/group-orders', roles: ['OWNER', 'MANAGER'] },
-  { label: 'Payments', icon: CreditCard, path: '/payments', roles: ['OWNER', 'MANAGER'], isBeta: true },
   { label: 'Workflow Templates', icon: WorkflowIcon, path: '/workflow-templates', roles: ['OWNER'] },
   { label: 'Staff Management', icon: UserCog, path: '/staff', roles: ['OWNER'] },
   { label: 'Reports', icon: BarChart2, path: '/reports', roles: ['OWNER', 'MANAGER'] },
@@ -71,7 +68,6 @@ const navItems = [
 
 const forensicNavItems = [
   { label: 'Audit Log', icon: ArticleIcon, path: '/reports/audit' },
-  { label: 'Security Audit', icon: SecurityShieldIcon, path: '/reports/security-audit' },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }) => {
