@@ -45,7 +45,7 @@ export function useAxiosInterceptors() {
       apiClient.interceptors.response.eject(interceptorId.current);
     }
 
-    // On 401, refresh once and retry; send people to login or the 403 page when needed
+    // On 401, refresh once and retry, or send people to login
     interceptorId.current = apiClient.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
@@ -100,13 +100,8 @@ export function useAxiosInterceptors() {
           }
         }
 
-        if (error.response?.status === 403) {
-          if (window.location.pathname !== "/403") {
-            navigate('/403');
-          }
-          return Promise.reject(error);
-        }
-
+        // A 403 is reported where it happened (a toast or the page's error state), never by leaving the page:
+        // a refused action shouldn't throw away what the user was doing. Route guards handle access to whole pages.
         // Attach a friendly message for callers to show
         const parsedError = parseApiError(error);
         (error as AxiosError & { parsedError?: ErrorMessage }).parsedError = parsedError;
