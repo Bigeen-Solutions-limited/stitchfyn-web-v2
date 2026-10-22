@@ -15,14 +15,16 @@ export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
   const role = user?.role;
 
-  if (role === 'SYSTEM_ADMIN') {
-    return <Navigate to="/system-admin" replace />;
-  }
-
+  // Hooks run on every render, before any early return; a system admin has no dashboard data to load
   const { data, isLoading } = useQuery({
     queryKey: keys.analytics.overview,
     queryFn: analyticsApi.getOverview,
+    enabled: role !== 'SYSTEM_ADMIN',
   });
+
+  if (role === 'SYSTEM_ADMIN') {
+    return <Navigate to="/system-admin" replace />;
+  }
 
   if (isLoading) {
     return (
