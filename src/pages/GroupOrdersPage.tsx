@@ -108,7 +108,8 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) 
 const GroupCard: React.FC<{ group: GroupOrderListItem }> = ({ group }) => {
   const navigate = useNavigate();
   const eventDate = new Date(group.eventDate);
-  const daysUntil = Math.ceil((eventDate.getTime() - Date.now()) / 86_400_000);
+  const [now] = useState(() => Date.now()); // read once when the card appears, not on every render
+  const daysUntil = Math.ceil((eventDate.getTime() - now) / 86_400_000);
   const isPast = daysUntil < 0;
   const isUrgent = daysUntil >= 0 && daysUntil <= 14;
 

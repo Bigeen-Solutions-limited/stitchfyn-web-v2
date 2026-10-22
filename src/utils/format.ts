@@ -11,7 +11,7 @@ export function formatDeadline(dateString: string): string {
     const date = new Date(dateString);
     if (!isValid(date)) return 'TBD';
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  } catch (e) {
+  } catch {
     return 'TBD';
   }
 }
@@ -22,7 +22,7 @@ export function safeFormatDistanceToNow(dateInput: string | Date | undefined | n
     const date = new Date(dateInput);
     if (!isValid(date)) return 'Recently';
     return formatDistanceToNow(date, { addSuffix: true });
-  } catch (e) {
+  } catch {
     return 'Recently';
   }
 }
@@ -33,7 +33,7 @@ export function safeLocaleDate(dateInput: string | Date | undefined | null): str
     const date = new Date(dateInput);
     if (!isValid(date)) return 'Historical record';
     return date.toLocaleString();
-  } catch (e) {
+  } catch {
     return 'Historical record';
   }
 }

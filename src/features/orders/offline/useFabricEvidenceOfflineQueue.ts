@@ -7,7 +7,10 @@ import { attemptFabricEvidenceSync, subscribeFabricEvidenceQueue } from './fabri
 export function useFabricEvidenceOfflineQueue(garmentId: string, onSynced?: (photo: FabricEvidencePhoto) => void) {
   const [items, setItems] = useState<PendingFabricEvidenceRecord[]>([]);
   const onSyncedRef = useRef(onSynced);
-  onSyncedRef.current = onSynced;
+  // Kept current after each render (refs aren't touched during render)
+  useEffect(() => {
+    onSyncedRef.current = onSynced;
+  });
 
   const refresh = useCallback(async () => {
     setItems(await getPendingForGarment(garmentId));
