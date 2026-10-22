@@ -130,11 +130,6 @@ export const workflowApi = {
     return data;
   },
 
-  getTemplateStages: async (templateId: string) => {
-    const { data } = await apiClient.get<ServerNode[]>(`/workflows/templates/${templateId}/stages`);
-    return data.map(fromServerNode);
-  },
-
   // Makes an editable company copy of a template (the only way to change a system template)
   duplicateTemplate: async (templateId: string, name?: string) => {
     const { data } = await apiClient.post<WorkflowTemplate>(`/workflows/templates/${templateId}/duplicate`, { name });

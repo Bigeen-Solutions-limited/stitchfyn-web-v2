@@ -16,14 +16,6 @@ export function useWorkflowTemplates() {
   });
 }
 
-export function useTemplateStages(templateId: string | undefined) {
-  return useQuery({
-    queryKey: ['workflow', 'template-stages', templateId],
-    queryFn: () => workflowApi.getTemplateStages(templateId!),
-    enabled: !!templateId,
-  });
-}
-
 export function useAddTemplateStage() {
   const queryClient = useQueryClient();
   const showToast = useToastStore((state) => state.showToast);
@@ -31,8 +23,7 @@ export function useAddTemplateStage() {
   return useMutation({
     mutationFn: ({ templateId, name, duration }: { templateId: string; name: string; duration: number }) =>
       workflowApi.addTemplateStage(templateId, name, duration),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['workflow', 'template-stages', variables.templateId] });
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.workflow.templates });
       showToast('Stage Added', 'Workflow blueprint has been updated.', 'success');
     },
@@ -99,8 +90,7 @@ export function useSaveStageOrder() {
   return useMutation({
     mutationFn: ({ templateId, graph }: { templateId: string; graph: WorkflowGraph }) =>
       workflowApi.saveTemplateGraph(templateId, graph),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['workflow', 'template-stages', variables.templateId] });
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.workflow.templates });
       showToast('Template Saved', 'New orders use these stages and hours; garments already in production keep theirs.', 'success');
     },
