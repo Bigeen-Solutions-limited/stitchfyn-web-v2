@@ -17,7 +17,6 @@ import {
   Card,
   Typography,
   Button,
-  Avatar,
   Stack,
   Box,
   Chip,
@@ -62,6 +61,8 @@ import { CollectionChecklistPanel } from '../features/orders/components/Collecti
 import { FittingsPanel } from '../features/orders/components/FittingsPanel.tsx';
 import { MobileHeader } from '../components/layout/MobileHeader.tsx';
 import { downloadBlob } from '../utils/download';
+import { MeasurementsGrid } from '../features/orders/components/MeasurementsGrid.tsx';
+import { GarmentEssentials } from '../features/orders/components/GarmentEssentials.tsx';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -518,67 +519,7 @@ export function OrderDetailPage() {
                     </Box>
                   </Stack>
 
-                  <Grid container spacing={4}>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <Typography variant="caption" color="text.secondary" fontWeight={800} sx={{ textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                        Fabric Reference
-                      </Typography>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar
-                          variant="rounded"
-                          src={selectedGarment.fabricImageBase64 || undefined}
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: 2,
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                            bgcolor: 'primary.light',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            '& img': { objectFit: 'cover' }
-                          }}
-                          className="sf-glass"
-                        >
-                          {selectedGarment.fabricType?.charAt(0) || 'F'}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle1" fontWeight={700}>
-                            {selectedGarment.fabricType || 'Standard Fabric'}
-                          </Typography>
-                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-                            <Box
-                              sx={{
-                                width: 16,
-                                height: 16,
-                                borderRadius: '50%',
-                                bgcolor: selectedGarment.colorSwatch || '#eee',
-                                border: '1px solid rgba(0,0,0,0.1)'
-                              }}
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                              {selectedGarment.colorSwatch || 'No Swatch'}
-                            </Typography>
-                          </Stack>
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                            {selectedGarment.quantity != null && selectedGarment.quantityUnit
-                              ? `Qty: ${selectedGarment.quantity} ${selectedGarment.quantityUnit}`
-                              : 'Qty: not recorded'}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, sm: 8 }}>
-                      <Typography variant="caption" color="text.secondary" fontWeight={800} sx={{ textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                        Design Notes
-                      </Typography>
-                      <Box sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 2, minHeight: 80 }} className="sf-glass">
-                        <Typography variant="body2" sx={{ fontStyle: selectedGarment.designNotes ? 'normal' : 'italic', color: selectedGarment.designNotes ? 'text.primary' : 'text.secondary' }}>
-                          {selectedGarment.designNotes || 'No custom design notes provided for this garment.'}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
+                  <GarmentEssentials garment={selectedGarment} />
 
                   {/* Keyed by garment so one garment's photos never show under another */}
                   <FabricEvidenceCapturePanel
@@ -624,48 +565,10 @@ export function OrderDetailPage() {
                     <Typography variant="caption" color="text.secondary" fontWeight={800} sx={{ textTransform: 'uppercase', mb: 2, display: 'block' }}>
                       Precision Measurements
                     </Typography>
-                    {(() => {
-                      const orderMeasurements = order.measurements || {};
-                      const requiredKeys = selectedGarment.requiredMeasurements || [];
-                      const filteredMeasurements = Object.entries(orderMeasurements).filter(([key]) => 
-                        requiredKeys.length === 0 || requiredKeys.includes(key)
-                      );
-
-                      if (filteredMeasurements.length > 0) {
-                        return (
-                          <Grid container spacing={2}>
-                            {filteredMeasurements.map(([key, value]) => (
-                              <Grid size={{ xs: 4, sm: 3 }} key={key}>
-                                <Box sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper' }}>
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{
-                                      fontSize: '0.65rem',
-                                      fontWeight: 700,
-                                      textTransform: 'uppercase',
-                                      display: 'block',
-                                      mb: 0.5
-                                    }}
-                                  >
-                                    {key.replace(/_/g, ' ')}
-                                  </Typography>
-                                  <Typography variant="body1" color="primary" sx={{ fontWeight: 800 }}>
-                                    {String(value)}
-                                  </Typography>
-                                </Box>
-                              </Grid>
-                            ))}
-                          </Grid>
-                        );
-                      }
-
-                      return (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', py: 2 }}>
-                          No measurements recorded for this garment type.
-                        </Typography>
-                      );
-                    })()}
+                    <MeasurementsGrid
+                      measurements={order.measurements}
+                      requiredKeys={selectedGarment.requiredMeasurements}
+                    />
                   </Box>
                 </Stack>
               ) : (

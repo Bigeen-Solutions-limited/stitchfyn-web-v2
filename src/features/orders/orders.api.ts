@@ -56,6 +56,17 @@ export interface Garment {
   confirmationChannel?: string | null
 }
 
+// GET /orders/:id/work: what someone making the garments needs, and nothing more
+export interface OrderWorkView {
+  id: string
+  orderNumber: number
+  eventDate: string
+  createdAt: string
+  customerFirstName: string
+  measurements?: Record<string, number>
+  garments?: Pick<Garment, 'id' | 'name' | 'status' | 'assignedTailorId' | 'fabricType' | 'colorSwatch' | 'designNotes' | 'quantity' | 'quantityUnit' | 'requiredMeasurements'>[]
+}
+
 export interface UrgentGarment {
   garmentId: string
   garmentName: string
@@ -93,6 +104,11 @@ export const ordersApi = {
     const { data } = await apiClient.get<OrderDetailResponse & { unverified_flags?: Order["unverifiedFlags"] }>(`/orders/${id}`)
     // The detail endpoint returns activation flags separately; attach them to the order like the list does
     return { ...data, order: { ...data.order, unverifiedFlags: data.unverified_flags ?? [] } }
+  },
+
+  getOrderWork: async (id: string) => {
+    const { data } = await apiClient.get<OrderWorkView>(`/orders/${id}/work`)
+    return data
   },
 
   getOrderGarments: async (id: string) => {

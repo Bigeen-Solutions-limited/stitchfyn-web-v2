@@ -5,6 +5,7 @@ import { ErrorState } from '../../../components/feedback/ErrorState.tsx';
 import { EditOrderModal } from './EditOrderModal.tsx';
 import { OrderEntryItem } from './OrderEntryItem.tsx';
 import { useNavigate } from 'react-router-dom';
+import { useOrderPath } from '../useOrderPath.ts';
 import { Box, Stack, Typography } from '@mui/material';
 
 import '../styles/orders.css';
@@ -13,6 +14,7 @@ import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 
 export function OrdersList() {
   const navigate = useNavigate();
+  const orderPath = useOrderPath();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('ALL');
   const [editingOrder, setEditingOrder] = useState<any>(null);
@@ -67,7 +69,7 @@ export function OrdersList() {
               <OrderEntryItem 
                 key={`${order.id}-${index}`} 
                 order={order} 
-                onClick={() => navigate(`/orders/${order.id}`)}
+                onClick={() => navigate(orderPath(order.id), { state: { targetGarmentId: order.garmentId } })}
               />
             ))
           )}
