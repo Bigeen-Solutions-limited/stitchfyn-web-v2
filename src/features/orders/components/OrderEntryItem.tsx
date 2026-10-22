@@ -23,8 +23,12 @@ interface OrderEntryItemProps {
     eventDate: string;
     createdAt?: string;
     unverifiedFlags?: ActivationFlag[];
+    groupOrderId?: string | null;
+    groupName?: string | null;
   };
   onClick?: () => void;
+  // Opens the order's group; without it the group shows as a plain label
+  onGroupClick?: (groupId: string) => void;
 }
 
 interface FlagConfig {
@@ -92,7 +96,7 @@ const ActivationChips: React.FC<{ flags?: ActivationFlag[] }> = ({ flags }) => {
   );
 };
 
-export const OrderEntryItem: React.FC<OrderEntryItemProps> = ({ order, onClick }) => {
+export const OrderEntryItem: React.FC<OrderEntryItemProps> = ({ order, onClick, onGroupClick }) => {
   const role = useAuthStore((state) => state.user?.role);
   const { mutate: sendReminder, isPending: isReminding } = useRequestActivationReminder();
   const customerStepPending = !!order.unverifiedFlags?.some((f) => f === 'fabric' || f === 'design');
@@ -123,6 +127,14 @@ export const OrderEntryItem: React.FC<OrderEntryItemProps> = ({ order, onClick }
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {order.garmentName}
             </Typography>
+          )}
+          {order.groupName && (
+            <Chip
+              size="small"
+              label={`Group: ${order.groupName}`}
+              onClick={onGroupClick && order.groupOrderId ? (e) => { e.stopPropagation(); onGroupClick(order.groupOrderId!); } : undefined}
+              sx={{ alignSelf: 'flex-start', fontWeight: 600 }}
+            />
           )}
           <ActivationChips flags={order.unverifiedFlags} />
           {canRemind && (

@@ -54,6 +54,7 @@ export const keys = {
   },
   groupOrders: {
     list: (page: number, limit: number) => ['groupOrders', 'list', { page, limit }] as const,
+    detail: (id: string) => ['groupOrders', id] as const,
   },
   stitchScore: {
     detail: (companyId: string) => ['stitchScore', companyId] as const,

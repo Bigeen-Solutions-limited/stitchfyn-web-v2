@@ -3,6 +3,9 @@ import { useParams } from 'react-router-dom';
 import { getGroupProjection, type GroupHealthProjection } from './group-order.api';
 import './GroupDashboard.css';
 import { CheckCircleRounded as CheckIcon } from '@mui/icons-material';
+import { BRAND_NAME } from '../../config/brand';
+
+const FLAG_LABEL: Record<string, string> = { payment: 'deposit', fabric: 'fabric confirmation', design: 'design approval' };
 
 export const GroupCoordinatorDashboard: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -34,6 +37,7 @@ export const GroupCoordinatorDashboard: React.FC = () => {
         <div className="header-content">
           <h1>{metadata.groupName}</h1>
           <p className="event-date">Event Date: {new Date(metadata.eventDate).toLocaleDateString()}</p>
+          {metadata.coordinatorName && <p className="event-date">Coordinator: {metadata.coordinatorName}</p>}
         </div>
         <div className={`risk-badge large risk-${aggregatedHealth.collectiveRiskLevel.toLowerCase()}`}>
           {aggregatedHealth.collectiveRiskLevel.replace('_', ' ')}
@@ -75,6 +79,7 @@ export const GroupCoordinatorDashboard: React.FC = () => {
               <thead>
                 <tr>
                   <th>Member</th>
+                  <th>Garment</th>
                   <th>Current Stage</th>
                   <th>Risk</th>
                   <th>Verification</th>
@@ -82,29 +87,33 @@ export const GroupCoordinatorDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
+                {memberDetails.length === 0 && (
+                  <tr><td colSpan={6}>No garments have been added to this group yet.</td></tr>
+                )}
                 {memberDetails.map((member) => (
-                  <tr key={member.orderId}>
+                  <tr key={member.garmentId}>
                     <td>
                       <div className="member-info">
-                        <span className="member-name">{member.memberName}</span>
-                        <span className="order-id">#{member.orderId.slice(-6)}</span>
+                        <span className="member-name">{member.memberFirstName}</span>
+                        <span className="order-id">Order #{member.orderNumber}</span>
                       </div>
                     </td>
+                    <td>{member.garmentName}</td>
                     <td>
-                      <span className="stage-pill">{member.displayStage}</span>
+                      <span className="stage-pill">{member.currentStage}</span>
                     </td>
                     <td>
                       <span className={`risk-pill risk-${member.riskLevel.toLowerCase()}`}>
-                        {member.riskLevel}
+                        {member.riskLevel.replace('_', ' ')}
                       </span>
                     </td>
                     <td>
                       <div className="verification-stack">
-                        {member.pendingVerifications.length === 0 ? (
+                        {member.pendingFlags.length === 0 ? (
                           <span className="verified-check"><CheckIcon sx={{ fontSize: 14, verticalAlign: '-2px', mr: 0.5 }} />Fully Verified</span>
                         ) : (
-                          member.pendingVerifications.map(flag => (
-                            <span key={flag} className="pending-flag">Pending {flag}</span>
+                          member.pendingFlags.map(flag => (
+                            <span key={flag} className="pending-flag">Waiting for {FLAG_LABEL[flag] ?? flag}</span>
                           ))
                         )}
                       </div>
@@ -114,10 +123,10 @@ export const GroupCoordinatorDashboard: React.FC = () => {
                         <div className="mini-progress-bar">
                           <div 
                             className="mini-progress-fill" 
-                            style={{ width: `${member.completionPercentage}%` }}
+                            style={{ width: `${member.progressPercent}%` }}
                           ></div>
                         </div>
-                        <span className="percent-text">{member.completionPercentage}%</span>
+                        <span className="percent-text">{member.progressPercent}%</span>
                       </div>
                     </td>
                   </tr>
@@ -129,7 +138,7 @@ export const GroupCoordinatorDashboard: React.FC = () => {
       </main>
 
       <footer className="group-footer">
-        <p>Protected by StitchFlow Truth Protocol</p>
+        <p>Tracked with {BRAND_NAME}</p>
         <span className="token-ref">Ref: {metadata.groupToken}</span>
       </footer>
     </div>
