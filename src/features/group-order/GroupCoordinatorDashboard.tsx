@@ -39,7 +39,7 @@ export const GroupCoordinatorDashboard: React.FC = () => {
           <p className="event-date">Event Date: {new Date(metadata.eventDate).toLocaleDateString()}</p>
           {metadata.coordinatorName && <p className="event-date">Coordinator: {metadata.coordinatorName}</p>}
         </div>
-        <div className={`risk-badge large risk-${aggregatedHealth.collectiveRiskLevel.toLowerCase()}`}>
+        <div className={`risk-badge large risk-${aggregatedHealth.collectiveRiskLevel.toLowerCase().replace('_', '')}`}>
           {aggregatedHealth.collectiveRiskLevel.replace('_', ' ')}
         </div>
       </header>
@@ -103,7 +103,7 @@ export const GroupCoordinatorDashboard: React.FC = () => {
                       <span className="stage-pill">{member.currentStage}</span>
                     </td>
                     <td>
-                      <span className={`risk-pill risk-${member.riskLevel.toLowerCase()}`}>
+                      <span className={`risk-pill risk-${member.riskLevel.toLowerCase().replace('_', '')}`}>
                         {member.riskLevel.replace('_', ' ')}
                       </span>
                     </td>
