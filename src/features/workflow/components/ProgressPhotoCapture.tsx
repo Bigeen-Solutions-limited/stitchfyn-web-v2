@@ -4,6 +4,7 @@ import AddAPhotoOutlinedIcon from '@mui/icons-material/AddAPhotoOutlined';
 import { useUploadProgressPhoto } from '../hooks/useWorkflowMutation';
 import { MAX_PROGRESS_PHOTO_IMAGE_SIZE_BYTES } from '../progress-photo.api';
 import { useToastStore } from '../../../components/feedback/Toast';
+import { PHOTO_ACCEPT } from '../../../utils/photo';
 
 interface ProgressPhotoCaptureProps {
   garmentId: string;
@@ -73,7 +74,7 @@ export function ProgressPhotoCapture({ garmentId, stageId }: ProgressPhotoCaptur
           ref={inputRef}
           type="file"
           hidden
-          accept="image/*"
+          accept={PHOTO_ACCEPT}
           capture="environment"
           onChange={handleFileChange}
         />
