@@ -6,6 +6,7 @@ export const keys = {
     all: ['orders'] as const,
     list: (page: number, limit: number) => ['orders', 'list', { page, limit }] as const,
     detail: (id: string) => ['orders', id] as const,
+    work: (id: string) => ['orders', id, 'work'] as const,
     deadlineRisk: (id: string) => ['orders', id, 'risk'] as const,
     garments: (id: string) => ['orders', id, 'garments'] as const,
   },

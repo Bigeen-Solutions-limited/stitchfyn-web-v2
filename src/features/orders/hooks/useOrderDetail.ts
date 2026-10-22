@@ -27,6 +27,14 @@ export function useMeasurements(orderId: string) {
     enabled: false
   });
 }
+export function useOrderWork(id: string) {
+  return useQuery({
+    queryKey: keys.orders.work(id),
+    queryFn: () => ordersApi.getOrderWork(id),
+    enabled: !!id,
+  });
+}
+
 export function useOrderGarments(orderId: string) {
   return useQuery({
     queryKey: keys.orders.garments(orderId),

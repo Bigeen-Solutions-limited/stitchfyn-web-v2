@@ -8,7 +8,11 @@ export type Capability =
   | 'THAW_DISPUTE'
   | 'MANAGE_STAFF'
   | 'VIEW_AUDIT_LOGS'
-  | 'SUSPEND_ACCOUNT';
+  | 'SUSPEND_ACCOUNT'
+  // The server's enforced capabilities
+  | 'VIEW_ORDER'
+  | 'UPDATE_PRODUCTION'
+  | 'VIEW_ALL_STORE_WORK';
 
 export type StitchFynRole = 'OWNER' | 'MANAGER' | 'TAILOR' | 'FRONT_DESK' | 'CUSTOMER' | 'SYSTEM_ADMIN';
 

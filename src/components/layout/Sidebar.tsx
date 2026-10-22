@@ -53,8 +53,9 @@ const ALL_STORES = '__all__';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['OWNER', 'MANAGER', 'TAILOR', 'FRONT_DESK', 'CUSTOMER'] },
-  // Roles match the route guards (order and client pages need MANAGE_ORDERS); tailors work from Production
+  // Roles match the route guards (order and client pages need MANAGE_ORDERS); tailors get their own orders instead
   { label: 'Orders', icon: ClipboardList, path: '/orders', roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
+  { label: 'My Orders', icon: ClipboardList, path: '/my-work', roles: ['TAILOR'] },
   { label: 'New Order', icon: Plus, path: '/orders/new', roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
   { label: 'Production', icon: ScissorsIcon, path: '/production', roles: ['OWNER', 'MANAGER', 'TAILOR'] },
   { label: 'Customers', icon: Users, path: '/customers', roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },

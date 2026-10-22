@@ -28,10 +28,11 @@ export const BottomNav: React.FC = () => {
 
   if (!isMobile) return null;
 
-  // Same role rules as the sidebar: order and client pages need MANAGE_ORDERS, which tailors lack
+  // Same role rules as the sidebar: order and client pages need MANAGE_ORDERS; tailors get My Orders
   const tabs = [
     { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
     { path: '/orders', label: 'Orders', icon: <OrdersIcon />, roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
+    { path: '/my-work', label: 'My Orders', icon: <OrdersIcon />, roles: ['TAILOR'] },
     { path: '/production', label: 'Production', icon: <ProductionIcon /> },
     { path: '/customers', label: 'Clients', icon: <CustomersIcon />, roles: ['OWNER', 'MANAGER', 'FRONT_DESK'] },
   ].filter(tab => !tab.roles || (role && tab.roles.includes(role)));

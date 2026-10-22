@@ -12,6 +12,10 @@ export const AuthCapabilities = {
   MANAGE_STAFF: 'MANAGE_STAFF',
   VIEW_AUDIT_LOGS: 'VIEW_AUDIT_LOGS',
   SUSPEND_ACCOUNT: 'SUSPEND_ACCOUNT',
+  // The server's enforced capabilities (Capability enum, upper-cased)
+  VIEW_ORDER: 'VIEW_ORDER',
+  UPDATE_PRODUCTION: 'UPDATE_PRODUCTION',
+  VIEW_ALL_STORE_WORK: 'VIEW_ALL_STORE_WORK',
 } as const;
 
 export type CapabilityType = (typeof AuthCapabilities)[keyof typeof AuthCapabilities];

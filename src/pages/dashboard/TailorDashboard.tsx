@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePermissions } from '../../features/auth/use-permissions';
 import {
   Box,
   Typography,
@@ -76,6 +77,8 @@ function StatCard({ label, value, icon: Icon, accentColor }: StatCardProps) {
 
 export const TailorDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { hasCapability } = usePermissions();
+  const canCreateOrder = hasCapability('MANAGE_ORDERS');
 
   const { data: analytics } = useQuery({
     queryKey: keys.analytics.overview,
@@ -137,7 +140,7 @@ export const TailorDashboard: React.FC = () => {
                 <Button
                   variant="contained"
                   size="small"
-                  onClick={() => navigate('/orders?filter=urgent')}
+                  onClick={() => navigate('/my-work')}
                   sx={{ bgcolor: '#ef4444', borderRadius: '8px', textTransform: 'none', fontWeight: 600, '&:hover': { bgcolor: '#dc2626' } }}
                 >
                   View overdue orders
@@ -158,7 +161,8 @@ export const TailorDashboard: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* New order button */}
+      {/* New order button; the new-order page needs MANAGE_ORDERS */}
+      {canCreateOrder && (
       <Button
         onClick={() => navigate('/orders/new')}
         sx={{
@@ -178,6 +182,7 @@ export const TailorDashboard: React.FC = () => {
       >
         <Plus sx={{ fontSize: 28 }} />
       </Button>
+      )}
     </Box>
   );
 };

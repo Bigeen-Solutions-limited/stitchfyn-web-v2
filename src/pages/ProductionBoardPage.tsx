@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useOrderPath } from '../features/orders/useOrderPath.ts';
 import {
   Alert,
   Avatar,
@@ -287,10 +288,11 @@ interface TaskMobileCardProps {
   onQuickUpdate: () => void;
   onOpenStage: () => void;
   canViewOrder: boolean;
+  orderPath: (orderId: string) => string;
   navigate: (path: string) => void;
 }
 
-function TaskMobileCard({ task, onQuickUpdate, onOpenStage, canViewOrder, navigate }: TaskMobileCardProps) {
+function TaskMobileCard({ task, onQuickUpdate, onOpenStage, canViewOrder, orderPath, navigate }: TaskMobileCardProps) {
   const atRisk = isAtRisk(task);
   const statusStyle = getStatusStyles(task.stageName);
 
@@ -360,7 +362,7 @@ function TaskMobileCard({ task, onQuickUpdate, onOpenStage, canViewOrder, naviga
             fullWidth
             variant="outlined"
             size="small"
-            onClick={() => navigate(`/orders/${task.orderId}`)}
+            onClick={() => navigate(orderPath(task.orderId))}
             sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, borderColor: 'divider' }}
           >
             View order
@@ -410,7 +412,9 @@ export function ProductionBoardPage() {
   const [selectedTask, setSelectedTask] = useState<ActiveFloorTask | null>(null);
   const [quickUpdateTask, setQuickUpdateTask] = useState<ActiveFloorTask | null>(null);
   const { hasCapability } = usePermissions();
-  const canViewOrder = hasCapability('MANAGE_ORDERS');
+  // Tailors open their orders through the essentials view; useOrderPath picks the right page
+  const canViewOrder = hasCapability('VIEW_ORDER') || hasCapability('MANAGE_ORDERS');
+  const orderPath = useOrderPath();
 
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('All');
@@ -698,6 +702,7 @@ export function ProductionBoardPage() {
               onQuickUpdate={() => setQuickUpdateTask(task)}
               onOpenStage={() => setSelectedTask(task)}
               canViewOrder={canViewOrder}
+              orderPath={orderPath}
               navigate={navigate}
             />
           ))
@@ -749,7 +754,7 @@ export function ProductionBoardPage() {
                     sx={{ '&:hover': { bgcolor: alpha('#1e5c3a', 0.015) }, transition: 'background-color 0.15s ease' }}
                   >
                     <TableCell>
-                      <Link to={`/orders/${task.orderId}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Link to={orderPath(task.orderId)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <Box sx={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, bgcolor: atRisk ? 'error.main' : alpha('#1e5c3a', 0.6) }} />
                         <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary' }}>
                           #{task.orderNumber}
@@ -802,13 +807,18 @@ export function ProductionBoardPage() {
                       <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                         {canViewOrder && (
                           <Tooltip title="View order">
-                            <IconButton size="small" aria-label="View order" onClick={() => navigate(`/orders/${task.orderId}`)}>
+                            <IconButton size="small" aria-label="View order" onClick={() => navigate(orderPath(task.orderId))}>
                               <VisibilityIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                             </IconButton>
                           </Tooltip>
                         )}
-                        <Tooltip title="Change garment status">
-                          <IconButton size="small" aria-label="Change garment status" onClick={() => setQuickUpdateTask(task)} sx={{ color: 'text.secondary' }}>
+                        <Tooltip title="Open garment in order">
+                          <IconButton
+                            size="small"
+                            aria-label="Open garment in order"
+                            onClick={() => navigate(orderPath(task.orderId), { state: { targetGarmentId: task.garmentId } })}
+                            sx={{ color: 'text.secondary' }}
+                          >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>

@@ -5,6 +5,8 @@ import { LoginPage } from '../../pages/LoginPage.tsx';
 import { NotFoundPage } from '../../pages/NotFoundPage.tsx';
 import { OrdersPage } from '../../pages/OrdersPage.tsx';
 import { OrderDetailPage } from '../../pages/OrderDetailPage.tsx';
+import { OrderWorkPage } from '../../pages/OrderWorkPage.tsx';
+import { MyWorkPage } from '../../pages/MyWorkPage.tsx';
 import { StaffManagementPage } from '../../pages/StaffManagementPage.tsx';
 import { NewOrderPage } from '../../pages/NewOrderPage.tsx';
 import { ProductionBoardPage } from '../../pages/ProductionBoardPage.tsx';
@@ -108,6 +110,22 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute requiredPermission="MANAGE_ORDERS">
                 <OrderDetailPage />
+              </ProtectedRoute>
+            )
+          },
+          {
+            path: '/orders/:id/work',
+            element: (
+              <ProtectedRoute requiredPermission="VIEW_ORDER">
+                <OrderWorkPage />
+              </ProtectedRoute>
+            )
+          },
+          {
+            path: '/my-work',
+            element: (
+              <ProtectedRoute requiredPermission="VIEW_ORDER">
+                <MyWorkPage />
               </ProtectedRoute>
             )
           },
