@@ -117,7 +117,7 @@ export function OrderDetailPage() {
       await ordersApi.assignTailor(selectedGarmentId, tailorId || null);
       showToast("Assignment updated successfully", "success");
       refetchGarments();
-    } catch (err) {
+    } catch {
       showToast("Failed to update assignment", "error");
     }
   };

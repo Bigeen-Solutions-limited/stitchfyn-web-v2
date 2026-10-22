@@ -22,5 +22,5 @@ export function useSilentRefresh() {
       .finally(() => {
         setLoading(false)
       })
-  }, [])
+  }, [setAuth, clearAuth, setLoading]) // store actions never change, so this still runs once
 }

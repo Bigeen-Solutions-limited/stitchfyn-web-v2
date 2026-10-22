@@ -44,7 +44,7 @@ export function WorkflowGraph({ garmentId, orderId }: WorkflowGraphProps) {
     let safeDeps: string[] = [];
     if ('dependencies' in stage) {
        const stageDeps = (stage as any).dependencies;
-       let parsedDeps = Array.isArray(stageDeps) 
+       const parsedDeps = Array.isArray(stageDeps) 
         ? stageDeps 
         : (stageDeps ? JSON.parse(stageDeps as string) : []);
        safeDeps = parsedDeps.filter((dep: any) => typeof dep === 'string' && dep.trim() !== '');
