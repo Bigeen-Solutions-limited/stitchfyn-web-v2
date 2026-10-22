@@ -102,6 +102,7 @@ export interface AddStoreDTO {
 export interface AdminAuditEntry {
   id: string
   actorId: string
+  actorName: string | null
   action: string
   targetType: string
   targetId: string

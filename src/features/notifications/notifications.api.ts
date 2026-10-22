@@ -5,12 +5,10 @@ export type { NotificationTemplateKey };
 
 export interface UserNotification {
   id: string;
-  user_id: string;
-  company_id: string;
-  template_key: NotificationTemplateKey;
+  templateKey: NotificationTemplateKey;
   payload: Record<string, string>;
-  read_at: string | null;
-  created_at: string;
+  readAt: string | null;
+  createdAt: string;
 }
 
 export interface NotificationsListResponse {

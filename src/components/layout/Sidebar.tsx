@@ -323,8 +323,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ open, onClose, toggleSidebar }
       open={open}
       onClose={onClose}
       sx={{
-        width: SIDEBAR_WIDTH,
+        // A closed persistent drawer keeps its root in the flex row, so collapse that too or main stays offset
+        width: isMobile || open ? SIDEBAR_WIDTH : 0,
         flexShrink: 0,
+        transition: (theme) => theme.transitions.create('width', {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.leavingScreen,
+        }),
         '& .MuiDrawer-paper': {
           width: SIDEBAR_WIDTH,
           boxSizing: 'border-box',
