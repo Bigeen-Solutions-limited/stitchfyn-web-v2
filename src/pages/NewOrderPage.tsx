@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { keys } from "../query/keys";
 import {
   Box,
   Typography,
@@ -454,6 +455,9 @@ export function NewOrderPage() {
       });
 
       showToast("Order Intake Complete", "Your order has been committed to production.", "success");
+      // So the new order is listed and searchable straight away
+      queryClient.invalidateQueries({ queryKey: keys.orders.all });
+      queryClient.invalidateQueries({ queryKey: ['workflow', 'active-tasks'] });
       // The API returns { order, initialProjection }
       setSuccessOrder(result.order || result);
     } catch (err: any) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useOrders } from '../hooks/useOrders.ts';
 import { WorkshopTableSkeleton } from '../../../components/ui/WorkshopTableSkeleton.tsx';
 import { ErrorState } from '../../../components/feedback/ErrorState.tsx';
@@ -6,7 +6,7 @@ import { EditOrderModal } from './EditOrderModal.tsx';
 import { OrderEntryItem } from './OrderEntryItem.tsx';
 import { useNavigate } from 'react-router-dom';
 import { useOrderPath } from '../useOrderPath.ts';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, TextField, Typography } from '@mui/material';
 
 import '../styles/orders.css';
 
@@ -18,8 +18,31 @@ export function OrdersList() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('ALL');
   const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
 
-  const { data: orders, isLoading, isError, error, refetch } = useOrders(page, 10);
+  // Search on the server once typing pauses, from the first page
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const { data: orders, isLoading, isError, error, refetch } = useOrders(page, 10, search || undefined);
+
+  const searchBox = (
+    <TextField
+      size="small"
+      fullWidth
+      placeholder="Search order #, client name or phone, garment"
+      value={searchInput}
+      onChange={(e) => setSearchInput(e.target.value)}
+      sx={{ mb: 2, px: 2 }}
+      slotProps={{ htmlInput: { 'aria-label': 'Search orders' } }}
+    />
+  );
 
   if (isLoading) {
     return (
@@ -57,12 +80,14 @@ export function OrdersList() {
         <h2 className="text-h2 ledger-title">Production Ledger</h2>
         <div className="text-xs md:text-sm text-black">High-fidelity projection of workshop workload</div>
       </div>
-      
+
+      {searchBox}
+
       <Box sx={{ mb: 4 }}>
         <Stack spacing={0}>
           {filteredItems?.length === 0 ? (
             <Typography variant="body2" sx={{ color: 'text.secondary', p: 4, textAlign: 'center' }}>
-              No orders found matching the selected filter.
+              {search ? `No orders match "${search}".` : 'No orders found matching the selected filter.'}
             </Typography>
           ) : (
             filteredItems?.map((order, index) => (

@@ -88,9 +88,9 @@ export interface OrdersResponse {
 }
 
 export const ordersApi = {
-  getOrders: async (page = 1, limit = 10) => {
+  getOrders: async (page = 1, limit = 10, search?: string) => {
     const { data } = await apiClient.get<OrdersResponse>("/orders", {
-      params: { page, limit },
+      params: { page, limit, ...(search ? { q: search } : {}) },
     })
     return data
   },

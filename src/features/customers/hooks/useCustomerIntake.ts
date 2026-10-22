@@ -16,8 +16,11 @@ export function useCustomerSearch(query: string) {
 
 export function useCreateCustomer() {
   const { handleError } = useDomainError();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateCustomerRequest) => customersApi.createCustomer(data),
+    // Cached searches would otherwise hide the new client for up to five minutes
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customers'] }),
     onError: (err: any) => handleError(err),
   });
 }
