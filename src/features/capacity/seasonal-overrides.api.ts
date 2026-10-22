@@ -9,11 +9,12 @@ export interface SeasonalOverride {
   createdAt: string;
 }
 
+// camelCase, as the server reads it (snake_case got a 400 every time)
 export interface CreateSeasonalOverrideBody {
   label: string;
-  capacity_limit: number;
-  starts_at: string;
-  ends_at: string;
+  capacityLimit: number;
+  startsAt: string;
+  endsAt: string;
 }
 
 export const seasonalOverridesApi = {

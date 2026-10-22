@@ -139,9 +139,7 @@ export function NewOrderPage() {
   const [selectedStoreId, setSelectedStoreId] = useState("");
   // A group with a store decides where its orders are made
   const groupStoreId = group?.storeId ?? null;
-  useEffect(() => {
-    if (groupStoreId) setSelectedStoreId(groupStoreId);
-  }, [groupStoreId]);
+  const chosenStoreId = groupStoreId ?? selectedStoreId;
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [materialQuantity, setMaterialQuantity] = useState<number | "">("");
   // Unit for the garment's fabric quantity; separate from the material's own free-text unit.
@@ -152,7 +150,7 @@ export function NewOrderPage() {
   const [paymentIntentType, setPaymentIntentType] = useState("");
 
   const { data: inventory } = useInventory();
-  const effectiveStoreId = role === 'OWNER' ? selectedStoreId : userStoreId || undefined;
+  const effectiveStoreId = role === 'OWNER' ? chosenStoreId : userStoreId || undefined;
   const { data: staff } = useStaffList({
     storeId: effectiveStoreId,
     enabled: !!effectiveStoreId || role === 'OWNER'
@@ -421,7 +419,7 @@ export function NewOrderPage() {
         finalMeasurementVersionId = locked.id;
       }
 
-      const finalStoreId = role === 'OWNER' ? selectedStoreId : userStoreId;
+      const finalStoreId = role === 'OWNER' ? chosenStoreId : userStoreId;
       if (!finalStoreId) {
         showToast("Store Assignment Required", "Store assignment is required. Please contact admin.", "error");
         return;
@@ -1050,7 +1048,7 @@ export function NewOrderPage() {
                         <InputLabel id="order-store-label">Production Store</InputLabel>
                         <Select
                           labelId="order-store-label"
-                          value={selectedStoreId}
+                          value={chosenStoreId}
                           label="Production Store"
                           onChange={(e) => setSelectedStoreId(e.target.value)}
                           disabled={!!groupStoreId}
@@ -1917,7 +1915,7 @@ export function NewOrderPage() {
                       </ListItemAvatar>
                       <ListItemText
                         primary={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{eventDate?.toLocaleDateString()}</Typography>}
-                        secondary={`Production Deadline • ${stores?.find(s => s.id === selectedStoreId)?.name || 'Unassigned Store'}`}
+                        secondary={`Production Deadline • ${stores?.find(s => s.id === chosenStoreId)?.name || 'Unassigned Store'}`}
                       />
                     </ListItem>
                   </List>

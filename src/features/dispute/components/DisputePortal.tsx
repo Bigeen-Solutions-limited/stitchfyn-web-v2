@@ -11,7 +11,7 @@ import {
   Chip
 } from '@mui/material';
 import { Warning, Gavel, History, CheckCircle } from '@mui/icons-material';
-import { useDisputeProjection, useSubmitEvidence, useResolveDispute } from '../dispute.hooks';
+import { useDisputeProjection, useSubmitEvidence, useTailorResolve } from '../dispute.hooks';
 
 interface DisputePortalProps {
   orderId: string;
@@ -21,7 +21,8 @@ interface DisputePortalProps {
 export const DisputePortal: React.FC<DisputePortalProps> = ({ orderId }) => {
   const { data: projection, isLoading } = useDisputeProjection(orderId);
   const { mutate: submitEvidence } = useSubmitEvidence(orderId);
-  const { mutate: resolveDispute } = useResolveDispute(orderId);
+  // The workshop's side of a mutual resolution; the customer confirms theirs from the portal
+  const { mutate: confirmWorkshopSide } = useTailorResolve(orderId);
 
   if (isLoading || !projection) return null;
 
@@ -101,10 +102,7 @@ export const DisputePortal: React.FC<DisputePortalProps> = ({ orderId }) => {
                   variant="contained" 
                   color="success" 
                   size="small"
-                  onClick={() => resolveDispute({ 
-                    disputeId: projection.disputeId, 
-                    resolutionToken: 'CONSENSUS_TOKEN_' + Math.random().toString(36).substr(2, 9) 
-                  })}
+                  onClick={() => confirmWorkshopSide(projection.disputeId)}
                 >
                   Sign Resolution Agreement
                 </Button>

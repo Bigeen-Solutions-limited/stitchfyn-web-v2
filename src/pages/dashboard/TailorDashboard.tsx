@@ -167,7 +167,7 @@ export const TailorDashboard: React.FC = () => {
         onClick={() => navigate('/orders/new')}
         sx={{
           position: 'fixed',
-          bottom: 24,
+          bottom: { xs: 88, md: 24 },
           right: 24,
           width: 56,
           height: 56,

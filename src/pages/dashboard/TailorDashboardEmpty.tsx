@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { usePermissions } from '../../features/auth/use-permissions';
+import { useAuthStore } from '../../features/auth/auth.store';
 import {
   Box,
   Typography,
@@ -79,6 +81,11 @@ function QuickStartTip({ title, subtitle, icon: Icon, accentColor, onClick }: Qu
 
 export const TailorDashboardEmpty: React.FC = () => {
   const navigate = useNavigate();
+  const { hasCapability } = usePermissions();
+  const role = useAuthStore((s) => s.user?.role);
+  // Only offer what this role can open: tailors can't reach the order, customer or inventory pages
+  const canManageOrders = hasCapability('MANAGE_ORDERS');
+  const canManageInventory = role === 'OWNER' || role === 'MANAGER';
 
   return (
     <Box
@@ -131,12 +138,14 @@ export const TailorDashboardEmpty: React.FC = () => {
           Your workshop is ready.
         </Typography>
         <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, maxWidth: 400, mx: 'auto', lineHeight: 1.6 }}>
-          No orders yet. Create your first to start tracking garments through the production floor.
+          {canManageOrders
+            ? 'No orders yet. Create your first to start tracking garments through the production floor.'
+            : 'Nothing is assigned to you yet. Garments your manager assigns will show up in My Orders and on the Production board.'}
         </Typography>
 
         <Button
           variant="contained"
-          onClick={() => navigate('/orders/new')}
+          onClick={() => navigate(canManageOrders ? '/orders/new' : '/production')}
           startIcon={<PlusCircle />}
           sx={{
             bgcolor: 'var(--sf-green)',
@@ -150,11 +159,12 @@ export const TailorDashboardEmpty: React.FC = () => {
             '&:hover': { bgcolor: 'var(--sf-green-dark)' },
           }}
         >
-          Create your first order
+          {canManageOrders ? 'Create your first order' : 'Open the Production board'}
         </Button>
       </Card>
 
       {/* Quick start */}
+      {canManageOrders && (
       <Box sx={{ width: '100%', maxWidth: 820 }}>
         <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700, mb: 3 }}>
           Get started
@@ -178,6 +188,7 @@ export const TailorDashboardEmpty: React.FC = () => {
               onClick={() => navigate('/orders')}
             />
           </Grid>
+          {canManageInventory && (
           <Grid size={{ xs: 12, sm: 4 }}>
             <QuickStartTip
               title="Log inventory"
@@ -187,15 +198,18 @@ export const TailorDashboardEmpty: React.FC = () => {
               onClick={() => navigate('/inventory')}
             />
           </Grid>
+          )}
         </Grid>
       </Box>
+      )}
 
-      {/* New order button */}
+      {/* New order button, clear of the phone bottom nav */}
+      {canManageOrders && (
       <Button
         onClick={() => navigate('/orders/new')}
         sx={{
           position: 'fixed',
-          bottom: 24,
+          bottom: { xs: 88, md: 24 },
           right: 24,
           width: 56,
           height: 56,
@@ -210,6 +224,7 @@ export const TailorDashboardEmpty: React.FC = () => {
       >
         <Plus sx={{ fontSize: 28 }} />
       </Button>
+      )}
     </Box>
   );
 };

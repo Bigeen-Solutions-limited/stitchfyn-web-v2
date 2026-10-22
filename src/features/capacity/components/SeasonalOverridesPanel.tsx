@@ -160,9 +160,9 @@ function AddOverrideDialog({ open, onClose }: { open: boolean; onClose: () => vo
     mutationFn: () =>
       seasonalOverridesApi.create({
         label: label.trim(),
-        capacity_limit: Number(capacityLimit),
-        starts_at: startsAt,
-        ends_at: endsAt,
+        capacityLimit: Number(capacityLimit),
+        startsAt,
+        endsAt,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });

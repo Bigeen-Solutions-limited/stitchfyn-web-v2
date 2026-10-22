@@ -627,7 +627,7 @@ export const AdminDashboard: React.FC = () => {
         <SpeedDialAction
           icon={<UserCog sx={{ fontSize: 20 }} />}
           tooltipTitle="Add staff"
-          onClick={() => navigate('/staff/new')}
+          onClick={() => navigate('/staff')}
         />
       </SpeedDial>
     </Box>
