@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Chip,
   Skeleton,
   alpha,
@@ -26,7 +25,9 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { groupOrderApi, type GroupOrderListItem } from '../features/group-order/group-order.api';
+import { groupOrderApi, groupShareUrl, type GroupOrderInput, type GroupOrderSummary } from '../features/group-order/group-order.api';
+import { GroupSettingsFields } from '../features/group-order/GroupSettingsFields';
+import { parseApiError } from '../lib/errors';
 import { keys } from '../query/keys';
 import { showToast } from '../components/feedback/Toast';
 
@@ -37,21 +38,24 @@ interface CreateGroupDialogProps {
 
 const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) => {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ name: '', eventDate: '' });
+  const navigate = useNavigate();
+  const [form, setForm] = useState<GroupOrderInput>({});
 
   const createMutation = useMutation({
-    mutationFn: () => groupOrderApi.create({ name: form.name.trim(), eventDate: form.eventDate }),
-    onSuccess: () => {
+    mutationFn: () => groupOrderApi.create({ ...form, name: form.name?.trim() }),
+    onSuccess: (group) => {
       queryClient.invalidateQueries({ queryKey: ['groupOrders'] });
-      showToast('Group Created', 'The group order has been registered.', 'success');
-      setForm({ name: '', eventDate: '' });
+      showToast('Group Created', 'Now add its orders.', 'success');
+      setForm({});
       onClose();
+      navigate(`/group-orders/${group.id}`);
     },
+    onError: (err) => showToast('Could not create the group', parseApiError(err).detail, 'error'),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.eventDate) return;
+    if (!form.name?.trim() || !form.eventDate) return;
     createMutation.mutate();
   };
 
@@ -65,29 +69,9 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) 
           </Stack>
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={2.5} sx={{ pt: 1 }}>
-            <TextField
-              label="Group Name"
-              value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              required
-              fullWidth
-              size="small"
-              placeholder="e.g. Johnson Wedding Party"
-              InputProps={{ sx: { borderRadius: '12px' } }}
-            />
-            <TextField
-              label="Event Date"
-              type="date"
-              value={form.eventDate}
-              onChange={(e) => setForm((p) => ({ ...p, eventDate: e.target.value }))}
-              required
-              fullWidth
-              size="small"
-              InputLabelProps={{ shrink: true }}
-              InputProps={{ sx: { borderRadius: '12px' } }}
-            />
-          </Stack>
+          <Box sx={{ pt: 1 }}>
+            <GroupSettingsFields value={form} onChange={setForm} />
+          </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 1 }}>
           <Button onClick={onClose} sx={{ color: 'text.secondary', borderRadius: '10px' }}>Cancel</Button>
@@ -105,7 +89,7 @@ const CreateGroupDialog: React.FC<CreateGroupDialogProps> = ({ open, onClose }) 
   );
 };
 
-const GroupCard: React.FC<{ group: GroupOrderListItem }> = ({ group }) => {
+const GroupCard: React.FC<{ group: GroupOrderSummary }> = ({ group }) => {
   const navigate = useNavigate();
   const eventDate = new Date(group.eventDate);
   const [now] = useState(() => Date.now()); // read once when the card appears, not on every render
@@ -116,7 +100,9 @@ const GroupCard: React.FC<{ group: GroupOrderListItem }> = ({ group }) => {
   return (
     <Card
       className="sf-glass"
+      onClick={() => navigate(`/group-orders/${group.id}`)}
       sx={{
+        cursor: 'pointer',
         p: 3,
         borderRadius: '20px',
         border: '1px solid',
@@ -141,8 +127,10 @@ const GroupCard: React.FC<{ group: GroupOrderListItem }> = ({ group }) => {
             </Stack>
             <Stack direction="row" spacing={0.5} alignItems="center">
               <TagIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
-                {group.groupToken}
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                {group.orderCount} {group.orderCount === 1 ? 'order' : 'orders'}
+                {group.leadTailorName ? ` · ${group.leadTailorName}` : ''}
+                {group.storeName ? ` · ${group.storeName}` : ''}
               </Typography>
             </Stack>
           </Stack>
@@ -156,10 +144,10 @@ const GroupCard: React.FC<{ group: GroupOrderListItem }> = ({ group }) => {
           ) : (
             <Chip label={`${daysUntil}d`} size="small" sx={{ height: 20, fontSize: '9px', fontWeight: 700, bgcolor: alpha('#1e5c3a', 0.08), color: '#1e5c3a', borderRadius: '4px' }} />
           )}
-          <Tooltip title="Open Group Dashboard">
+          <Tooltip title="Open the coordinator's shared view">
             <IconButton
               size="small"
-              onClick={() => navigate(`/groups/${group.groupToken}`)}
+              onClick={(e) => { e.stopPropagation(); window.open(groupShareUrl(group.groupToken), '_blank', 'noopener'); }}
               sx={{ color: 'primary.main' }}
             >
               <OpenInNewIcon sx={{ fontSize: 18 }} />

@@ -40,6 +40,7 @@ import { ChangePasswordPage } from '../../pages/ChangePasswordPage.tsx';
 import { GroupCoordinatorDashboard } from '../../features/group-order/GroupCoordinatorDashboard.tsx';
 import { WorkflowTemplatesPage } from '../../pages/WorkflowTemplatesPage.tsx';
 import { GroupOrdersPage } from '../../pages/GroupOrdersPage.tsx';
+import { GroupOrderDetailPage } from '../../pages/GroupOrderDetailPage.tsx';
 import { StitchScoreDetailPage } from '../../pages/StitchScoreDetailPage.tsx';
 import { SystemAdminGuard } from '../../features/system-admin/guards/SystemAdminGuard.tsx';
 import { SystemAdminLayout } from '../../features/system-admin/layouts/SystemAdminLayout.tsx';
@@ -69,6 +70,8 @@ export const router = createBrowserRouter([
           { path: '/reset-password', element: <ResetPasswordPage /> },
           { path: '/verify-email', element: <VerifyEmailPage /> },
           { path: '/track/:slug', element: <TrackingPage /> },
+          // The group coordinator's shared link: read-only, no account (PRD US-13.2, 13.3)
+          { path: '/groups/:token', element: <GroupCoordinatorDashboard /> },
           { path: '/public/seals/:code', element: <SealVerificationPage /> },
           ...(import.meta.env.DEV ? [{ path: '/design-system', element: <DesignSystemPage /> }] : []),
           {
@@ -230,10 +233,10 @@ export const router = createBrowserRouter([
             element: <BetaFeatureGuard featureName="Payment Ledger" />
           },
           {
-            path: '/groups/:token',
+            path: '/group-orders/:id',
             element: (
-              <ProtectedRoute requiredPermission="MANAGE_ORDERS">
-                <GroupCoordinatorDashboard />
+              <ProtectedRoute allowedRoles={['OWNER', 'MANAGER']}>
+                <GroupOrderDetailPage />
               </ProtectedRoute>
             ),
           },

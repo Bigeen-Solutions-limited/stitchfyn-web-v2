@@ -6,6 +6,7 @@ import { EditOrderModal } from './EditOrderModal.tsx';
 import { OrderEntryItem } from './OrderEntryItem.tsx';
 import { useNavigate } from 'react-router-dom';
 import { useOrderPath } from '../useOrderPath.ts';
+import { useAuthStore } from '../../auth/auth.store.ts';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 
 import '../styles/orders.css';
@@ -15,6 +16,9 @@ import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 export function OrdersList() {
   const navigate = useNavigate();
   const orderPath = useOrderPath();
+  // Groups are managed by owners and managers; others just see the label
+  const role = useAuthStore((state) => state.user?.role);
+  const canOpenGroups = role === 'OWNER' || role === 'MANAGER';
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('ALL');
   const [editingOrder, setEditingOrder] = useState<any>(null);
@@ -95,6 +99,7 @@ export function OrdersList() {
                 key={`${order.id}-${index}`} 
                 order={order} 
                 onClick={() => navigate(orderPath(order.id), { state: { targetGarmentId: order.garmentId } })}
+                onGroupClick={canOpenGroups ? (groupId) => navigate(`/group-orders/${groupId}`) : undefined}
               />
             ))
           )}

@@ -91,6 +91,14 @@ export const errorMessages: Record<ErrorCode, ErrorMessage> = {
     title: 'Production Blocked',
     detail: 'Complete the activation checklist before advancing production.',
   },
+  GROUP_STORE_MISMATCH: {
+    title: 'Different Store',
+    detail: "Every order in a group is made at the group's store. Pick that store, or change the group's store.",
+  },
+  ORDER_IN_OTHER_GROUP: {
+    title: 'Already In A Group',
+    detail: 'This order belongs to another group. Remove it from that group first.',
+  },
   UNKNOWN_ERROR: {
     title: 'Unexpected Error',
     detail: 'We ran into an issue. Please refresh the page, or contact support if the issue persists.',

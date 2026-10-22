@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { groupOrderApi } from "../features/group-order/group-order.api";
 import { keys } from "../query/keys";
 import {
   Box,
@@ -101,7 +102,15 @@ export function NewOrderPage() {
   const { data: stores } = useStores();
   const isStoreManager = role === 'MANAGER';
   const isTailor = role === 'TAILOR';
-  const userStoreId = undefined; // storeId is not present on AuthUser currently
+  // Managers and tailors create orders for their own store
+  const userStoreId = user?.storeId;
+  // ?groupId= creates the order inside a group order, which fixes the store and gives the lead tailor
+  const groupId = searchParams.get("groupId") || undefined;
+  const { data: group } = useQuery({
+    queryKey: keys.groupOrders.detail(groupId ?? ''),
+    queryFn: () => groupOrderApi.get(groupId!),
+    enabled: !!groupId && (role === 'OWNER' || role === 'MANAGER'),
+  });
   const { data: templates } = useWorkflowTemplates();
   const createCustomer = useCreateCustomer();
   const createMeasurement = useCreateMeasurement();
@@ -128,6 +137,11 @@ export function NewOrderPage() {
   });
   const [eventDate, setEventDate] = useState<Date | null>(null);
   const [selectedStoreId, setSelectedStoreId] = useState("");
+  // A group with a store decides where its orders are made
+  const groupStoreId = group?.storeId ?? null;
+  useEffect(() => {
+    if (groupStoreId) setSelectedStoreId(groupStoreId);
+  }, [groupStoreId]);
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [materialQuantity, setMaterialQuantity] = useState<number | "">("");
   // Unit for the garment's fabric quantity; separate from the material's own free-text unit.
@@ -451,12 +465,14 @@ export function NewOrderPage() {
           quantityUnit: materialQuantity ? quantityUnit : undefined
         })),
         materialId: selectedMaterialId || undefined,
-        materialQuantity: materialQuantity || undefined
+        materialQuantity: materialQuantity || undefined,
+        groupOrderId: groupId,
       });
 
       showToast("Order Intake Complete", "Your order has been committed to production.", "success");
       // So the new order is listed and searchable straight away
       queryClient.invalidateQueries({ queryKey: keys.orders.all });
+      if (groupId) queryClient.invalidateQueries({ queryKey: ['groupOrders'] });
       queryClient.invalidateQueries({ queryKey: ['workflow', 'active-tasks'] });
       // The API returns { order, initialProjection }
       setSuccessOrder(result.order || result);
@@ -498,6 +514,13 @@ export function NewOrderPage() {
             Precision order capture for the modern atelier.
           </Typography>
         </header>
+
+        {group && (
+          <Alert severity="info" sx={{ mb: 4, borderRadius: '12px' }}>
+            This order joins the group <strong>{group.name}</strong>
+            {group.leadTailorName ? `; unassigned garments go to ${group.leadTailorName}` : ''}.
+          </Alert>
+        )}
 
         {/* STEP INDICATOR */}
         <Box sx={{
@@ -1030,6 +1053,7 @@ export function NewOrderPage() {
                           value={selectedStoreId}
                           label="Production Store"
                           onChange={(e) => setSelectedStoreId(e.target.value)}
+                          disabled={!!groupStoreId}
                           sx={{ borderRadius: '12px', bgcolor: 'background.default' }}
                         >
                           {stores?.map(store => (

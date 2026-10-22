@@ -21,6 +21,9 @@ export interface Order {
   unverifiedFlags?: ActivationFlag[]
   garmentTier?: 'STANDARD' | 'COMPLEX' | 'BESPOKE'
   lockedAt?: string | null
+  // On list rows: the group order this order belongs to
+  groupOrderId?: string | null
+  groupName?: string | null
 }
 
 export interface OrderDeadlineProjection {
