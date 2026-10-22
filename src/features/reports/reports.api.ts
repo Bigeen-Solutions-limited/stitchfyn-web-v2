@@ -39,13 +39,17 @@ export interface TurnaroundGroup {
   completed: number;
   averageHours: number;
   medianHours: number;
+  // 9 in 10 finished within this
+  p90Hours: number;
 }
 
 export interface TurnaroundReport {
   from: string;
   to: string;
   period: ReportPeriod;
-  totals: { completed: number; averageHours: number };
+  totals: { completed: number; averageHours: number; medianHours: number };
+  // Finished stages left out because their completion is recorded before their start
+  excluded: number;
   byStage: TurnaroundGroup[];
   byTailor: TurnaroundGroup[];
   periods: { period: string; completed: number; averageHours: number }[];
