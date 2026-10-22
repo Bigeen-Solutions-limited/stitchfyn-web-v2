@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
-import { useCustomerOrder } from '../hooks/useCustomerOrder';
+import { useCustomerOrder, usePortalStageTimeline } from '../hooks/useCustomerOrder';
+import { StageTimelineView } from '../../workflow/components/WorkflowStageTimeline';
 import { Timeline, TimelineItem } from '../../../components/timeline/Timeline';
 import { RiskBadge } from '../../../components/ui/RiskBadge';
 import { StageStepper } from '../../../components/ui/StageStepper';
@@ -13,6 +14,8 @@ import { PortalDisputeSurface } from '../../portal/components/PortalDisputeSurfa
 export function CustomerOrderPage() {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading, error } = useCustomerOrder(id || '');
+  // The same stage timeline staff see, with its photos, for each garment
+  const { data: garmentTimelines = [] } = usePortalStageTimeline(id || '');
 
   if (isLoading) return <div className="p-xl text-center">Synchronizing with Workshop Archive...</div>;
   if (error || !order) return <div className="p-xl text-center text-danger">Order Projection Unavailable.</div>;
@@ -51,29 +54,43 @@ export function CustomerOrderPage() {
         <div className="md:col-span-2">
           <div className="sf-card">
             <h3 className="text-h3 mb-lg">Production Timeline</h3>
-            <Timeline>
-              {order.stages.map((stage, index) => (
-                <TimelineItem 
-                  key={stage.id}
-                  actor={`Stage ${index + 1} of ${order.stages.length}`}
-                  action={
-                    <div className="flex justify-between items-center w-full">
-                      <span className={stage.isComplete ? 'text-muted line-through' : 'font-bold'}>
-                        {stage.name}
-                      </span>
-                      {stage.isComplete ? (
-                        <span className="badge badge-ontrack">Complete</span>
-                      ) : stage.isActive ? (
-                        <span className="badge badge-warning animate-pulse">In Progress</span>
-                      ) : (
-                        <span className="text-muted text-xs">Pending</span>
-                      )}
-                    </div>
-                  }
-                  timestamp={stage.isComplete ? 'Done' : stage.isActive ? 'Now' : 'Upcoming'}
-                />
-              ))}
-            </Timeline>
+            {garmentTimelines.length > 0 ? (
+              <div className="grid gap-lg">
+                {garmentTimelines.map((g) => (
+                  <div key={g.garmentId}>
+                    {garmentTimelines.length > 1 && <h4 className="text-sm font-bold mb-sm">{g.garmentName}</h4>}
+                    <StageTimelineView
+                      stages={g.stages.map((st) => ({ ...st, key: `${g.garmentId}-${st.stageId}` }))}
+                      photos={g.photos}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Timeline>
+                {order.stages.map((stage, index) => (
+                  <TimelineItem 
+                    key={stage.id}
+                    actor={`Stage ${index + 1} of ${order.stages.length}`}
+                    action={
+                      <div className="flex justify-between items-center w-full">
+                        <span className={stage.isComplete ? 'text-muted line-through' : 'font-bold'}>
+                          {stage.name}
+                        </span>
+                        {stage.isComplete ? (
+                          <span className="badge badge-ontrack">Complete</span>
+                        ) : stage.isActive ? (
+                          <span className="badge badge-warning animate-pulse">In Progress</span>
+                        ) : (
+                          <span className="text-muted text-xs">Pending</span>
+                        )}
+                      </div>
+                    }
+                    timestamp={stage.isComplete ? 'Done' : stage.isActive ? 'Now' : 'Upcoming'}
+                  />
+                ))}
+              </Timeline>
+            )}
           </div>
         </div>
       </div>

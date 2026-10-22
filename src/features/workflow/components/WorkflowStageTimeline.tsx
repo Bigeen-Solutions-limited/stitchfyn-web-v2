@@ -18,11 +18,26 @@ import {
 } from '@mui/icons-material';
 import { useGarmentWorkflow, useProgressPhotos } from '../hooks/useWorkflowMutation';
 import type { StageInstance } from '../workflow.api';
+import type { ProgressPhoto } from '../progress-photo.api';
 import { ProgressPhotoThumbnails } from './ProgressPhotoThumbnails';
 
 interface WorkflowStageTimelineProps {
   garmentId: string;
 }
+
+// One stage as the timeline shows it; staff and customer data both map to this
+export interface TimelineStage {
+  key: string;
+  stageId: string;
+  name: string;
+  status: StageInstance['status'];
+  estimatedDurationHours?: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  completedByName?: string | null;
+}
+
+export type TimelinePhoto = Pick<ProgressPhoto, 'id' | 'stageId' | 'secureUrl' | 'note'>;
 
 function getStageStyle(status: StageInstance['status']) {
   switch (status) {
@@ -73,6 +88,25 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
         .filter(Boolean) as StageInstance[]
     : stages;
 
+  const timelineStages: TimelineStage[] = orderedStages.map((stage, idx) => {
+    const nodeInfo = graphDefinition?.nodes.find((n) => n.id === stage.stageId);
+    return {
+      key: stage.id,
+      stageId: stage.stageId,
+      name: nodeInfo?.name ?? `Stage ${idx + 1}`,
+      status: stage.status,
+      estimatedDurationHours: nodeInfo?.estimatedDurationHours,
+      startedAt: stage.startedAt,
+      completedAt: stage.completedAt,
+      completedByName: stage.completedByName,
+    };
+  });
+
+  return <StageTimelineView stages={timelineStages} photos={progressPhotos ?? []} />;
+};
+
+// The stage timeline itself, shared by the order page, the tailor's work view and the customer portal
+export function StageTimelineView({ stages, photos }: { stages: TimelineStage[]; photos: TimelinePhoto[] }) {
   const completedCount = stages.filter((s) => s.status === 'COMPLETED').length;
   const progressPct = stages.length > 0 ? Math.round((completedCount / stages.length) * 100) : 0;
 
@@ -100,13 +134,12 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
       />
 
       <Stack spacing={0}>
-        {orderedStages.map((stage, idx) => {
-          const nodeInfo = graphDefinition?.nodes.find((n) => n.id === stage.stageId);
+        {stages.map((stage, idx) => {
           const style = getStageStyle(stage.status);
-          const isLast = idx === orderedStages.length - 1;
+          const isLast = idx === stages.length - 1;
 
           return (
-            <Box key={stage.id} sx={{ display: 'flex', position: 'relative', pb: isLast ? 0 : 3 }}>
+            <Box key={stage.key} sx={{ display: 'flex', position: 'relative', pb: isLast ? 0 : 3 }}>
               {!isLast && (
                 <Box sx={{
                   position: 'absolute',
@@ -138,7 +171,7 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
               <Box sx={{ flex: 1, minWidth: 0, pt: 0.25 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: stage.status === 'PENDING' ? 'text.disabled' : 'text.primary' }}>
-                    {nodeInfo?.name ?? `Stage ${idx + 1}`}
+                    {stage.name}
                   </Typography>
                   <Chip
                     label={style.label}
@@ -156,9 +189,9 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
                 </Stack>
 
                 <Stack direction="row" spacing={2} sx={{ mt: 0.5 }} flexWrap="wrap">
-                  {nodeInfo?.estimatedDurationHours && (
+                  {!!stage.estimatedDurationHours && (
                     <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '10px' }}>
-                      Est. {nodeInfo.estimatedDurationHours}h
+                      Est. {stage.estimatedDurationHours}h
                     </Typography>
                   )}
                   {stage.startedAt && (
@@ -175,16 +208,16 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
                       </Typography>
                     </Tooltip>
                   )}
-                  {stage.completedBy && (
+                  {stage.completedByName && (
                     <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '10px' }}>
-                      by {stage.completedBy.split('@')[0]}
+                      by {stage.completedByName}
                     </Typography>
                   )}
                 </Stack>
 
                 {/* Photos for stages that have started; not-yet-started stages show none */}
                 {(stage.status === 'IN_PROGRESS' || stage.status === 'INHIBITED' || stage.status === 'COMPLETED') && (() => {
-                  const stagePhotos = (progressPhotos ?? []).filter((p) => p.stageId === stage.stageId);
+                  const stagePhotos = photos.filter((p) => p.stageId === stage.stageId);
                   return <ProgressPhotoThumbnails photos={stagePhotos} />;
                 })()}
               </Box>
@@ -194,4 +227,4 @@ export const WorkflowStageTimeline: React.FC<WorkflowStageTimelineProps> = ({ ga
       </Stack>
     </Box>
   );
-};
+}
