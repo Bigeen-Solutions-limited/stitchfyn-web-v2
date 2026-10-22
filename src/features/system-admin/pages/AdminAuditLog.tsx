@@ -73,8 +73,8 @@ export function AdminAuditLog() {
                   <span style={{ color: '#64748b', textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 600 }}>{e.targetType}</span><br />
                   <span style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{e.targetId.slice(0, 16)}…</span>
                 </td>
-                <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: '0.75rem', color: '#64748b' }}>
-                  {e.actorId.slice(0, 16)}…
+                <td style={{ ...tdStyle, fontSize: '0.8rem', color: '#64748b' }} title={e.actorId}>
+                  {e.actorName ?? 'System admin'}
                 </td>
                 <td style={{ ...tdStyle, maxWidth: '240px' }}>
                   {e.previousState && <div><span style={{ color: '#94a3b8', fontSize: '0.7rem', fontWeight: 600 }}>BEFORE</span><StateCell value={e.previousState} /></div>}

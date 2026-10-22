@@ -10,7 +10,9 @@ interface Props {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-NG', {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-NG', {
     hour: '2-digit',
     minute: '2-digit',
     day: 'numeric',
@@ -19,7 +21,7 @@ function formatTime(iso: string): string {
 }
 
 function MessageBubble({ message }: { message: PortalMessage }) {
-  const isStaff = message.senderRole === 'STAFF';
+  const isStaff = message.senderType === 'staff';
 
   return (
     <div
@@ -40,7 +42,7 @@ function MessageBubble({ message }: { message: PortalMessage }) {
           letterSpacing: 0.6,
         }}
       >
-        {isStaff ? 'Your tailor' : 'You'}
+        {isStaff ? message.senderName ?? 'Your tailor' : 'You'}
       </p>
       <div
         style={{
@@ -57,7 +59,7 @@ function MessageBubble({ message }: { message: PortalMessage }) {
         {message.body}
       </div>
       <p style={{ fontSize: '10px', color: '#bbb', marginTop: 4 }}>
-        {formatTime(message.createdAt)}
+        {formatTime(message.sentAt)}
       </p>
     </div>
   );

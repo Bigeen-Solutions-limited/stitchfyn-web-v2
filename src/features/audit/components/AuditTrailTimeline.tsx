@@ -23,6 +23,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../infrastructure/http/axios.client';
 import type { AuditRecord } from '../types';
+import { actorLabel, presentMetadata } from '../auditPresentation';
 
 interface AuditTrailTimelineProps {
   targetId?: string;
@@ -128,27 +129,43 @@ export const AuditTrailTimeline: React.FC<AuditTrailTimelineProps> = ({ targetId
                 </Stack>
 
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                  Actor: {record.actorId || 'System'}
+                  Actor: {actorLabel(record)}
                 </Typography>
 
                 {/* Metadata Tags */}
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
-                  {Object.entries(record.metadata).map(([key, value]) => (
-                    <Chip 
-                      key={key} 
-                      label={`${key}: ${value}`} 
-                      size="small" 
-                      variant="outlined"
-                      sx={{ 
-                        fontSize: '10px', 
-                        height: '20px', 
-                        borderColor: 'divider',
-                        bgcolor: 'background.paper',
-                        maxWidth: '100%',
-                      }} 
-                      title={`${key}: ${value}`}
-                    />
-                  ))}
+                  {presentMetadata(record.metadata).map((item) =>
+                    item.kind === 'link' ? (
+                      <Chip
+                        key={item.key}
+                        icon={<PhotoCameraOutlinedIcon sx={{ fontSize: '12px !important' }} />}
+                        label={item.label}
+                        size="small"
+                        variant="outlined"
+                        component="a"
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        clickable
+                        sx={{ fontSize: '10px', height: '20px', borderColor: 'divider', bgcolor: 'background.paper' }}
+                      />
+                    ) : (
+                      <Chip
+                        key={item.key}
+                        label={`${item.label}: ${item.text}`}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          fontSize: '10px',
+                          height: '20px',
+                          borderColor: 'divider',
+                          bgcolor: 'background.paper',
+                          maxWidth: '100%',
+                        }}
+                        title={`${item.label}: ${item.text}`}
+                      />
+                    ),
+                  )}
                 </Stack>
 
                 <Stack direction="row" spacing={2} alignItems="center">

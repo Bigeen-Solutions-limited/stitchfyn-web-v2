@@ -23,9 +23,11 @@ export const getTrackingInfo = async (slug: string): Promise<PortalView> => {
 
 export interface PortalMessage {
   id: string;
-  senderRole: 'STAFF' | 'CUSTOMER';
+  senderType: 'staff' | 'customer';
+  // The staff member's name; null for the customer's own messages
+  senderName: string | null;
   body: string;
-  createdAt: string;
+  sentAt: string;
 }
 
 export interface PortalPaymentSummary {
