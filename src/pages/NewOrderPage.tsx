@@ -74,6 +74,10 @@ import { truncateId, safeLocaleDate } from "../utils/format";
 import { NumberField } from "../components/inputs/NumberField";
 import { mapErrorCode } from "../utils/errorMapper";
 
+// Picked in place of a stock material when the customer supplies the fabric
+const OWN_FABRIC = "__customer_own_fabric__";
+const OWN_FABRIC_LABEL = "Customer's own fabric";
+
 type Step = "CLIENT_SELECTION" | "CLIENT_DETAILS" | "GARMENTS_TIMELINE" | "FABRIC_DETAILS" | "MEASUREMENTS" | "SUMMARY";
 
 const getGarmentIcon = (templateName: string) => {
@@ -139,7 +143,9 @@ export function NewOrderPage() {
   const [selectedStoreId, setSelectedStoreId] = useState("");
   // A group with a store decides where its orders are made
   const groupStoreId = group?.storeId ?? null;
-  const chosenStoreId = groupStoreId ?? selectedStoreId;
+  // With a single store there's nothing to choose
+  const storeIdOrOnly = selectedStoreId || (stores?.length === 1 ? stores[0].id : "");
+  const chosenStoreId = groupStoreId ?? storeIdOrOnly;
   const [selectedMaterialId, setSelectedMaterialId] = useState("");
   const [materialQuantity, setMaterialQuantity] = useState<number | "">("");
   // Unit for the garment's fabric quantity; separate from the material's own free-text unit.
@@ -150,6 +156,11 @@ export function NewOrderPage() {
   const [paymentIntentType, setPaymentIntentType] = useState("");
 
   const { data: inventory } = useInventory();
+  // The customer brings their own fabric: nothing comes out of stock, but the quantity is still recorded,
+  // because the customer confirms it before production can start
+  const ownFabric = selectedMaterialId === OWN_FABRIC;
+  const stockMaterialId = ownFabric ? "" : selectedMaterialId;
+  const fabricName = ownFabric ? OWN_FABRIC_LABEL : inventory?.find(m => m.materialId === selectedMaterialId)?.name;
   const effectiveStoreId = role === 'OWNER' ? chosenStoreId : userStoreId || undefined;
   const { data: staff } = useStaffList({
     storeId: effectiveStoreId,
@@ -455,15 +466,15 @@ export function NewOrderPage() {
           assignedTailorId: g.assignedTailorId || null,
           estimatedTotalDurationHours: g.estimatedTotalDurationHours || 24,
           fabricImageBase64: fabricDetails.fabricImageBase64,
-          fabricType: inventory?.find(m => m.materialId === selectedMaterialId)?.name || null,
+          fabricType: fabricName || null,
           colorSwatch: fabricDetails.colorSwatch,
           designNotes: fabricDetails.designNotes,
           // The same quantity is saved on the garment and used for the material reservation
           quantity: materialQuantity || undefined,
           quantityUnit: materialQuantity ? quantityUnit : undefined
         })),
-        materialId: selectedMaterialId || undefined,
-        materialQuantity: materialQuantity || undefined,
+        materialId: stockMaterialId || undefined,
+        materialQuantity: stockMaterialId ? materialQuantity || undefined : undefined,
         groupOrderId: groupId,
       });
 
@@ -1425,7 +1436,7 @@ export function NewOrderPage() {
                           gap: 2
                         }}>
                           <Typography variant="body2" sx={{ color: '#92400e', fontWeight: 600 }}>
-                            <WarningIcon sx={{ fontSize: 16, verticalAlign: '-3px', mr: 0.5 }} aria-hidden />No materials found in Vault. Register one under Inventory first.
+                            <WarningIcon sx={{ fontSize: 16, verticalAlign: '-3px', mr: 0.5 }} aria-hidden />No materials in stock yet. Choose "Customer's own fabric", or register one under Inventory.
                           </Typography>
                         </Box>
                       )}
@@ -1443,6 +1454,7 @@ export function NewOrderPage() {
                             error={inventory !== undefined && inventory.length === 0}
                           >
                             <MenuItem value=""><em>-- Select Material --</em></MenuItem>
+                            <MenuItem value={OWN_FABRIC}>{OWN_FABRIC_LABEL} (not from stock)</MenuItem>
                             {inventory?.map((m: any, idx: number) => (
                               <MenuItem key={`${m.materialId}-${idx}`} value={m.materialId} disabled={m.quantityAvailable <= 0}>
                                 {m.name} ({m.quantityAvailable} {m.unit} left)
@@ -1579,7 +1591,7 @@ export function NewOrderPage() {
               <Button onClick={() => setStep("GARMENTS_TIMELINE")} sx={{ color: 'text.primary' }}>Back</Button>
               <Button
                 variant="contained"
-                disabled={!selectedMaterialId || (inventory !== undefined && inventory.length === 0)}
+                disabled={!selectedMaterialId || (ownFabric && !materialQuantity)}
                 onClick={goToMeasurementsOrSummary}
                 sx={{ bgcolor: 'secondary.main', height: 52, px: 6, borderRadius: '12px', '&:hover': { bgcolor: '#d4aa2a' } }}
               >
@@ -1947,7 +1959,7 @@ export function NewOrderPage() {
                     </Box>
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                        {inventory?.find(m => m.materialId === selectedMaterialId)?.name || "External Material"}
+                        {fabricName || "External Material"}
                       </Typography>
                       <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5, fontStyle: fabricDetails.designNotes ? 'normal' : 'italic' }}>
                         {fabricDetails.designNotes || "No specific design notes provided."}
