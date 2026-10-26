@@ -3,6 +3,7 @@ import { useAuthStore } from '../features/auth/auth.store';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '../features/dashboard/analytics.api';
 import { keys } from '../query/keys';
+import { useOnboardingStatus } from '../features/onboarding/hooks/useOnboarding';
 
 import { AdminDashboard } from './dashboard/AdminDashboard';
 import { TailorDashboard } from './dashboard/TailorDashboard';
@@ -21,12 +22,18 @@ export const DashboardPage: React.FC = () => {
     queryFn: analyticsApi.getOverview,
     enabled: role !== 'SYSTEM_ADMIN',
   });
+  // An owner whose business isn't set up yet starts in the setup wizard; other pages stay reachable
+  const onboarding = useOnboardingStatus(role === 'OWNER');
 
   if (role === 'SYSTEM_ADMIN') {
     return <Navigate to="/system-admin" replace />;
   }
 
-  if (isLoading) {
+  if (role === 'OWNER' && onboarding.data && !onboarding.data.completedAt) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (isLoading || (role === 'OWNER' && onboarding.isLoading)) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
         <QueryLoading label="Loading dashboard…" />
