@@ -8,6 +8,7 @@ import { OrderDetailPage } from '../../pages/OrderDetailPage.tsx';
 import { OrderWorkPage } from '../../pages/OrderWorkPage.tsx';
 import { MyWorkPage } from '../../pages/MyWorkPage.tsx';
 import { StaffManagementPage } from '../../pages/StaffManagementPage.tsx';
+import { OnboardingPage } from '../../pages/OnboardingPage.tsx';
 import { NewOrderPage } from '../../pages/NewOrderPage.tsx';
 import { ProductionBoardPage } from '../../pages/ProductionBoardPage.tsx';
 import { DashboardPage } from '../../pages/DashboardPage.tsx';
@@ -129,6 +130,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute requiredPermission="VIEW_ORDER">
                 <MyWorkPage />
+              </ProtectedRoute>
+            )
+          },
+          {
+            path: '/onboarding',
+            element: (
+              <ProtectedRoute allowedRoles={['OWNER']}>
+                <OnboardingPage />
               </ProtectedRoute>
             )
           },
