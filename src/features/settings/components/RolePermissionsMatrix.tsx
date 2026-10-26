@@ -19,6 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { rolePermissionsApi } from '../role-permissions.api';
+import { ROLE_LABELS } from '../../auth/staff.api';
 
 const CAPABILITY_LABELS: Record<string, string> = {
   VIEW_ORDERS: 'View Orders',
@@ -44,14 +45,6 @@ const CAPABILITY_DESCRIPTIONS: Record<string, string> = {
 
 const CONFIGURABLE_ROLES = ['MANAGER', 'TAILOR', 'FRONT_DESK'];
 
-const ROLE_LABELS: Record<string, string> = {
-  OWNER: 'Owner',
-  MANAGER: 'Manager',
-  TAILOR: 'Tailor',
-  FRONT_DESK: 'Front Desk',
-  CUSTOMER: 'Customer',
-  SYSTEM_ADMIN: 'System Admin',
-};
 
 export function RolePermissionsMatrix() {
   const queryClient = useQueryClient();

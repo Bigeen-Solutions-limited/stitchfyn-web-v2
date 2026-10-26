@@ -4,6 +4,16 @@ export type StaffRole = "OWNER" | "MANAGER" | "TAILOR" | "FRONT_DESK";
 // Roles an owner can give; Owner is never one of them
 export const ASSIGNABLE_STAFF_ROLES: StaffRole[] = ["MANAGER", "TAILOR", "FRONT_DESK"];
 
+// How each role is named on screen
+export const ROLE_LABELS: Record<string, string> = {
+  OWNER: "Owner",
+  MANAGER: "Manager",
+  TAILOR: "Tailor",
+  FRONT_DESK: "Front Desk",
+  CUSTOMER: "Customer",
+  SYSTEM_ADMIN: "System Admin",
+};
+
 export interface Staff {
   id: string;
   email: string;

@@ -30,6 +30,9 @@ export const keys = {
     activeTasks: ['workflow', 'active-tasks'] as const,
     progressPhotos: (garmentId: string) => ['workflow', 'garment', garmentId, 'progress-photos'] as const,
   },
+  onboarding: {
+    status: ['onboarding', 'status'] as const,
+  },
   staff: {
     all: ['staff'] as const,
     list: (storeId?: string) => ['staff', 'list', { storeId }] as const,
