@@ -457,6 +457,8 @@ export function NewOrderPage() {
         // Midday local time, so the calendar date survives conversion to UTC
         eventDate: eventDate ? new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate(), 12).toISOString() : new Date().toISOString(),
         lockedMeasurementVersionId: finalMeasurementVersionId,
+        // The server refuses an order that doesn't say where its fabric comes from
+        fabric_source: ownFabric ? 'CUSTOMER' : 'STOCK',
         event_occasion: eventOccasion || undefined,
         garment_category: garmentCategory || undefined,
         garment_tier: garmentTier,
@@ -470,11 +472,11 @@ export function NewOrderPage() {
           colorSwatch: fabricDetails.colorSwatch,
           designNotes: fabricDetails.designNotes,
           // The same quantity is saved on the garment and used for the material reservation
-          quantity: materialQuantity || undefined,
-          quantityUnit: materialQuantity ? quantityUnit : undefined
+          quantity: Number(materialQuantity),
+          quantityUnit
         })),
         materialId: stockMaterialId || undefined,
-        materialQuantity: stockMaterialId ? materialQuantity || undefined : undefined,
+        materialQuantity: stockMaterialId ? Number(materialQuantity) : undefined,
         groupOrderId: groupId,
       });
 
@@ -1591,7 +1593,8 @@ export function NewOrderPage() {
               <Button onClick={() => setStep("GARMENTS_TIMELINE")} sx={{ color: 'text.primary' }}>Back</Button>
               <Button
                 variant="contained"
-                disabled={!selectedMaterialId || (ownFabric && !materialQuantity)}
+                // Both sources need the fabric quantity: the customer confirms it before production starts
+                disabled={!selectedMaterialId || !materialQuantity}
                 onClick={goToMeasurementsOrSummary}
                 sx={{ bgcolor: 'secondary.main', height: 52, px: 6, borderRadius: '12px', '&:hover': { bgcolor: '#d4aa2a' } }}
               >
