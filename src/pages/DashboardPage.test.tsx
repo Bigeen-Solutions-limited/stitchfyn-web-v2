@@ -16,7 +16,7 @@ vi.mock('./dashboard/AdminDashboard', () => ({ AdminDashboard: () => <div>Owner 
 const status = (completedAt: string | null) => ({
   completedAt,
   companyName: 'Adire Atelier',
-  steps: { business: false, workflow: false, staff: false },
+  steps: { workshop: false, workflow: false, staff: false },
   defaultStore: { id: 's', name: 'Adire Atelier', locationAddress: null, maxGarmentCapacity: 100, dailyCapacityHours: 8 },
 })
 

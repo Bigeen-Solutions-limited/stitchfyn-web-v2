@@ -8,7 +8,7 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import {
-  useCompleteOnboarding, useOnboardingStatus, useRefreshOnboarding, useSaveBusiness,
+  useCompleteOnboarding, useOnboardingStatus, useRefreshOnboarding, useSaveWorkshop,
 } from '../features/onboarding/hooks/useOnboarding';
 import type { OnboardingStatus, ReadinessStep } from '../features/onboarding/onboarding.api';
 import { useCreateTemplate, useWorkflowTemplates } from '../features/workflow/hooks/useWorkflowTemplates';
@@ -20,17 +20,17 @@ import { QueryError, QueryLoading } from '../components/feedback/QueryState';
 import { parseApiError } from '../lib/errors/parse-api-error';
 import { useDomainError } from '../lib/errors/use-domain-error';
 
-// First-time setup for an owner: the business, production stages and a first team member, so an order can be taken.
+// First-time setup for an owner: the workshop, production stages and a first team member, so an order can be taken.
 // The server decides what "done" means (GET /onboarding); each step saves as it goes, so the owner can leave and resume.
 const STEPS: { key: ReadinessStep | 'ready'; label: string }[] = [
-  { key: 'business', label: 'Your business' },
+  { key: 'workshop', label: 'Your workshop' },
   { key: 'workflow', label: 'Production stages' },
   { key: 'staff', label: 'Your team' },
   { key: 'ready', label: 'Ready' },
 ];
 
 const STEP_NAMES: Record<ReadinessStep, string> = {
-  business: 'Business and store details',
+  workshop: 'Workshop address and capacity',
   workflow: 'Production stages',
   staff: 'At least one team member',
 };
@@ -69,7 +69,7 @@ export function OnboardingPage() {
       </Stepper>
 
       <Card sx={{ p: { xs: 2, md: 3 }, borderRadius: '16px' }}>
-        {STEPS[step].key === 'business' && <BusinessStep status={status} onDone={next} />}
+        {STEPS[step].key === 'workshop' && <WorkshopStep status={status} onDone={next} />}
         {STEPS[step].key === 'workflow' && <WorkflowStep done={status.steps.workflow} onDone={next} />}
         {STEPS[step].key === 'staff' && <TeamStep status={status} onDone={next} />}
         {STEPS[step].key === 'ready' && <ReadyStep status={status} onGoTo={setActive} />}
@@ -78,11 +78,10 @@ export function OnboardingPage() {
   );
 }
 
-function BusinessStep({ status, onDone }: { status: OnboardingStatus; onDone: () => void }) {
-  const save = useSaveBusiness();
+// The company and workshop names were set when the business was created on StitchFYN; the owner adds what wasn't
+function WorkshopStep({ status, onDone }: { status: OnboardingStatus; onDone: () => void }) {
+  const save = useSaveWorkshop();
   const [form, setForm] = useState({
-    companyName: status.companyName,
-    storeName: status.defaultStore.name,
     storeAddress: status.defaultStore.locationAddress ?? '',
     maxGarmentCapacity: String(status.defaultStore.maxGarmentCapacity),
     dailyCapacityHours: String(status.defaultStore.dailyCapacityHours),
@@ -93,8 +92,6 @@ function BusinessStep({ status, onDone }: { status: OnboardingStatus; onDone: ()
     e.preventDefault();
     save.mutate(
       {
-        companyName: form.companyName,
-        storeName: form.storeName,
         storeAddress: form.storeAddress,
         maxGarmentCapacity: Number(form.maxGarmentCapacity),
         dailyCapacityHours: Number(form.dailyCapacityHours),
@@ -105,11 +102,15 @@ function BusinessStep({ status, onDone }: { status: OnboardingStatus; onDone: ()
 
   return (
     <Box component="form" onSubmit={submit}>
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Your business</Typography>
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Your workshop</Typography>
       <Stack spacing={2}>
-        <TextField label="Business name" value={form.companyName} onChange={set('companyName')} required fullWidth />
-        <TextField label="Workshop name" value={form.storeName} onChange={set('storeName')} required fullWidth
-          helperText="Customers see this on their order page" />
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <TextField label="Business name" value={status.companyName} fullWidth InputProps={{ readOnly: true }} />
+          <TextField label="Workshop name" value={status.defaultStore.name} fullWidth InputProps={{ readOnly: true }} />
+        </Stack>
+        <Typography variant="caption" color="text.secondary">
+          These were set when your business was created on StitchFYN. Contact support to change them.
+        </Typography>
         <TextField label="Workshop address" value={form.storeAddress} onChange={set('storeAddress')} required fullWidth multiline minRows={2} />
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <TextField label="Garments in production at once" type="number" value={form.maxGarmentCapacity}

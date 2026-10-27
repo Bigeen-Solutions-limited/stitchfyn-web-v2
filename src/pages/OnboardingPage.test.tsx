@@ -9,7 +9,7 @@ import { staffApi } from '../features/auth/staff.api'
 import { workflowApi } from '../features/workflow/workflow.api'
 
 vi.mock('../features/onboarding/onboarding.api', () => ({
-  onboardingApi: { getStatus: vi.fn(), saveBusiness: vi.fn(), complete: vi.fn() },
+  onboardingApi: { getStatus: vi.fn(), saveWorkshop: vi.fn(), complete: vi.fn() },
 }))
 vi.mock('../features/auth/staff.api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../features/auth/staff.api')>()),
@@ -23,7 +23,7 @@ vi.mock('../features/workflow/workflow.api', async (importOriginal) => ({
 const status = (steps: Partial<OnboardingStatus['steps']>, completedAt: string | null = null): OnboardingStatus => ({
   completedAt,
   companyName: 'Adire Atelier',
-  steps: { business: false, workflow: false, staff: false, ...steps },
+  steps: { workshop: false, workflow: false, staff: false, ...steps },
   defaultStore: { id: 'store-1', name: 'Adire Atelier', locationAddress: null, maxGarmentCapacity: 100, dailyCapacityHours: 8 },
 })
 
@@ -44,44 +44,47 @@ function renderPage() {
 describe('OnboardingPage', () => {
   beforeEach(() => {
     vi.mocked(onboardingApi.getStatus).mockReset()
-    vi.mocked(onboardingApi.saveBusiness).mockReset()
+    vi.mocked(onboardingApi.saveWorkshop).mockReset()
     vi.mocked(onboardingApi.complete).mockReset()
     vi.mocked(staffApi.getStaff).mockReset().mockResolvedValue([])
     vi.mocked(staffApi.inviteStaff).mockReset()
     vi.mocked(workflowApi.getTemplates).mockReset().mockResolvedValue([])
   })
 
-  it('starts a new owner at the business details, prefilled from what was provisioned', async () => {
+  it('starts a new owner at the workshop, showing the names admin set up as read-only', async () => {
     vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({}))
     renderPage()
 
-    expect(await screen.findByLabelText(/business name/i)).toHaveValue('Adire Atelier')
+    const name = await screen.findByLabelText(/business name/i)
+    expect(name).toHaveValue('Adire Atelier')
+    expect(name).toHaveAttribute('readonly')
+    expect(screen.getByLabelText(/workshop name/i)).toHaveAttribute('readonly')
     expect(screen.getByLabelText(/garments in production at once/i)).toHaveValue(100)
   })
 
-  it('saves the business details and moves on to production stages', async () => {
+  it('saves only the address and capacity, then moves on to production stages', async () => {
     vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({}))
-    vi.mocked(onboardingApi.saveBusiness).mockResolvedValue(status({ business: true }))
+    vi.mocked(onboardingApi.saveWorkshop).mockResolvedValue(status({ workshop: true }))
     renderPage()
 
     fireEvent.change(await screen.findByLabelText(/workshop address/i), { target: { value: '12 Herbert Macaulay Way, Yaba' } })
     fireEvent.click(screen.getByRole('button', { name: /save and continue/i }))
 
-    await waitFor(() => expect(onboardingApi.saveBusiness).toHaveBeenCalledWith(expect.objectContaining({
-      companyName: 'Adire Atelier', storeAddress: '12 Herbert Macaulay Way, Yaba', maxGarmentCapacity: 100, dailyCapacityHours: 8,
-    })))
+    await waitFor(() => expect(onboardingApi.saveWorkshop).toHaveBeenCalledWith({
+      storeAddress: '12 Herbert Macaulay Way, Yaba', maxGarmentCapacity: 100, dailyCapacityHours: 8,
+    }))
     expect(await screen.findByRole('button', { name: /use the standard stages/i })).toBeInTheDocument()
   })
 
   it('resumes at the first step that is not done', async () => {
-    vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({ business: true, workflow: true }))
+    vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({ workshop: true, workflow: true }))
     renderPage()
 
     expect(await screen.findByRole('button', { name: /send invite/i })).toBeInTheDocument()
   })
 
   it("won't continue past the team step until someone has been invited", async () => {
-    vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({ business: true, workflow: true }))
+    vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({ workshop: true, workflow: true }))
     renderPage()
 
     expect(await screen.findByRole('button', { name: /^continue$/i })).toBeDisabled()
@@ -89,8 +92,8 @@ describe('OnboardingPage', () => {
 
   it('invites a team member to the default store and shows the link to share', async () => {
     vi.mocked(onboardingApi.getStatus)
-      .mockResolvedValueOnce(status({ business: true, workflow: true }))
-      .mockResolvedValue(status({ business: true, workflow: true, staff: true }))
+      .mockResolvedValueOnce(status({ workshop: true, workflow: true }))
+      .mockResolvedValue(status({ workshop: true, workflow: true, staff: true }))
     vi.mocked(staffApi.inviteStaff).mockResolvedValue({
       id: 'u-1', email: 'tunde@example.com', fullName: 'Tunde Bello', role: 'TAILOR', storeId: 'store-1',
       isActive: false, status: 'INVITED', lastLoginAt: null, removedAt: null, createdAt: '', inviteUrl: 'https://app.example/accept?t=abc',
@@ -109,8 +112,8 @@ describe('OnboardingPage', () => {
   })
 
   it('finishes setup and opens the new order form', async () => {
-    vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({ business: true, workflow: true, staff: true }))
-    vi.mocked(onboardingApi.complete).mockResolvedValue(status({ business: true, workflow: true, staff: true }, '2026-10-26T10:00:00Z'))
+    vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({ workshop: true, workflow: true, staff: true }))
+    vi.mocked(onboardingApi.complete).mockResolvedValue(status({ workshop: true, workflow: true, staff: true }, '2026-10-26T10:00:00Z'))
     renderPage()
 
     fireEvent.click(await screen.findByRole('button', { name: /finish and take your first order/i }))
@@ -119,7 +122,7 @@ describe('OnboardingPage', () => {
   })
 
   it('names what is still missing when the server refuses to finish', async () => {
-    vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({ business: true, workflow: true, staff: true }))
+    vi.mocked(onboardingApi.getStatus).mockResolvedValue(status({ workshop: true, workflow: true, staff: true }))
     const conflict = { status: 409, data: { code: 'CONFLICT', metadata: { missing: ['staff'] } } } as unknown as AxiosResponse
     vi.mocked(onboardingApi.complete).mockRejectedValue(new AxiosError('Conflict', 'ERR_BAD_REQUEST', undefined, undefined, conflict))
     renderPage()

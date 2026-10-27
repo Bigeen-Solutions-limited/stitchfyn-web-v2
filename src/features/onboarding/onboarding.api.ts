@@ -1,7 +1,7 @@
 import { apiClient } from '../../infrastructure/http/axios.client';
 
 // What the server reports about first-time setup. It decides readiness; the web only shows it.
-export type ReadinessStep = 'business' | 'workflow' | 'staff';
+export type ReadinessStep = 'workshop' | 'workflow' | 'staff';
 
 export interface OnboardingStatus {
   completedAt: string | null;
@@ -16,9 +16,8 @@ export interface OnboardingStatus {
   };
 }
 
-export interface BusinessDetails {
-  companyName: string;
-  storeName: string;
+// What the owner adds; the company and workshop names come from admin onboarding
+export interface WorkshopDetails {
   storeAddress: string;
   maxGarmentCapacity: number;
   dailyCapacityHours: number;
@@ -30,8 +29,8 @@ export const onboardingApi = {
     return data;
   },
 
-  saveBusiness: async (details: BusinessDetails): Promise<OnboardingStatus> => {
-    const { data } = await apiClient.put<OnboardingStatus>('/onboarding/business', details);
+  saveWorkshop: async (details: WorkshopDetails): Promise<OnboardingStatus> => {
+    const { data } = await apiClient.put<OnboardingStatus>('/onboarding/workshop', details);
     return data;
   },
 
