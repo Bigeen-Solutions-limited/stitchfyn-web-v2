@@ -2,10 +2,14 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAllUsers } from '../hooks/useUsers'
 import { AdminLoadError } from '../components/AdminLoadError'
+import { AddSystemAdminSlideOver } from '../components/AddSystemAdminSlideOver'
+import { InviteLinkDialog } from '../../auth/components/InviteLinkDialog'
 
 export function UserList() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [invite, setInvite] = useState<{ inviteUrl: string; name: string; email: string } | null>(null)
 
   const { data: users, isLoading, isError, refetch } = useAllUsers({ search: search || undefined })
 
@@ -15,7 +19,15 @@ export function UserList() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>All Users</h1>
+        <button onClick={() => setAdding(true)} style={{
+          padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: '#1e293b', color: 'white',
+          cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600,
+        }}>
+          Add System Admin
+        </button>
       </div>
+      {adding && <AddSystemAdminSlideOver onClose={() => setAdding(false)} onInvited={setInvite} />}
+      {invite && <InviteLinkDialog open inviteUrl={invite.inviteUrl} name={invite.name} email={invite.email} onClose={() => setInvite(null)} />}
 
       <div style={{ marginBottom: '16px' }}>
         <input

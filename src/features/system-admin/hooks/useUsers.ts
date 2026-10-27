@@ -87,3 +87,11 @@ export function useResendInvite() {
     },
   })
 }
+
+export function useInviteSystemAdmin() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: { email: string; fullName: string }) => usersApi.inviteSystemAdmin(dto),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.systemAdmin.users.all }),
+  })
+}
