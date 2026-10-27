@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { keys } from '../../../query/keys';
-import { onboardingApi, type BusinessDetails } from '../onboarding.api';
+import { onboardingApi, type WorkshopDetails } from '../onboarding.api';
 
 export function useOnboardingStatus(enabled = true) {
   return useQuery({
@@ -11,10 +11,10 @@ export function useOnboardingStatus(enabled = true) {
 }
 
 // The server returns the new status, so the cache is updated in place
-export function useSaveBusiness() {
+export function useSaveWorkshop() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (details: BusinessDetails) => onboardingApi.saveBusiness(details),
+    mutationFn: (details: WorkshopDetails) => onboardingApi.saveWorkshop(details),
     onSuccess: (status) => queryClient.setQueryData(keys.onboarding.status, status),
   });
 }
