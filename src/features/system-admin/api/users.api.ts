@@ -7,7 +7,20 @@ export interface ListUsersParams {
   limit?: number
 }
 
+export interface SystemAdminInvite {
+  id: string
+  email: string
+  fullName: string
+  inviteUrl: string
+}
+
 export const usersApi = {
+  // A new system admin gets an email with a link to set their password; the link is returned too, to share another way
+  inviteSystemAdmin: async (dto: { email: string; fullName: string }): Promise<SystemAdminInvite> => {
+    const { data } = await apiClient.post<SystemAdminInvite>('/system-admin/admins', dto)
+    return data
+  },
+
   list: async (params?: ListUsersParams): Promise<UserRecord[]> => {
     const { data } = await apiClient.get<UserRecord[]>('/system-admin/users', { params })
     return data

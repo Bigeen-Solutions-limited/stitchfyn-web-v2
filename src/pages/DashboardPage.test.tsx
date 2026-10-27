@@ -36,7 +36,10 @@ function renderAs(role: string) {
 }
 
 describe('DashboardPage first-run redirect', () => {
-  beforeEach(() => vi.mocked(onboardingApi.getStatus).mockReset())
+  // Braces matter: a function returned from beforeEach runs as a teardown, which would call the mock again
+  beforeEach(() => {
+    vi.mocked(onboardingApi.getStatus).mockReset()
+  })
 
   it('sends an owner whose business is not set up to the setup wizard', async () => {
     vi.mocked(onboardingApi.getStatus).mockResolvedValue(status(null))
