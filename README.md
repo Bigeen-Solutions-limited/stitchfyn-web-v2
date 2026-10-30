@@ -1,49 +1,49 @@
 # stitchfyn-web
 
-The frontend for StitchFYN. It displays what the backend reports and computes nothing on its own — no stage math, no risk levels, no balances calculated in the browser.
+The frontend for StitchFYN. It shows what the backend reports and works nothing out on its own. Stage progress, risk levels and balances all come from the API. The browser does not calculate them.
 
-## How a mutation actually works
+## How a change reaches the screen
 
-There's no optimistic UI here. Every change follows the same sequence:
+The app never shows a change before the server accepts it (no "optimistic UI"). Every change follows the same steps:
 
 1. Send the `POST`/`PATCH`/`DELETE` to the API.
-2. Show a success toast acknowledging the request went through.
-3. Invalidate the relevant TanStack Query cache entries.
-4. Refetch from the server.
-5. Render whatever the server actually says now.
+2. Show a success toast to say the request went through.
+3. Mark the related TanStack Query cache entries as out of date ("invalidate" them).
+4. Fetch them again from the server.
+5. Show whatever the server now says.
 
-If the UI shows something wrong, it's reflecting what the API returned — check the backend first.
+If the screen shows something wrong, it is showing what the API returned. Check the backend first.
 
 ## What's here
 
-- **Production dashboard** — deadline risk and workshop load at a glance
-- **Order detail** — full order view with the live workflow graph
-- **Intake wizard** — customer lookup, measurement capture, order creation
-- **Material vault** — stock levels, reservations, and the material ledger
-- **Measurement archive** — version history, nothing overwritten
-- **Customer portal** — read-only order status page for customers
-- **StitchScore** — workshop reputation and on-time delivery metrics
-- **Fabric safety flow** — intake photo verification and dispute handling
-- **Group order coordination** — multiple orders booked together for one event
-- **Deadline countdown** — daily digest and urgent-timeline escalation
-- **Audit trail viewer** — full evidence view for dispute resolution
-- **Analytics dashboard** — revenue, velocity, and activity reporting
-- **Transparency panel** — trust/capacity/audit-health indicators for staff
+- **Production dashboard**: deadline risk and workshop load at a glance.
+- **Order detail**: the full order, with the live workflow graph.
+- **Intake wizard**: find the customer, take measurements, create the order.
+- **Material vault**: stock levels, reservations and the material ledger.
+- **Measurement archive**: every version is kept. Nothing is overwritten.
+- **Customer portal**: a read-only order status page for customers.
+- **StitchScore**: the workshop's reputation and on-time delivery figures.
+- **Fabric safety flow**: photo checks when fabric comes in, and dispute handling.
+- **Group order coordination**: several orders booked together for one event.
+- **Deadline countdown**: a daily digest, and escalation when a timeline gets urgent.
+- **Audit trail viewer**: the full evidence record, for settling disputes.
+- **Analytics dashboard**: revenue, speed of work and activity reports.
+- **Transparency panel**: trust, capacity and audit-health indicators for staff.
 
 ## Tech stack
 
 - [React 19](https://react.dev/) on Vite
-- [TanStack Query v5](https://tanstack.com/query/latest) for server state
-- [Zustand](https://zustand-demo.pmnd.rs/) for the small amount of client-only state (auth session, UI toggles)
-- Plain CSS with a shared design-token layer — no CSS framework
-- Axios, with silent token refresh on 401s
+- [TanStack Query v5](https://tanstack.com/query/latest) for data fetched from the server
+- [Zustand](https://zustand-demo.pmnd.rs/) for the small amount of state that lives only in the browser (the signed-in session, UI toggles)
+- MUI (Material UI) components, themed from `src/design-system/theme`, with shared design tokens in plain CSS
+- Axios, which quietly refreshes the sign-in token when the API answers 401
 
 ## Directory structure
 
-- `src/app` — routing and top-level providers
-- `src/components` — shared UI primitives (timelines, steppers, badges, data grids)
-- `src/features` — one folder per domain area (auth, orders, workflow, materials, etc.), mirroring the backend's module boundaries
-- `src/design-system` — design tokens and shared styling utilities
+- `src/app`: routing and the top-level providers
+- `src/components`: shared UI building blocks (timelines, steppers, badges, data grids)
+- `src/features`: one folder per area of the product (auth, orders, workflow, materials and so on), matching the backend's modules
+- `src/design-system`: design tokens and shared styling
 
 ## Commands
 
