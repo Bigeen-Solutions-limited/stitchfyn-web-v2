@@ -72,7 +72,7 @@ import { useToastStore } from "../components/feedback/Toast";
 import { useInventory } from "../features/inventory/useInventory";
 import { truncateId, safeLocaleDate } from "../utils/format";
 import { NumberField } from "../components/inputs/NumberField";
-import { mapErrorCode } from "../utils/errorMapper";
+import { ERROR_MAP } from "../utils/errorMapper";
 
 // Picked in place of a stock material when the customer supplies the fabric
 const OWN_FABRIC = "__customer_own_fabric__";
@@ -492,9 +492,9 @@ export function NewOrderPage() {
       const errorData = err.response?.data;
       let errorMessage = errorData?.message || err.message || "Failed to finalize order";
 
-      // Turn the server's error code into a friendly message
+      // Use a friendlier wording where one exists; otherwise the server's message says what went wrong
       if (errorData?.code) {
-        errorMessage = mapErrorCode(errorData.code);
+        if (ERROR_MAP[errorData.code]) errorMessage = ERROR_MAP[errorData.code];
 
         if (errorData.code === 'INSUFFICIENT_STOCK') {
           errorMessage = `Material Vault Error: ${errorMessage}`;
@@ -718,6 +718,7 @@ export function NewOrderPage() {
                       fullWidth
                       variant="standard"
                       label="Full Name"
+                      required
                       value={newCustomer.name}
                       onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
                       InputProps={{ disableUnderline: true, sx: { fontSize: '1rem', fontWeight: 600 } }}
@@ -731,10 +732,15 @@ export function NewOrderPage() {
                     <TextField
                       fullWidth
                       variant="standard"
-                      label="Email Address"
+                      label="Email Address (optional)"
                       type="email"
                       value={newCustomer.email}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                      onChange={(e) => {
+                        const email = e.target.value;
+                        // Email updates need an address; fall back to WhatsApp if it's cleared
+                        const notificationChannel = !email.trim() && newCustomer.notificationChannel === "email" ? "whatsapp" : newCustomer.notificationChannel;
+                        setNewCustomer({ ...newCustomer, email, notificationChannel });
+                      }}
                       InputProps={{ disableUnderline: true, sx: { fontSize: '1rem', fontWeight: 600 } }}
                       sx={{ '& .MuiInputLabel-root': { fontSize: '0.875rem' } }}
                     />
@@ -747,6 +753,7 @@ export function NewOrderPage() {
                       fullWidth
                       variant="standard"
                       label="Phone Number"
+                      required
                       type="tel"
                       value={newCustomer.phone}
                       onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
@@ -766,7 +773,7 @@ export function NewOrderPage() {
                       >
                         <FormControlLabel value="whatsapp" control={<Radio size="small" color="primary" />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>WhatsApp (recommended)</Typography>} />
                         <FormControlLabel value="sms" control={<Radio size="small" color="primary" />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>SMS</Typography>} />
-                        <FormControlLabel value="email" control={<Radio size="small" color="primary" />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Email</Typography>} />
+                        <FormControlLabel value="email" disabled={!newCustomer.email.trim()} control={<Radio size="small" color="primary" />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Email</Typography>} />
                       </RadioGroup>
                     </FormControl>
                   </Box>
@@ -796,7 +803,8 @@ export function NewOrderPage() {
                 <Button onClick={() => setStep("CLIENT_SELECTION")} sx={{ color: 'text.primary' }}>Back</Button>
                 <Button
                   variant="contained"
-                  disabled={!selectedCustomer && !newCustomer.name}
+                  // Name and phone are what the API needs; email is optional
+                  disabled={!selectedCustomer && !(newCustomer.name.trim() && newCustomer.phone.trim())}
                   onClick={() => setStep("GARMENTS_TIMELINE")}
                   sx={{ bgcolor: 'secondary.main', height: 52, px: 6, borderRadius: '12px', '&:hover': { bgcolor: '#d4aa2a' } }}
                 >

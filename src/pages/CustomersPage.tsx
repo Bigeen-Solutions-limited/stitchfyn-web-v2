@@ -30,8 +30,8 @@ export function CustomersPage() {
   const createMutation = useCreateCustomer();
 
   const handleCreateCustomer = async () => {
-    if (!newCustomerForm.name.trim()) {
-      showToast("Validation Error", "Client name is required.", "error");
+    if (!newCustomerForm.name.trim() || !newCustomerForm.phone.trim()) {
+      showToast("Validation Error", "Client name and phone are required.", "error");
       return;
     }
     
@@ -39,14 +39,14 @@ export function CustomersPage() {
       const newCustomer = await createMutation.mutateAsync(newCustomerForm);
       showToast(
         "Client Created",
-        `${newCustomerForm.name} has been added${newCustomerForm.email ? `. A welcome email with login credentials has been sent to ${newCustomerForm.email}` : ' to the system'}.`,
+        `${newCustomerForm.name} has been added${newCustomerForm.email ? `. A welcome email has been sent to ${newCustomerForm.email}` : ' to the system'}.`,
         "success"
       );
       setIsAddModalOpen(false);
       setNewCustomerForm({ name: '', phone: '', email: '' });
       navigate(`/customers/${newCustomer.id}`);
     } catch (err: any) {
-      showToast("Creation Failed", err.message || "Failed to create customer.", "error");
+      showToast("Creation Failed", err.response?.data?.message || err.message || "Failed to create customer.", "error");
     }
   };
 
@@ -309,13 +309,14 @@ export function CustomersPage() {
             />
             <TextField
               label="Phone Number"
+              required
               fullWidth
               type="tel"
               value={newCustomerForm.phone}
               onChange={(e) => setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })}
             />
             <TextField
-              label="Email Address"
+              label="Email Address (optional)"
               fullWidth
               type="email"
               value={newCustomerForm.email}
@@ -329,7 +330,7 @@ export function CustomersPage() {
             variant="contained" 
             color="primary" 
             onClick={handleCreateCustomer}
-            disabled={createMutation.isPending || !newCustomerForm.name.trim()}
+            disabled={createMutation.isPending || !newCustomerForm.name.trim() || !newCustomerForm.phone.trim()}
             sx={{ borderRadius: '12px', px: 4, fontWeight: 700 }}
           >
             {createMutation.isPending ? 'Saving...' : 'Create Profile'}
