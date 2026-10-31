@@ -72,7 +72,7 @@ import { useToastStore } from "../components/feedback/Toast";
 import { useInventory } from "../features/inventory/useInventory";
 import { truncateId, safeLocaleDate } from "../utils/format";
 import { NumberField } from "../components/inputs/NumberField";
-import { mapErrorCode } from "../utils/errorMapper";
+import { ERROR_MAP } from "../utils/errorMapper";
 
 // Picked in place of a stock material when the customer supplies the fabric
 const OWN_FABRIC = "__customer_own_fabric__";
@@ -492,9 +492,9 @@ export function NewOrderPage() {
       const errorData = err.response?.data;
       let errorMessage = errorData?.message || err.message || "Failed to finalize order";
 
-      // Turn the server's error code into a friendly message
+      // Use a friendlier wording where one exists; otherwise the server's message says what went wrong
       if (errorData?.code) {
-        errorMessage = mapErrorCode(errorData.code);
+        if (ERROR_MAP[errorData.code]) errorMessage = ERROR_MAP[errorData.code];
 
         if (errorData.code === 'INSUFFICIENT_STOCK') {
           errorMessage = `Material Vault Error: ${errorMessage}`;

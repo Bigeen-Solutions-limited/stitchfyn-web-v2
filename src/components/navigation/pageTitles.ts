@@ -21,6 +21,10 @@ const routeConfig: Record<string, string> = {
   measurements: 'Measurements',
   payments: 'Payments',
   'change-password': 'Change Password',
+  'my-work': 'My Orders',
+  onboarding: 'Setup',
+  revenue: 'Revenue & Balances',
+  turnaround: 'Production Turnaround',
 };
 
 export const labelFor = (segment: string) => routeConfig[segment] ?? 'Details';
@@ -28,6 +32,8 @@ export const labelFor = (segment: string) => routeConfig[segment] ?? 'Details';
 const pageTitles: Record<string, string> = {
   '/orders/new': 'New Order',
   '/reports/audit': 'Audit Log',
+  '/reports/revenue': 'Revenue & Balances',
+  '/reports/turnaround': 'Production Turnaround',
   '/reports/security-audit': 'Security Audit',
 };
 

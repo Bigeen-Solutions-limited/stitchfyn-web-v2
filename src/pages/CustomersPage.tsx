@@ -46,7 +46,7 @@ export function CustomersPage() {
       setNewCustomerForm({ name: '', phone: '', email: '' });
       navigate(`/customers/${newCustomer.id}`);
     } catch (err: any) {
-      showToast("Creation Failed", err.message || "Failed to create customer.", "error");
+      showToast("Creation Failed", err.response?.data?.message || err.message || "Failed to create customer.", "error");
     }
   };
 
